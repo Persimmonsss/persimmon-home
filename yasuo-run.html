@@ -594,7 +594,7 @@ function update(dt){
   if(keys["d"]||keys["D"]||keys["ArrowRight"]) mx += 1;
   if(joy){ mx = joy.dx; my = joy.dy; }
   var len = Math.sqrt(mx*mx+my*my);
-  if(len>0){ mx/=len; my/=len; player.moveDir = mx; }
+  if(len>0){ mx/=len; my/=len; player.moveDir = mx; player.moving = true; } else { player.moving = false; }
   player.x = clamp(player.x + mx*player.speed*dt, 26, WW-26);
   player.y = clamp(player.y + my*player.speed*dt, 26, WH-26);
   if(player.attackAnim > 0) player.attackAnim -= dt;
@@ -1247,14 +1247,20 @@ function draw(){
   // 玩家
   var im3 = IMG.yasuo;
   var ps = 78;
-  var pBob = Math.sin(tNow * 8) * 2;
-  var pLean = player.moveDir * 0.04;
+  // 动画状态
+  var walkCycle = player.moving ? Math.sin(tNow*12) : 0;
+  var breathe = Math.sin(tNow*2.5) * 0.03;
+  var pBob = player.moving ? Math.abs(walkCycle)*-3 : Math.sin(tNow*2.5)*2;
+  var pLean = player.moving ? walkCycle * 0.08 : 0;
+  var pScale = 1 + breathe + (player.moving ? Math.sin(tNow*12)*0.02 : 0);
   var pDash = 0;
-  if(player.attackAnim > 0){ pDash = Math.sin(player.attackAnim / 0.18 * Math.PI) * 12; }
+  if(player.attackAnim > 0){ pDash = Math.sin(player.attackAnim / 0.18 * Math.PI) * 14; }
   var pDrawX = player.x + Math.cos(player.attackDir) * pDash;
   var pDrawY = player.y + pBob;
-  ctx.fillStyle = "rgba(0,0,0,0.3)";
-  ctx.beginPath(); ctx.ellipse(player.x, player.y+34, 26, 8, 0, 0, 6.283); ctx.fill();
+  // 阴影
+  ctx.fillStyle = "rgba(0,0,0,0.35)";
+  ctx.beginPath(); ctx.ellipse(player.x, player.y+34, 24, 7, 0, 0, 6.283); ctx.fill();
+  // 攻击斩击弧线
   if(player.attackAnim > 0 && im3){
     ctx.save();
     ctx.translate(pDrawX, pDrawY);
@@ -1267,7 +1273,6 @@ function draw(){
     ctx.beginPath();
     ctx.arc(0, 0, 50, -0.8, 0.8);
     ctx.stroke();
-    // 第二层更亮的弧线
     ctx.globalAlpha = slashAlpha * 0.5;
     ctx.lineWidth = 10;
     ctx.beginPath();
@@ -1279,6 +1284,7 @@ function draw(){
     ctx.save();
     ctx.translate(pDrawX, pDrawY);
     ctx.rotate(pLean);
+    ctx.scale(pScale, 2-pScale);
     if(gmGod){ ctx.shadowColor = "#ffd700"; ctx.shadowBlur = 20; }
     if(player.hitCd > 0 && Math.floor(tNow*20)%2===0) ctx.globalAlpha = 0.3;
     ctx.drawImage(im3, -ps/2, -ps/2, ps, ps);
