@@ -87,7 +87,7 @@ canvas{display:block;width:100%;height:auto;border-radius:10px;background:#070d1
 <body>
 <div class="wrap">
   <div class="top">
-    <h1>🌪️ 疾风幸存者 · 亚索 <span style="font-size:12px;color:var(--muted);font-weight:normal;">v1.3</span></h1>
+    <h1>🌪️ 疾风幸存者 · 亚索 <span style="font-size:12px;color:var(--muted);font-weight:normal;">v1.4</span></h1>
     <a class="back" href="index.html">← 返回工具箱</a>
   </div>
   <div class="meta-bar">
@@ -197,7 +197,7 @@ canvas{display:block;width:100%;height:auto;border-radius:10px;background:#070d1
 
 <!-- 隐藏 img 占位 -->
 <div style="display:none" aria-hidden="true">
-  <img src="assets/run2/yasuo.webp" alt=""><img src="assets/run2/slime.webp" alt=""><img src="assets/run2/bat.webp" alt=""><img src="assets/run2/skel.webp" alt=""><img src="assets/run2/boss.webp" alt=""><img src="assets/run2/gem.webp" alt=""><img src="assets/run2/heal.webp" alt=""><img src="assets/run2/tornado.webp" alt=""><img src="assets/run2/ground.webp" alt=""><img src="assets/run2/yasuo_sheet.png" alt="">
+  <img src="assets/run2/yasuo.webp" alt=""><img src="assets/run2/slime.webp" alt=""><img src="assets/run2/bat.webp" alt=""><img src="assets/run2/skel.webp" alt=""><img src="assets/run2/boss.webp" alt=""><img src="assets/run2/gem.webp" alt=""><img src="assets/run2/heal.webp" alt=""><img src="assets/run2/tornado.webp" alt=""><img src="assets/run2/ground.webp" alt=""><img src="assets/run2/yasuo_sheet.png" alt=""><img src="assets/run2/faction_icons.png" alt="">
 </div>
 
 <script>
@@ -207,7 +207,11 @@ var cv = document.getElementById("cv"), ctx = cv.getContext("2d");
 var W = 1280, H = 800, WW = 3000, WH = 2000;
 var IMG = {};
 function loadImg(key, src){ var im = new Image(); im.onload = function(){ IMG[key] = im; }; im.src = src; }
-["yasuo","slime","bat","skel","boss","gem","heal","tornado","ground","yasuo_sheet"].forEach(function(k){ loadImg(k, "assets/run2/" + (k==="yasuo_sheet" ? "yasuo_sheet.png" : k + ".webp")); });
+["yasuo","slime","bat","skel","boss","gem","heal","tornado","ground","yasuo_sheet","faction_icons"].forEach(function(k){
+  if(k==="yasuo_sheet") loadImg(k, "assets/run2/yasuo_sheet.png");
+  else if(k==="faction_icons") loadImg(k, "assets/run2/faction_icons.png");
+  else loadImg(k, "assets/run2/" + k + ".webp");
+});
 
 /* ===== 音效 ===== */
 var AC = null, muted = localStorage.getItem("yasuo_mute") === "1";
@@ -1430,24 +1434,32 @@ function draw(){
   if(state==="levelup"){
     ctx.fillStyle = "rgba(5,9,15,0.66)"; ctx.fillRect(0,0,W,H);
     ctx.textAlign = "center";
-    ctx.fillStyle = "#c8aa6e"; ctx.font = "bold 26px 'Microsoft YaHei',sans-serif";
-    ctx.fillText("升级！选择一项风之力", W/2, H*0.16);
+    ctx.fillStyle = "#c8aa6e"; ctx.font = "bold 28px 'Microsoft YaHei',sans-serif";
+    ctx.fillText("升级！选择一项风之力", W/2, H*0.14);
     ctx.textAlign = "left";
+    var facOrder = {wind:0, sword:1, guard:2, elem:3, summon:4};
+    var facIcon = IMG.faction_icons;
     for(var c=0;c<upgradeChoices.length;c++){
       var u = upgradeChoices[c];
-      var bx = W/2 - 300, by = H*0.24 + c*92, bw2 = 600, bh = 74;
+      var bx = W/2 - 350, by = H*0.2 + c*110, bw2 = 700, bh = 96;
       var fc = FACTION_COLOR[u.faction] || "#7fd8ff";
       var lvlAlpha = Math.min(1, (tNow - (window.__lvlTime||tNow)) * 4);
       ctx.globalAlpha = lvlAlpha;
       ctx.fillStyle = "#1c2330"; ctx.fillRect(bx, by, bw2, bh);
       ctx.strokeStyle = fc; ctx.lineWidth = 2; ctx.strokeRect(bx, by, bw2, bh);
       ctx.fillStyle = fc; ctx.fillRect(bx, by, 4, bh);
-      ctx.font = "16px 'Microsoft YaHei',sans-serif"; ctx.fillStyle = "#e6edf3";
-      ctx.fillText(u.icon + " " + u.name, bx+22, by+30);
+      // 派系图标
+      if(facIcon){
+        var fi = facOrder[u.faction]||0;
+        var iw = facIcon.width/5;
+        ctx.drawImage(facIcon, fi*iw, 0, iw, facIcon.height, bx+12, by+18, 60, 60);
+      }
+      ctx.font = "bold 17px 'Microsoft YaHei',sans-serif"; ctx.fillStyle = "#e6edf3";
+      ctx.fillText(u.name, bx+84, by+32);
       ctx.font = "12px 'Microsoft YaHei',sans-serif"; ctx.fillStyle = fc;
-      ctx.fillText("[" + ({wind:"疾风",sword:"剑道",guard:"护体",elem:"元素",summon:"召唤"}[u.faction]||"?") + "系]", bx+22, by+50);
-      ctx.font = "13px 'Microsoft YaHei',sans-serif"; ctx.fillStyle = "#9aa7b8";
-      ctx.fillText(u.desc, bx+100, by+50);
+      ctx.fillText("[" + ({wind:"疾风",sword:"剑道",guard:"护体",elem:"元素",summon:"召唤"}[u.faction]||"?") + "系]", bx+84, by+54);
+      ctx.font = "14px 'Microsoft YaHei',sans-serif"; ctx.fillStyle = "#9aa7b8";
+      ctx.fillText(u.desc, bx+84, by+76);
       ctx.globalAlpha = 1;
     }
   }
