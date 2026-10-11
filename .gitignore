@@ -10,3 +10,15 @@ Desktop.ini
 
 # Logs
 *.log
+
+# 临时文件/截图
+_shots/
+_backup/
+
+# 旧图标（已替换为icon_persimmon.png）
+icon_16.png
+icon_48.png
+icon_128.png
+
+# 微信开发者工具project.config.json缓存
+project.private.config.json
