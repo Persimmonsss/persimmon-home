@@ -87,7 +87,7 @@ canvas{display:block;width:100%;height:auto;border-radius:10px;background:#070d1
 <body>
 <div class="wrap">
   <div class="top">
-    <h1>🌪️ 疾风幸存者 · 亚索 <span style="font-size:12px;color:var(--muted);font-weight:normal;">v3.0</span></h1>
+    <h1>🌪️ 疾风幸存者 · 亚索 <span style="font-size:12px;color:var(--muted);font-weight:normal;">v3.1</span></h1>
     <a class="back" href="index.html">← 返回工具箱</a>
   </div>
   <div class="meta-bar">
@@ -471,7 +471,8 @@ var UP = [
   {id:"thorns", faction:"guard", name:"荆棘反甲", desc:"受到伤害时反弹 50%", icon:"🌵", fn:function(){ player.thorns += 0.5; }},
   {id:"thunder", faction:"elem", name:"雷刃附魔", desc:"旋风 30% 概率触发雷击，范围伤害", icon:"⚡", fn:function(){ player.thunderChance += 0.3; }},
   {id:"ice", faction:"elem", name:"冰刃附魔", desc:"旋风减速敌人 30%，持续2秒", icon:"❄", fn:function(){ player.slowAmt = Math.max(player.slowAmt, 0.3); }},
-  {id:"familiar", faction:"summon", name:"风灵召唤", desc:"召唤一个风灵跟随协助攻击", icon:"👻", fn:function(){ addFamiliar(); }}
+  {id:"familiar", faction:"summon", name:"风灵召唤", desc:"召唤一个风灵跟随协助攻击", icon:"👻", fn:function(){ addFamiliar(); }},
+  {id:"refresh", faction:"wind", name:"风暴洗礼", desc:"每局限刷新次数 +2", icon:"🔄", fn:function(){ player.refreshLeft = (player.refreshLeft||3) + 2; }}
 ];
 var FACTION_COLOR = {wind:"#7fd8ff", sword:"#ff9f43", guard:"#2ecc71", elem:"#a55eea", summon:"#ff6bd5"};
 
@@ -521,9 +522,10 @@ function gainXp(v){
 function pickUpgrade(){
   state = "levelup";
   window.__lvlTime = tNow;
+  if(!player.refreshLeft) player.refreshLeft = 3;
   var pool = UP.slice();
   for(var i=pool.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=pool[i]; pool[i]=pool[j]; pool[j]=t; }
-  var num = 3 + player.luckOptions;
+  var num = 2 + player.luckOptions;
   upgradeChoices = pool.slice(0, Math.min(num, pool.length));
   document.getElementById("lv").textContent = player.lv;
 }
@@ -535,7 +537,7 @@ function reset(){
   player.projSize = 1; player.pierce = 0; player.extraShot = 0; player.slowAmt = 0;
   player.thunderChance = 0; player.thorns = 0; player.swordAuraCd = 0; player.swordAuraOn = false;
   player.familiarCount = 0; player.attackAnim = 0; player.godMode = false;
-  player.xpMult = 1; player.luckOptions = 0; player.bossKillsThisRun = 0; player.hitCd = 0;
+  player.xpMult = 1; player.luckOptions = 0; player.bossKillsThisRun = 0; player.hitCd = 0; player.refreshLeft = 3;
   // 应用永久升级
   META_UPGRADES.forEach(function(u){
     var lv = meta.upgrades[u.id]||0;
@@ -1539,47 +1541,50 @@ function draw(){
     ctx.textAlign = "center";
     ctx.fillStyle = "#c8aa6e"; ctx.font = "bold 30px 'Microsoft YaHei',sans-serif";
     ctx.shadowColor = "#c8aa6e"; ctx.shadowBlur = 15;
-    ctx.fillText("升级！选择一项风之力", W/2, H*0.14);
+    ctx.fillText("升级！选择一项风之力", W/2, H*0.15);
     ctx.shadowBlur = 0;
     ctx.textAlign = "left";
+    var cardW = 280, cardH = 280, gap = 20;
+    var totalW = upgradeChoices.length * cardW + (upgradeChoices.length-1)*gap;
+    var startX = W/2 - totalW/2;
     for(var c=0;c<upgradeChoices.length;c++){
       var u = upgradeChoices[c];
-      var bx = W/2 - 350, by = H*0.2 + c*110, bw2 = 700, bh = 96;
+      var bx = startX + c*(cardW+gap), by = H*0.25;
       var fc = FACTION_COLOR[u.faction] || "#7fd8ff";
       var lvlAlpha = Math.min(1, (tNow - (window.__lvlTime||tNow)) * 4);
       ctx.globalAlpha = lvlAlpha;
-      // 卡片背景渐变
-      var cg = ctx.createLinearGradient(bx, by, bx, by+bh);
+      var cg = ctx.createLinearGradient(bx, by, bx, by+cardH);
       cg.addColorStop(0, "#1c2330");
       cg.addColorStop(1, "#161b28");
       ctx.fillStyle = cg;
-      roundRect(ctx, bx, by, bw2, bh, 12); ctx.fill();
+      roundRect(ctx, bx, by, cardW, cardH, 16); ctx.fill();
       ctx.strokeStyle = fc; ctx.lineWidth = 2;
-      roundRect(ctx, bx, by, bw2, bh, 12); ctx.stroke();
-      // 左侧色条
+      roundRect(ctx, bx, by, cardW, cardH, 16); ctx.stroke();
       ctx.fillStyle = fc;
-      roundRect(ctx, bx, by, 5, bh, 3); ctx.fill();
-      // 派系图标 - 用生成的图片
+      roundRect(ctx, bx, by, cardW, 5, 3); ctx.fill();
+      // 图标居中
       var iconImg = IMG["icon_" + u.faction];
       if(iconImg){
-        ctx.drawImage(iconImg, bx+14, by+18, 60, 60);
+        ctx.drawImage(iconImg, bx+cardW/2-40, by+30, 80, 80);
       }
-      ctx.font = "bold 17px 'Microsoft YaHei',sans-serif"; ctx.fillStyle = "#e6edf3";
-      ctx.fillText(u.name, bx+84, by+32);
+      ctx.textAlign = "center";
+      ctx.font = "bold 18px 'Microsoft YaHei',sans-serif"; ctx.fillStyle = "#e6edf3";
+      ctx.fillText(u.name, bx+cardW/2, by+145);
       ctx.font = "12px 'Microsoft YaHei',sans-serif"; ctx.fillStyle = fc;
-      ctx.fillText("[" + ({wind:"疾风",sword:"剑道",guard:"护体",elem:"元素",summon:"召唤"}[u.faction]||"?") + "系]", bx+84, by+54);
-      ctx.font = "14px 'Microsoft YaHei',sans-serif"; ctx.fillStyle = "#9aa7b8";
-      ctx.fillText(u.desc, bx+84, by+76);
+      ctx.fillText("[" + ({wind:"疾风",sword:"剑道",guard:"护体",elem:"元素",summon:"召唤"}[u.faction]||"?") + "系]", bx+cardW/2, by+168);
+      ctx.font = "13px 'Microsoft YaHei',sans-serif"; ctx.fillStyle = "#9aa7b8";
+      ctx.fillText(u.desc, bx+cardW/2, by+200);
       ctx.globalAlpha = 1;
     }
     // 刷新按钮
-    var ry = H*0.2 + upgradeChoices.length*110 + 10;
-    ctx.fillStyle = "rgba(200,170,110,0.2)";
-    roundRect(ctx, W/2-80, ry, 160, 40, 20); ctx.fill();
-    ctx.strokeStyle = "#c8aa6e"; ctx.lineWidth = 1.5;
-    roundRect(ctx, W/2-80, ry, 160, 40, 20); ctx.stroke();
-    ctx.fillStyle = "#c8aa6e"; ctx.font = "14px 'Microsoft YaHei',sans-serif"; ctx.textAlign = "center";
-    ctx.fillText("🔄 刷新 (10碎片)", W/2, ry+26);
+    var ry = H*0.25+cardH+30;
+    var canRefresh = player.refreshLeft > 0;
+    ctx.fillStyle = canRefresh ? "rgba(200,170,110,0.2)" : "rgba(100,100,100,0.1)";
+    roundRect(ctx, W/2-100, ry, 200, 44, 22); ctx.fill();
+    ctx.strokeStyle = canRefresh ? "#c8aa6e" : "#555"; ctx.lineWidth = 1.5;
+    roundRect(ctx, W/2-100, ry, 200, 44, 22); ctx.stroke();
+    ctx.fillStyle = canRefresh ? "#c8aa6e" : "#666"; ctx.font = "14px 'Microsoft YaHei',sans-serif";
+    ctx.fillText("刷新 ("+(player.refreshLeft||0)+"次)", W/2, ry+28);
     ctx.textAlign = "left";
   }
   if(state==="over"){
@@ -1668,14 +1673,18 @@ cv.addEventListener("click", function(event){
   else if(state==="levelup"){
     var rect = cv.getBoundingClientRect();
     var ex = (event.clientX - rect.left) * (W/rect.width), ey = (event.clientY - rect.top) * (H/rect.height);
+    var cardW = 280, cardH = 280, gap = 20;
+    var totalW = upgradeChoices.length * cardW + (upgradeChoices.length-1)*gap;
+    var startX = W/2 - totalW/2;
     for(var c=0;c<upgradeChoices.length;c++){
-      var bx = W/2-350, by = H*0.2+c*110;
-      if(ex>bx && ex<bx+700 && ey>by && ey<by+96){ acquireUpgrade(upgradeChoices[c]); state="play"; last=performance.now(); return; }
+      var bx = startX + c*(cardW+gap), by = H*0.25;
+      if(ex>bx && ex<bx+cardW && ey>by && ey<by+cardH){ acquireUpgrade(upgradeChoices[c]); state="play"; last=performance.now(); return; }
     }
     // 刷新按钮
-    if(ex>W/2-80 && ex<W/2+80 && ey>H*0.2+upgradeChoices.length*110+10 && ey<H*0.2+upgradeChoices.length*110+50){
-      if(meta.shards >= 10){ meta.shards -= 10; updateShardDisplay(); saveMeta(); pickUpgrade(); }
-      else toast("碎片不足，需要10碎片刷新");
+    var ry = H*0.25+cardH+30;
+    if(ex>W/2-100 && ex<W/2+100 && ey>ry && ey<ry+44){
+      if(player.refreshLeft > 0){ player.refreshLeft--; pickUpgrade(); }
+      else toast("本局限用次数已用完");
     }
   }
 });
