@@ -1045,13 +1045,29 @@ function draw(){
   if(shake>0) ctx.translate(rnd(-5,5), rnd(-5,5));
   ctx.translate(-cam.x, -cam.y);
 
-  // 地面
-  var g = IMG.ground;
-  if(g){
-    var gs = 512;
-    for(var gx=Math.floor(cam.x/gs)-1; gx<Math.ceil((cam.x+W)/gs)+1; gx++){
-      for(var gy=Math.floor(cam.y/gs)-1; gy<Math.ceil((cam.y+H)/gs)+1; gy++){
-        ctx.drawImage(g, gx*gs, gy*gs, gs, gs);
+  // 地面 - 程序化绘制，无缝
+  ctx.fillStyle = "#0a1628";
+  ctx.fillRect(cam.x, cam.y, W, H);
+  var tileSize = 128;
+  var startX = Math.floor(cam.x/tileSize)*tileSize;
+  var startY = Math.floor(cam.y/tileSize)*tileSize;
+  for(var tx=startX; tx<cam.x+W+tileSize; tx+=tileSize){
+    for(var ty=startY; ty<cam.y+H+tileSize; ty+=tileSize){
+      //  deterministic pseudo-random per tile
+      var h = Math.abs(Math.sin(tx*12.9898 + ty*78.233)*43758.5453) % 1;
+      var shade = 18 + Math.floor(h*10);
+      ctx.fillStyle = "rgb(" + shade + "," + (shade+8) + "," + (shade+18) + ")";
+      ctx.fillRect(tx+1, ty+1, tileSize-2, tileSize-2);
+      // 石板裂纹
+      ctx.strokeStyle = "rgba(0,0,0,0.2)";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(tx+1, ty+1, tileSize-2, tileSize-2);
+      // 随机小装饰点
+      if(h > 0.7){
+        ctx.fillStyle = "rgba(100,180,255,0.08)";
+        ctx.beginPath();
+        ctx.arc(tx + h*100, ty + (1-h)*100, 8, 0, 6.283);
+        ctx.fill();
       }
     }
   }
