@@ -87,7 +87,7 @@ canvas{display:block;width:100%;height:auto;border-radius:10px;background:#070d1
 <body>
 <div class="wrap">
   <div class="top">
-    <h1>🌪️ 疾风幸存者 · 亚索 <span style="font-size:12px;color:var(--muted);font-weight:normal;">v3.2</span></h1>
+    <h1>🌪️ 疾风幸存者 · 亚索 <span style="font-size:12px;color:var(--muted);font-weight:normal;">v3.3</span></h1>
     <a class="back" href="index.html">← 返回工具箱</a>
   </div>
   <div class="meta-bar">
@@ -95,6 +95,7 @@ canvas{display:block;width:100%;height:auto;border-radius:10px;background:#070d1
     <button class="meta-btn" id="shopBtn">天赋</button>
     <button class="meta-btn" id="gachaBtn">扭蛋</button>
     <button class="meta-btn" id="achBtn">成就</button>
+    <button class="meta-btn" id="fsBtn">全屏</button>
   </div>
   <p class="sub" style="display:none"></p>
   <div class="stage">
@@ -370,6 +371,11 @@ updateShardDisplay();
 document.getElementById("shopBtn").onclick = function(){ renderShop(); document.getElementById("shopModal").classList.add("show"); };
 document.getElementById("gachaBtn").onclick = function(){ renderGacha(); document.getElementById("gachaModal").classList.add("show"); };
 document.getElementById("gachaBtn2").onclick = gachaPull;
+document.getElementById("fsBtn").onclick = function(){
+  var el = document.documentElement;
+  if(!document.fullscreenElement) el.requestFullscreen();
+  else document.exitFullscreen();
+};
 document.getElementById("achBtn").onclick = function(){ renderAchievements(); document.getElementById("achModal").classList.add("show"); };
 
 /* ===== 状态 ===== */
@@ -1507,24 +1513,26 @@ function draw(){
   xpGrad.addColorStop(0, "#00d2ff"); xpGrad.addColorStop(1, "#7fd8ff");
   ctx.fillStyle = xpGrad;
   roundRect(ctx, 12, 32, Math.max(0,220*Math.min(1,player.xp/player.xpNeed)), 8, 4); ctx.fill();
-  ctx.fillStyle = "#fff"; ctx.font = "bold 12px sans-serif";
-  ctx.fillText("HP " + Math.max(0,Math.ceil(player.hp)), 16, 24);
-  ctx.fillText("LV " + player.lv, 16, 42);
+  ctx.fillStyle = "#fff"; ctx.font = "bold 14px sans-serif";
+  ctx.fillText("HP " + Math.max(0,Math.ceil(player.hp)), 16, 25);
+  ctx.fillText("LV " + player.lv, 16, 46);
 
   if(state==="menu"){
     ctx.fillStyle = "rgba(5,9,15,0.72)"; ctx.fillRect(0,0,W,H);
     ctx.textAlign = "center";
-    ctx.fillStyle = "#7fd8ff"; ctx.font = "bold 46px 'Microsoft YaHei',sans-serif";
+    ctx.fillStyle = "#7fd8ff"; ctx.font = "bold 64px 'Microsoft YaHei',sans-serif";
+    ctx.shadowColor = "#7fd8ff"; ctx.shadowBlur = 30;
     ctx.fillText("疾风幸存者", W/2, H*0.25);
-    ctx.fillStyle = "#c8aa6e"; ctx.font = "bold 20px 'Microsoft YaHei',sans-serif";
-    ctx.fillText("亚 索 · 暗 影 入 侵", W/2, H*0.32);
-    ctx.fillStyle = "#67e8f9"; ctx.font = "bold 16px 'Microsoft YaHei',sans-serif";
-    ctx.fillText("💎 " + meta.shards + " 风之碎片", W/2, H*0.39);
-    ctx.fillStyle = "#9aa7b8"; ctx.font = "14px 'Microsoft YaHei',sans-serif";
-    ctx.fillText("WASD / 方向键移动 · 旋风斩全自动迎敌", W/2, H*0.46);
-    ctx.fillText("15种强化 · 5大派系 · 局外永久升级 · 成就系统", W/2, H*0.51);
-    ctx.fillStyle = "#7fd8ff"; ctx.font = "bold 17px 'Microsoft YaHei',sans-serif";
-    ctx.fillText("— 点击「开始游戏」—", W/2, H*0.62);
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = "#c8aa6e"; ctx.font = "bold 28px 'Microsoft YaHei',sans-serif";
+    ctx.fillText("亚 索 · 暗 影 入 侵", W/2, H*0.33);
+    ctx.fillStyle = "#67e8f9"; ctx.font = "bold 22px 'Microsoft YaHei',sans-serif";
+    ctx.fillText(meta.shards + " 风之碎片", W/2, H*0.41);
+    ctx.fillStyle = "#9aa7b8"; ctx.font = "18px 'Microsoft YaHei',sans-serif";
+    ctx.fillText("WASD / 方向键移动 · 旋风斩全自动迎敌", W/2, H*0.49);
+    ctx.fillText("15种强化 · 5大派系 · 天赋养成 · 成就系统", W/2, H*0.54);
+    ctx.fillStyle = "#7fd8ff"; ctx.font = "bold 22px 'Microsoft YaHei',sans-serif";
+    ctx.fillText("— 点击开始游戏 —", W/2, H*0.65);
     ctx.textAlign = "left";
   }
   if(state==="pause"){
