@@ -87,7 +87,7 @@ canvas{display:block;width:100%;height:auto;border-radius:10px;background:#070d1
 <body>
 <div class="wrap">
   <div class="top">
-    <h1>🌪️ 疾风幸存者 · 亚索 <span style="font-size:12px;color:var(--muted);font-weight:normal;">v2.4</span></h1>
+    <h1>🌪️ 疾风幸存者 · 亚索 <span style="font-size:12px;color:var(--muted);font-weight:normal;">v2.5</span></h1>
     <a class="back" href="index.html">← 返回工具箱</a>
   </div>
   <div class="meta-bar">
@@ -1483,6 +1483,15 @@ function draw(){
       ctx.fillText(u.desc, bx+84, by+76);
       ctx.globalAlpha = 1;
     }
+    // 刷新按钮
+    var ry = H*0.2 + upgradeChoices.length*110 + 10;
+    ctx.fillStyle = "rgba(200,170,110,0.2)";
+    roundRect(ctx, W/2-80, ry, 160, 40, 20); ctx.fill();
+    ctx.strokeStyle = "#c8aa6e"; ctx.lineWidth = 1.5;
+    roundRect(ctx, W/2-80, ry, 160, 40, 20); ctx.stroke();
+    ctx.fillStyle = "#c8aa6e"; ctx.font = "14px 'Microsoft YaHei',sans-serif"; ctx.textAlign = "center";
+    ctx.fillText("🔄 刷新 (10碎片)", W/2, ry+26);
+    ctx.textAlign = "left";
   }
   if(state==="over"){
     ctx.fillStyle = "rgba(5,9,15,0.74)"; ctx.fillRect(0,0,W,H);
@@ -1571,8 +1580,13 @@ cv.addEventListener("click", function(event){
     var rect = cv.getBoundingClientRect();
     var ex = (event.clientX - rect.left) * (W/rect.width), ey = (event.clientY - rect.top) * (H/rect.height);
     for(var c=0;c<upgradeChoices.length;c++){
-      var bx = W/2-300, by = H*0.24+c*92;
-      if(ex>bx && ex<bx+600 && ey>by && ey<by+74){ acquireUpgrade(upgradeChoices[c]); state="play"; last=performance.now(); return; }
+      var bx = W/2-350, by = H*0.2+c*110;
+      if(ex>bx && ex<bx+700 && ey>by && ey<by+96){ acquireUpgrade(upgradeChoices[c]); state="play"; last=performance.now(); return; }
+    }
+    // 刷新按钮
+    if(ex>W/2-80 && ex<W/2+80 && ey>H*0.2+upgradeChoices.length*110+10 && ey<H*0.2+upgradeChoices.length*110+50){
+      if(meta.shards >= 10){ meta.shards -= 10; updateShardDisplay(); saveMeta(); pickUpgrade(); }
+      else toast("碎片不足，需要10碎片刷新");
     }
   }
 });
