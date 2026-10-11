@@ -87,7 +87,7 @@ canvas{display:block;width:100%;height:auto;border-radius:10px;background:#070d1
 <body>
 <div class="wrap">
   <div class="top">
-    <h1>🌪️ 疾风幸存者 · 亚索 <span style="font-size:12px;color:var(--muted);font-weight:normal;">v1.7</span></h1>
+    <h1>🌪️ 疾风幸存者 · 亚索 <span style="font-size:12px;color:var(--muted);font-weight:normal;">v1.8</span></h1>
     <a class="back" href="index.html">← 返回工具箱</a>
   </div>
   <div class="meta-bar">
@@ -1466,12 +1466,40 @@ function draw(){
       ctx.fillStyle = "#1c2330"; ctx.fillRect(bx, by, bw2, bh);
       ctx.strokeStyle = fc; ctx.lineWidth = 2; ctx.strokeRect(bx, by, bw2, bh);
       ctx.fillStyle = fc; ctx.fillRect(bx, by, 4, bh);
-      // 派系图标
-      if(facIcon){
-        var fi = facOrder[u.faction]||0;
-        var iw = facIcon.width/5;
-        ctx.drawImage(facIcon, fi*iw, 0, iw, facIcon.height, bx+12, by+18, 60, 60);
+      // 派系图标 - Canvas矢量绘制
+      var ic = {wind:"#7fd8ff", sword:"#ff9f43", guard:"#2ecc71", elem:"#a55eea", summon:"#ff6bd5"}[u.faction] || "#7fd8ff";
+      var ix = bx+42, iy = by+48;
+      ctx.save();
+      ctx.fillStyle = "rgba(0,0,0,0.3)";
+      ctx.beginPath(); ctx.arc(ix, iy, 28, 0, 6.283); ctx.fill();
+      ctx.strokeStyle = ic; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(ix, iy, 28, 0, 6.283); ctx.stroke();
+      ctx.fillStyle = ic;
+      if(u.faction === "wind"){
+        ctx.beginPath(); ctx.arc(ix, iy, 12, 0.3, 5.5); ctx.stroke();
+        ctx.lineWidth = 3; ctx.strokeStyle = ic;
+        ctx.beginPath(); ctx.arc(ix, iy, 18, 0.5, 3.5); ctx.stroke();
+      } else if(u.faction === "sword"){
+        ctx.beginPath(); ctx.moveTo(ix-10, iy+12); ctx.lineTo(ix+10, iy-12); ctx.lineWidth = 4; ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(ix-6, iy+6); ctx.lineTo(ix+6, iy-6); ctx.lineWidth = 2; ctx.stroke();
+      } else if(u.faction === "guard"){
+        ctx.beginPath();
+        ctx.moveTo(ix, iy-14); ctx.lineTo(ix+12, iy-8); ctx.lineTo(ix+12, iy+4);
+        ctx.quadraticCurveTo(ix+12, iy+14, ix, iy+18);
+        ctx.quadraticCurveTo(ix-12, iy+14, ix-12, iy+4);
+        ctx.lineTo(ix-12, iy-8); ctx.closePath();
+        ctx.fill();
+      } else if(u.faction === "elem"){
+        ctx.beginPath();
+        ctx.moveTo(ix+4, iy-16); ctx.lineTo(ix-8, iy+2); ctx.lineTo(ix, iy+2);
+        ctx.lineTo(ix-4, iy+16); ctx.lineTo(ix+8, iy-2); ctx.lineTo(ix, iy-2);
+        ctx.closePath(); ctx.fill();
+      } else if(u.faction === "summon"){
+        ctx.beginPath(); ctx.arc(ix, iy, 10, 0, 6.283); ctx.fill();
+        ctx.beginPath(); ctx.arc(ix-8, iy-6, 5, 0, 6.283); ctx.fill();
+        ctx.beginPath(); ctx.arc(ix+8, iy-6, 5, 0, 6.283); ctx.fill();
       }
+      ctx.restore();
       ctx.font = "bold 17px 'Microsoft YaHei',sans-serif"; ctx.fillStyle = "#e6edf3";
       ctx.fillText(u.name, bx+84, by+32);
       ctx.font = "12px 'Microsoft YaHei',sans-serif"; ctx.fillStyle = fc;
