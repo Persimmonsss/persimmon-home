@@ -87,7 +87,7 @@ canvas{display:block;width:100%;height:auto;border-radius:10px;background:#070d1
 <body>
 <div class="wrap">
   <div class="top">
-    <h1>🌪️ 疾风幸存者 · 亚索 <span style="font-size:12px;color:var(--muted);font-weight:normal;">v2.1</span></h1>
+    <h1>🌪️ 疾风幸存者 · 亚索 <span style="font-size:12px;color:var(--muted);font-weight:normal;">v2.2</span></h1>
     <a class="back" href="index.html">← 返回工具箱</a>
   </div>
   <div class="meta-bar">
@@ -242,6 +242,7 @@ function sfx(k){
 /* ===== 工具 ===== */
 function rnd(a,b){ return a + Math.random()*(b-a); }
 function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+function roundRect(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r); ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h); ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r); ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y); ctx.closePath(); }
 function dist2(ax,ay,bx,by){ var dx=ax-bx, dy=ay-by; return dx*dx+dy*dy; }
 var toastEl = document.getElementById("toast");
 function toast(m){ toastEl.textContent=m; toastEl.classList.add("show"); clearTimeout(toastEl._t); toastEl._t=setTimeout(function(){ toastEl.classList.remove("show"); },1600); }
@@ -1199,22 +1200,18 @@ function draw(){
   for(var b=0;b<enemies.length;b++){
     var eb2 = enemies[b];
     if(eb2.kind==="boss"){
-      var bw = 280, bh2 = 14, by2 = cam.y+12;
-      // 背景
+      var bw = 300, bh2 = 14, by2 = cam.y+18;
       ctx.fillStyle = "rgba(0,0,0,0.6)";
-      ctx.fillRect(cam.x+W/2-bw/2-2, by2-2, bw+4, bh2+4);
-      // 血条渐变
+      roundRect(ctx, cam.x+W/2-bw/2-2, by2-2, bw+4, bh2+4, 7); ctx.fill();
       var hpFrac = Math.max(0, eb2.hp/eb2.maxHp);
       var bg = ctx.createLinearGradient(cam.x+W/2-bw/2, 0, cam.x+W/2+bw/2, 0);
       bg.addColorStop(0, "#ff4081"); bg.addColorStop(1, "#ff6bd5");
       ctx.fillStyle = bg;
-      ctx.fillRect(cam.x+W/2-bw/2, by2, bw*hpFrac, bh2);
-      // 边框
-      ctx.strokeStyle = "#ff6bd5"; ctx.lineWidth = 1;
-      ctx.strokeRect(cam.x+W/2-bw/2-0.5, by2-0.5, bw+1, bh2+1);
-      // Boss名称
-      ctx.fillStyle = "#ffd7f0"; ctx.font = "bold 11px sans-serif"; ctx.textAlign = "center";
-      ctx.fillText(eb2.isClone ? "暗影分身" : "暗影兽", cam.x+W/2, by2-6);
+      roundRect(ctx, cam.x+W/2-bw/2, by2, bw*hpFrac, bh2, 7); ctx.fill();
+      ctx.strokeStyle = "#ff6bd5"; ctx.lineWidth = 1.5;
+      roundRect(ctx, cam.x+W/2-bw/2-0.5, by2-0.5, bw+1, bh2+1, 7); ctx.stroke();
+      ctx.fillStyle = "#ffd7f0"; ctx.font = "bold 12px sans-serif"; ctx.textAlign = "center";
+      ctx.fillText(eb2.isClone ? "暗影分身" : "暗影兽", cam.x+W/2, by2-8);
       ctx.textAlign = "left";
     }
   }
@@ -1432,10 +1429,20 @@ function draw(){
   ctx.restore();
 
   // HUD
-  ctx.fillStyle = "rgba(0,0,0,0.4)"; ctx.fillRect(12,12,220,16);
-  ctx.fillStyle = "#ff5d5d"; ctx.fillRect(12,12,220*Math.max(0,player.hp/player.maxHp),16);
-  ctx.fillStyle = "rgba(0,0,0,0.4)"; ctx.fillRect(12,32,220,8);
-  ctx.fillStyle = "#7fd8ff"; ctx.fillRect(12,32,220*Math.min(1,player.xp/player.xpNeed),8);
+  // HP条
+  ctx.fillStyle = "rgba(0,0,0,0.5)";
+  roundRect(ctx, 12, 12, 220, 16, 8); ctx.fill();
+  var hpGrad = ctx.createLinearGradient(12, 12, 232, 12);
+  hpGrad.addColorStop(0, "#ff4757"); hpGrad.addColorStop(1, "#ff6b81");
+  ctx.fillStyle = hpGrad;
+  roundRect(ctx, 12, 12, Math.max(0,220*player.hp/player.maxHp), 16, 8); ctx.fill();
+  // 经验条
+  ctx.fillStyle = "rgba(0,0,0,0.5)";
+  roundRect(ctx, 12, 32, 220, 8, 4); ctx.fill();
+  var xpGrad = ctx.createLinearGradient(12, 32, 232, 32);
+  xpGrad.addColorStop(0, "#00d2ff"); xpGrad.addColorStop(1, "#7fd8ff");
+  ctx.fillStyle = xpGrad;
+  roundRect(ctx, 12, 32, Math.max(0,220*Math.min(1,player.xp/player.xpNeed)), 8, 4); ctx.fill();
   ctx.fillStyle = "#fff"; ctx.font = "bold 12px sans-serif";
   ctx.fillText("HP " + Math.max(0,Math.ceil(player.hp)), 16, 24);
   ctx.fillText("LV " + player.lv, 16, 42);
@@ -1466,22 +1473,30 @@ function draw(){
     ctx.textAlign = "left";
   }
   if(state==="levelup"){
-    ctx.fillStyle = "rgba(5,9,15,0.66)"; ctx.fillRect(0,0,W,H);
+    ctx.fillStyle = "rgba(5,9,15,0.72)"; ctx.fillRect(0,0,W,H);
     ctx.textAlign = "center";
-    ctx.fillStyle = "#c8aa6e"; ctx.font = "bold 28px 'Microsoft YaHei',sans-serif";
+    ctx.fillStyle = "#c8aa6e"; ctx.font = "bold 30px 'Microsoft YaHei',sans-serif";
+    ctx.shadowColor = "#c8aa6e"; ctx.shadowBlur = 15;
     ctx.fillText("升级！选择一项风之力", W/2, H*0.14);
+    ctx.shadowBlur = 0;
     ctx.textAlign = "left";
-    var facOrder = {wind:0, sword:1, guard:2, elem:3, summon:4};
-    var facIcon = IMG.faction_icons;
     for(var c=0;c<upgradeChoices.length;c++){
       var u = upgradeChoices[c];
       var bx = W/2 - 350, by = H*0.2 + c*110, bw2 = 700, bh = 96;
       var fc = FACTION_COLOR[u.faction] || "#7fd8ff";
       var lvlAlpha = Math.min(1, (tNow - (window.__lvlTime||tNow)) * 4);
       ctx.globalAlpha = lvlAlpha;
-      ctx.fillStyle = "#1c2330"; ctx.fillRect(bx, by, bw2, bh);
-      ctx.strokeStyle = fc; ctx.lineWidth = 2; ctx.strokeRect(bx, by, bw2, bh);
-      ctx.fillStyle = fc; ctx.fillRect(bx, by, 4, bh);
+      // 卡片背景渐变
+      var cg = ctx.createLinearGradient(bx, by, bx, by+bh);
+      cg.addColorStop(0, "#1c2330");
+      cg.addColorStop(1, "#161b28");
+      ctx.fillStyle = cg;
+      roundRect(ctx, bx, by, bw2, bh, 12); ctx.fill();
+      ctx.strokeStyle = fc; ctx.lineWidth = 2;
+      roundRect(ctx, bx, by, bw2, bh, 12); ctx.stroke();
+      // 左侧色条
+      ctx.fillStyle = fc;
+      roundRect(ctx, bx, by, 5, bh, 3); ctx.fill();
       // 派系图标 - Canvas矢量绘制
       var ic = {wind:"#7fd8ff", sword:"#ff9f43", guard:"#2ecc71", elem:"#a55eea", summon:"#ff6bd5"}[u.faction] || "#7fd8ff";
       var ix = bx+42, iy = by+48;
