@@ -87,7 +87,7 @@ canvas{display:block;width:100%;height:auto;border-radius:10px;background:#070d1
 <body>
 <div class="wrap">
   <div class="top">
-    <h1>🌪️ 疾风幸存者 · 亚索 <span style="font-size:12px;color:var(--muted);font-weight:normal;">v1.1</span></h1>
+    <h1>🌪️ 疾风幸存者 · 亚索 <span style="font-size:12px;color:var(--muted);font-weight:normal;">v1.2</span></h1>
     <a class="back" href="index.html">← 返回工具箱</a>
   </div>
   <div class="meta-bar">
@@ -95,7 +95,7 @@ canvas{display:block;width:100%;height:auto;border-radius:10px;background:#070d1
     <button class="meta-btn" id="shopBtn">⚔ 永久升级</button>
     <button class="meta-btn" id="achBtn">🏆 成就</button>
   </div>
-  <p class="sub">类「吸血鬼幸存者 / 雨中冒险」：亚索自动旋风斩迎敌，拾经验宝石升级，15 种强化分 5 大派系自由搭配。局外可用风之碎片永久强化，已获得强化显示在右侧。</p>
+  <p class="sub" style="display:none"></p>
   <div class="stage">
     <canvas id="cv" width="1280" height="800"></canvas>
   </div>
@@ -245,11 +245,11 @@ function toast(m){ toastEl.textContent=m; toastEl.classList.add("show"); clearTi
 
 /* ===== 局外养成数据 ===== */
 var META_KEY = "yasuo_meta_v1";
-var meta = { shards: 0, upgrades: {}, achievements: {}, stats: { totalKills:0, totalRuns:0, totalShards:0, bossKills:0, bestTime:0 } };
+var meta = { shards: 0, upgrades: {}, achievements: {}, stats: { totalKills:0, totalRuns:0, totalShards:0, bossKills:0, bestTime:0, bestLevel:0, bestKills:0, totalPlayTime:0 } };
 function loadMeta(){
   try{
     var s = localStorage.getItem(META_KEY);
-    if(s){ var d = JSON.parse(s); meta = Object.assign(meta, d); if(!meta.stats) meta.stats = {totalKills:0,totalRuns:0,totalShards:0,bossKills:0,bestTime:0}; }
+    if(s){ var d = JSON.parse(s); meta = Object.assign(meta, d); if(!meta.stats) meta.stats = {totalKills:0,totalRuns:0,totalShards:0,bossKills:0,bestTime:0,bestLevel:0,bestKills:0,totalPlayTime:0}; else { meta.stats.bestLevel = meta.stats.bestLevel||0; meta.stats.bestKills = meta.stats.bestKills||0; meta.stats.totalPlayTime = meta.stats.totalPlayTime||0; } }
   }catch(e){}
 }
 function saveMeta(){ try{ localStorage.setItem(META_KEY, JSON.stringify(meta)); }catch(e){} }
@@ -483,7 +483,10 @@ function over(){
   meta.stats.totalKills += kills;
   meta.stats.bossKills += player.bossKillsThisRun;
   if(runTime > meta.stats.bestTime) meta.stats.bestTime = runTime;
+  if(player.lv > (meta.stats.bestLevel||0)) meta.stats.bestLevel = player.lv;
   if(player.lv > (meta.stats.maxLevel||0)) meta.stats.maxLevel = player.lv;
+  if(kills > (meta.stats.bestKills||0)) meta.stats.bestKills = kills;
+  meta.stats.totalPlayTime = (meta.stats.totalPlayTime||0) + runTime;
   var upgCount = Object.keys(acquired).length;
   if(upgCount > (meta.stats.maxUpgrades||0)) meta.stats.maxUpgrades = upgCount;
   saveMeta();
@@ -492,10 +495,13 @@ function over(){
   // 显示奖励弹窗
   document.getElementById("rewardShards").textContent = shards;
   document.getElementById("rewardDetail").innerHTML =
-    "存活 " + bestFmtT(runTime) + " × 0.5 = " + Math.floor(runTime*0.5) + "<br>" +
-    "击杀 " + kills + " × 0.3 = " + Math.floor(kills*0.3) + "<br>" +
-    "等级 " + player.lv + " × 2 = " + (player.lv*2) + "<br>" +
-    "Boss " + player.bossKillsThisRun + " × 10 = " + (player.bossKillsThisRun*10);
+    "存活 " + bestFmtT(runTime) + " · 击杀 " + kills + " · 等级 " + player.lv + " · Boss " + player.bossKillsThisRun +
+    "<hr style='border-color:#2a3242;margin:8px 0;'>" +
+    "<span style='color:#c8aa6e;font-size:13px;'>🏆 历史记录</span><br>" +
+    "最长存活：" + bestFmtT(meta.stats.bestTime) + "<br>" +
+    "最高等级：Lv." + (meta.stats.bestLevel||0) + " · 最多击杀：" + (meta.stats.bestKills||0) + "<br>" +
+    "总对局：" + meta.stats.totalRuns + " · 总击杀：" + meta.stats.totalKills + "<br>" +
+    "总游戏时长：" + bestFmtT(meta.stats.totalPlayTime||0) + " · Boss击杀：" + meta.stats.bossKills;
   document.getElementById("rewardPopup").classList.add("show");
 }
 
