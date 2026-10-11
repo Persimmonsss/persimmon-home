@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>疾风幸存者 · 亚索 · 柿子eeeee</title>
 <link rel="icon" type="image/png" href="icon_persimmon.png">
 <style>
@@ -363,6 +363,7 @@ var player = {
 };
 var enemies = [], shots = [], drops = [], parts = [], rings = [], dying = [], familiars = [], thunderFx = [];
 var chests = [], supplies = [], enemyBullets = [];
+var meteors = [], poisonClouds = [], blackHoles = [], lightningLinks = [], dmgTexts = [];
 var kills = 0, spawnT = 0, bossT = 50, shake = 0, cam = {x: 0, y: 0};
 var keys = {}, joy = null, upgradeChoices = [], acquired = {}, gmGod = false;
 var chestT = 25, supplyT = 40, eliteT = 35;
@@ -459,6 +460,7 @@ function reset(){
   enemies.length = 0; shots.length = 0; drops.length = 0; parts.length = 0;
   rings.length = 0; dying.length = 0; familiars.length = 0; thunderFx.length = 0;
   chests.length = 0; supplies.length = 0; enemyBullets.length = 0;
+  meteors.length = 0; poisonClouds.length = 0; blackHoles.length = 0; lightningLinks.length = 0; dmgTexts.length = 0;
   acquired = {}; renderAcquired(false);
   kills = 0; runTime = 0; spawnT = 0; bossT = 50; shake = 0;
   chestT = 25; supplyT = 40; eliteT = 35;
@@ -542,7 +544,8 @@ function spawnBoss(){
   var x = clamp(player.x + Math.cos(a)*d, 60, WW-60), y = clamp(player.y + Math.sin(a)*d, 60, WH-60);
   var hp = 320 + runTime*4;
   enemies.push({kind:"boss", x:x, y:y, hp:hp, maxHp:hp, sp:42, dmg:25, r:52, xp:18, img:"boss", flash:0, slow:0, phase:0,
-    chargeCd:15, summonCd:20, bulletCd:10, charging:0, chargeDir:{x:0,y:0}});
+    chargeCd:12, summonCd:18, bulletCd:9, charging:0, chargeDir:{x:0,y:0},
+    chainCd:14, meteorCd:20, poisonCd:16, holeCd:28, cloneCd:45});
 }
 function spawnChest(){
   var a = rnd(0,6.283), d = rnd(150, 400);
@@ -661,6 +664,7 @@ function update(dt){
         var isCrit = Math.random() < player.critChance;
         if(isCrit){ dmg *= player.critMult; sfx("crit"); }
         en.hp -= dmg; en.flash = 0.12;
+        dmgTexts.push({x:en.x+rnd(-10,10), y:en.y-en.r, val:Math.round(dmg), life:0.8, crit:isCrit});
         if(player.slowAmt > 0){ en.slow = 2.0; }
         if(Math.random() < player.thunderChance){
           sfx("thunder");
@@ -810,6 +814,67 @@ function update(dt){
           }
           toast("💫 Boss 弹幕攻击！");
         }
+        // 闪电链
+        e3.chainCd -= dt;
+        if(e3.chainCd <= 0){
+          e3.chainCd = 14;
+          var chainTargets = [e3.x, e3.y];
+          var cx = e3.x, cy = e3.y, chDmg = 20;
+          for(var ci=0; ci<3 && enemies.length>0; ci++){
+            var nearest = null, nd = 1e12;
+            for(var ei=0; ei<enemies.length; ei++){
+              if(enemies[ei] === e3) continue;
+              var dd = dist2(cx,cy,enemies[ei].x,enemies[ei].y);
+              if(dd < nd && dd < 200*200){ nd=dd; nearest=enemies[ei]; }
+            }
+            if(!nearest) break;
+            chainTargets.push(nearest.x, nearest.y);
+            nearest.hp -= chDmg; nearest.flash = 0.15;
+            burst(nearest.x, nearest.y, 8, "#ffe066");
+            cx = nearest.x; cy = nearest.y;
+          }
+          if(chainTargets.length > 2){
+            lightningLinks.push({pts:chainTargets.slice(), life:0.35, maxLife:0.35});
+            sfx("thunder");
+          }
+          toast("⚡ Boss 闪电链！");
+        }
+        // 陨石雨
+        e3.meteorCd -= dt;
+        if(e3.meteorCd <= 0){
+          e3.meteorCd = 20;
+          for(var mi=0; mi<5; mi++){
+            var ma = rnd(0,6.283), md = rnd(100,350);
+            meteors.push({x:player.x+Math.cos(ma)*md, y:player.y+Math.sin(ma)*md, r:0, maxR:55, life:1.0, maxLife:1.0, dmg:18});
+          }
+          sfx("thunder");
+          toast("☄ Boss 陨石雨！");
+        }
+        // 毒雾
+        e3.poisonCd -= dt;
+        if(e3.poisonCd <= 0){
+          e3.poisonCd = 16;
+          poisonClouds.push({x:e3.x, y:e3.y, r:70, life:5, maxLife:5, dmg:8});
+          toast("☠ Boss 释放毒雾！");
+        }
+        // 黑洞
+        e3.holeCd -= dt;
+        if(e3.holeCd <= 0){
+          e3.holeCd = 30;
+          blackHoles.push({x:player.x+rnd(-50,50), y:player.y+rnd(-50,50), r:90, life:3, maxLife:3});
+          shake = 0.5;
+          toast("🕳 Boss 召唤黑洞！");
+        }
+        // 分身
+        e3.cloneCd -= dt;
+        if(e3.cloneCd <= 0){
+          e3.cloneCd = 50;
+          for(var cli=0; cli<2; cli++){
+            enemies.push({kind:"boss", x:e3.x+rnd(-60,60), y:e3.y+rnd(-60,60), hp:e3.maxHp*0.3, maxHp:e3.maxHp*0.3, sp:e3.sp*1.2, dmg:e3.dmg*0.7, r:38, xp:8, img:"boss", flash:0, slow:0, phase:0,
+              chargeCd:99, summonCd:99, bulletCd:5, charging:0, chargeDir:{x:0,y:0}, chainCd:99, meteorCd:99, poisonCd:99, holeCd:99, cloneCd:99, isClone:true});
+          }
+          toast("👥 Boss 分裂了！");
+        }
       }
       // 远程法师
       if(e3.ranged){
@@ -855,6 +920,64 @@ function update(dt){
         eb.x+=dx*push*0.5; eb.y+=dy*push*0.5;
       }
     }
+  }
+
+  // 陨石
+  for(var mi=meteors.length-1; mi>=0; mi--){
+    var mt = meteors[mi];
+    mt.life -= dt;
+    mt.r = mt.maxR * (1 - mt.life/mt.maxLife);
+    if(mt.life <= 0){
+      burst(mt.x, mt.y, 20, "#ff6b35");
+      shake = Math.max(shake, 0.25);
+      for(var mei=enemies.length-1; mei>=0; mei--){
+        var me = enemies[mei];
+        if(dist2(mt.x,mt.y,me.x,me.y) < mt.maxR*mt.maxR){ me.hp -= mt.dmg; me.flash=0.15; if(me.hp<=0) killEnemy(me,mei); }
+      }
+      if(dist2(mt.x,mt.y,player.x,player.y) < mt.maxR*mt.maxR && !player.godMode && !gmGod){
+        player.hp -= mt.dmg; sfx("hurt"); burst(player.x,player.y,12,"#ff6b35");
+        if(player.hp<=0){ player.hp=0; over(); return; }
+      }
+      meteors.splice(mi,1);
+    }
+  }
+  // 毒雾
+  for(var pi=poisonClouds.length-1; pi>=0; pi--){
+    var pc = poisonClouds[pi];
+    pc.life -= dt;
+    if(dist2(pc.x,pc.y,player.x,player.y) < pc.r*pc.r && !player.godMode && !gmGod){
+      player.hp -= pc.dmg*dt;
+      if(Math.random()<dt*3) burst(player.x+rnd(-15,15), player.y+rnd(-15,15), 3, "#7cfc00");
+      if(player.hp<=0){ player.hp=0; over(); return; }
+    }
+    if(pc.life <= 0) poisonClouds.splice(pi,1);
+  }
+  // 黑洞
+  for(var bi=blackHoles.length-1; bi>=0; bi--){
+    var bh = blackHoles[bi];
+    bh.life -= dt;
+    var pdx = bh.x-player.x, pdy = bh.y-player.y, pd = Math.sqrt(pdx*pdx+pdy*pdy);
+    if(pd < 200 && pd > 10 && !player.godMode){
+      player.x += pdx/pd*120*dt; player.y += pdy/pd*120*dt;
+    }
+    for(var bei=enemies.length-1; bei>=0; bei--){
+      var ben = enemies[bei];
+      if(ben.kind==="boss") continue;
+      var edx = bh.x-ben.x, edy = bh.y-ben.y, ed = Math.sqrt(edx*edx+edy*edy);
+      if(ed < 180 && ed > 10){ ben.x += edx/ed*80*dt; ben.y += edy/ed*80*dt; }
+    }
+    if(bh.life <= 0) blackHoles.splice(bi,1);
+  }
+  // 闪电链
+  for(var li=lightningLinks.length-1; li>=0; li--){
+    lightningLinks[li].life -= dt;
+    if(lightningLinks[li].life <= 0) lightningLinks.splice(li,1);
+  }
+  // 伤害数字
+  for(var di2=dmgTexts.length-1; di2>=0; di2--){
+    var dt2 = dmgTexts[di2];
+    dt2.y -= 50*dt; dt2.life -= dt;
+    if(dt2.life <= 0) dmgTexts.splice(di2,1);
   }
 
   // 掉落物
@@ -1030,9 +1153,23 @@ function draw(){
   for(var b=0;b<enemies.length;b++){
     var eb2 = enemies[b];
     if(eb2.kind==="boss"){
-      var bw = 260;
-      ctx.fillStyle = "rgba(0,0,0,0.55)"; ctx.fillRect(cam.x+W/2-bw/2, cam.y+14, bw, 10);
-      ctx.fillStyle = "#ff6bd5"; ctx.fillRect(cam.x+W/2-bw/2, cam.y+14, bw*(eb2.hp/eb2.maxHp), 10);
+      var bw = 280, bh2 = 14, by2 = cam.y+12;
+      // 背景
+      ctx.fillStyle = "rgba(0,0,0,0.6)";
+      ctx.fillRect(cam.x+W/2-bw/2-2, by2-2, bw+4, bh2+4);
+      // 血条渐变
+      var hpFrac = Math.max(0, eb2.hp/eb2.maxHp);
+      var bg = ctx.createLinearGradient(cam.x+W/2-bw/2, 0, cam.x+W/2+bw/2, 0);
+      bg.addColorStop(0, "#ff4081"); bg.addColorStop(1, "#ff6bd5");
+      ctx.fillStyle = bg;
+      ctx.fillRect(cam.x+W/2-bw/2, by2, bw*hpFrac, bh2);
+      // 边框
+      ctx.strokeStyle = "#ff6bd5"; ctx.lineWidth = 1;
+      ctx.strokeRect(cam.x+W/2-bw/2-0.5, by2-0.5, bw+1, bh2+1);
+      // Boss名称
+      ctx.fillStyle = "#ffd7f0"; ctx.font = "bold 11px sans-serif"; ctx.textAlign = "center";
+      ctx.fillText(eb2.isClone ? "暗影分身" : "暗影兽", cam.x+W/2, by2-6);
+      ctx.textAlign = "left";
     }
   }
 
@@ -1091,12 +1228,18 @@ function draw(){
     ctx.translate(pDrawX, pDrawY);
     ctx.rotate(player.attackDir);
     var slashAlpha = player.attackAnim / 0.18;
-    ctx.globalAlpha = slashAlpha * 0.7;
+    ctx.globalAlpha = slashAlpha * 0.8;
     ctx.strokeStyle = "#7fd8ff";
-    ctx.lineWidth = 6;
+    ctx.lineWidth = 5;
     ctx.shadowColor = "#7fd8ff"; ctx.shadowBlur = 20;
     ctx.beginPath();
-    ctx.arc(0, 0, 50, -0.6, 0.6);
+    ctx.arc(0, 0, 50, -0.8, 0.8);
+    ctx.stroke();
+    // 第二层更亮的弧线
+    ctx.globalAlpha = slashAlpha * 0.5;
+    ctx.lineWidth = 10;
+    ctx.beginPath();
+    ctx.arc(0, 0, 42, -0.5, 0.5);
     ctx.stroke();
     ctx.restore();
   }
@@ -1133,6 +1276,68 @@ function draw(){
     ctx.lineWidth = tf.type === "thunder" ? 4 : 6;
     ctx.shadowColor = tf.color; ctx.shadowBlur = 15;
     ctx.beginPath(); ctx.arc(tf.x, tf.y, tf.r, 0, 6.283); ctx.stroke();
+    ctx.restore();
+  }
+
+  // 陨石预警圈+爆炸
+  for(var mri=0; mri<meteors.length; mri++){
+    var mr = meteors[mri];
+    ctx.save();
+    ctx.globalAlpha = 0.3 + 0.3*Math.sin(tNow*20);
+    ctx.strokeStyle = "#ff6b35"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(mr.x, mr.y, mr.maxR, 0, 6.283); ctx.stroke();
+    ctx.globalAlpha = 0.15; ctx.fillStyle = "#ff6b35";
+    ctx.beginPath(); ctx.arc(mr.x, mr.y, mr.maxR, 0, 6.283); ctx.fill();
+    ctx.restore();
+  }
+  // 毒雾
+  for(var pci=0; pci<poisonClouds.length; pci++){
+    var pc = poisonClouds[pci];
+    ctx.save();
+    ctx.globalAlpha = (pc.life/pc.maxLife)*0.35;
+    var pg = ctx.createRadialGradient(pc.x,pc.y,0,pc.x,pc.y,pc.r);
+    pg.addColorStop(0,"#7cfc00"); pg.addColorStop(1,"transparent");
+    ctx.fillStyle = pg;
+    ctx.beginPath(); ctx.arc(pc.x,pc.y,pc.r,0,6.283); ctx.fill();
+    ctx.restore();
+  }
+  // 黑洞
+  for(var bhi=0; bhi<blackHoles.length; bhi++){
+    var bh = blackHoles[bhi];
+    ctx.save();
+    ctx.globalAlpha = 0.9;
+    var bg = ctx.createRadialGradient(bh.x,bh.y,0,bh.x,bh.y,bh.r);
+    bg.addColorStop(0,"#000"); bg.addColorStop(0.6,"#4a1a6b"); bg.addColorStop(1,"transparent");
+    ctx.fillStyle = bg;
+    ctx.beginPath(); ctx.arc(bh.x,bh.y,bh.r,0,6.283); ctx.fill();
+    ctx.strokeStyle = "#a55eea"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(bh.x,bh.y,bh.r*0.7,0,tNow*5); ctx.stroke();
+    ctx.restore();
+  }
+  // 闪电链
+  for(var lki=0; lki<lightningLinks.length; lki++){
+    var lk = lightningLinks[lki];
+    ctx.save();
+    ctx.globalAlpha = lk.life/lk.maxLife;
+    ctx.strokeStyle = "#ffe066"; ctx.lineWidth = 3;
+    ctx.shadowColor = "#ffe066"; ctx.shadowBlur = 15;
+    ctx.beginPath();
+    for(var lpi=0; lpi<lk.pts.length; lpi+=2){
+      if(lpi===0) ctx.moveTo(lk.pts[lpi], lk.pts[lpi+1]);
+      else ctx.lineTo(lk.pts[lpi], lk.pts[lpi+1]);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+  // 伤害数字飘字
+  for(var dti=0; dti<dmgTexts.length; dti++){
+    var dt3 = dmgTexts[dti];
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, dt3.life/0.8);
+    ctx.fillStyle = dt3.crit ? "#ffd700" : "#fff";
+    ctx.font = (dt3.crit ? "bold 16px" : "12px") + " sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(dt3.val, dt3.x, dt3.y);
     ctx.restore();
   }
 
