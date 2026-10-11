@@ -87,13 +87,14 @@ canvas{display:block;width:100%;height:auto;border-radius:10px;background:#070d1
 <body>
 <div class="wrap">
   <div class="top">
-    <h1>🌪️ 疾风幸存者 · 亚索 <span style="font-size:12px;color:var(--muted);font-weight:normal;">v2.5</span></h1>
+    <h1>🌪️ 疾风幸存者 · 亚索 <span style="font-size:12px;color:var(--muted);font-weight:normal;">v3.0</span></h1>
     <a class="back" href="index.html">← 返回工具箱</a>
   </div>
   <div class="meta-bar">
     <div class="shard-display">💎 <span id="shardCount">0</span> 风之碎片</div>
-    <button class="meta-btn" id="shopBtn">⚔ 永久升级</button>
-    <button class="meta-btn" id="achBtn">🏆 成就</button>
+    <button class="meta-btn" id="shopBtn">永久升级</button>
+    <button class="meta-btn" id="gachaBtn">扭蛋</button>
+    <button class="meta-btn" id="achBtn">成就</button>
   </div>
   <p class="sub" style="display:none"></p>
   <div class="stage">
@@ -130,9 +131,24 @@ canvas{display:block;width:100%;height:auto;border-radius:10px;background:#070d1
 <div class="modal-mask" id="achModal">
   <div class="modal">
     <button class="close" onclick="document.getElementById('achModal').classList.remove('show')">✕</button>
-    <h2>🏆 成就</h2>
+    <h2>成就</h2>
     <p style="color:#9aa7b8;font-size:12px;" id="achProgress"></p>
     <div class="achievement-list" id="achievementList"></div>
+  </div>
+</div>
+
+<!-- 扭蛋面板 -->
+<div class="modal-mask" id="gachaModal">
+  <div class="modal">
+    <button class="close" onclick="document.getElementById('gachaModal').classList.remove('show')">✕</button>
+    <h2>风之扭蛋</h2>
+    <p style="color:#9aa7b8;font-size:12px;">每次100碎片，随机获得皮肤或武器。</p>
+    <div style="text-align:center;margin:16px 0;">
+      <button class="btn gold" id="gachaBtn2" style="font-size:16px;padding:12px 30px;">抽取一次 (100💎)</button>
+    </div>
+    <div id="gachaResult" style="text-align:center;min-height:40px;font-size:14px;margin:10px 0;"></div>
+    <h3 style="color:#c8aa6e;font-size:14px;margin-top:16px;">已收集</h3>
+    <div id="gachaCollection" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;"></div>
   </div>
 </div>
 
@@ -352,6 +368,8 @@ function updateShardDisplay(){ document.getElementById("shardCount").textContent
 updateShardDisplay();
 
 document.getElementById("shopBtn").onclick = function(){ renderShop(); document.getElementById("shopModal").classList.add("show"); };
+document.getElementById("gachaBtn").onclick = function(){ renderGacha(); document.getElementById("gachaModal").classList.add("show"); };
+document.getElementById("gachaBtn2").onclick = gachaPull;
 document.getElementById("achBtn").onclick = function(){ renderAchievements(); document.getElementById("achModal").classList.add("show"); };
 
 /* ===== 状态 ===== */
@@ -374,6 +392,68 @@ var chestT = 25, supplyT = 40, eliteT = 35;
 
 function bestFmt(){ var m = Math.floor(bestTime/60), s = Math.floor(bestTime%60); return (m<10?"0":"")+m+":"+(s<10?"0":"")+s; }
 function bestFmtT(t){ var m=Math.floor(t/60), s=Math.floor(t%60); return (m<10?"0":"")+m+":"+(s<10?"0":"")+s; }
+
+/* ===== 扭蛋皮肤武器池 ===== */
+var GACHA_POOL = [
+  {id:"skin_classic", type:"skin", name:"经典风", rarity:"N", filter:"none", desc:"原版亚索"},
+  {id:"skin_crimson", type:"skin", name:"赤风", rarity:"R", filter:"hue-rotate(-40deg) saturate(1.5)", desc:"红色风暴"},
+  {id:"skin_ice", type:"skin", name:"霜风", rarity:"R", filter:"hue-rotate(180deg) brightness(1.2)", desc:"冰蓝之刃"},
+  {id:"skin_gold", type:"skin", name:"金风", rarity:"SR", filter:"sepia(1) saturate(3) hue-rotate(0deg)", desc:"黄金之风"},
+  {id:"skin_shadow", type:"skin", name:"影风", rarity:"SR", filter:"brightness(0.6) hue-rotate(280deg)", desc:"暗影行者"},
+  {id:"skin_dawn", type:"skin", name:"黎明风", rarity:"SSR", filter:"hue-rotate(300deg) saturate(2) brightness(1.3)", desc:"破晓之光"},
+  {id:"skin_storm", type:"skin", name:"风暴风", rarity:"SSR", filter:"hue-rotate(90deg) saturate(2) brightness(1.1)", desc:"雷霆风暴"},
+  {id:"wpn_basic", type:"weapon", name:"疾风剑", rarity:"N", color:"#7fd8ff", size:1, desc:"原版旋风"},
+  {id:"wpn_fire", type:"weapon", name:"烈焰剑", rarity:"R", color:"#ff6b35", size:1.1, desc:"火焰旋风"},
+  {id:"wpn_ice", type:"weapon", name:"霜寒剑", rarity:"R", color:"#67e8f9", size:1, desc:"冰冻旋风"},
+  {id:"wpn_thunder", type:"weapon", name:"雷霆剑", rarity:"SR", color:"#c084fc", size:1.15, desc:"雷电旋风"},
+  {id:"wpn_demon", type:"weapon", name:"魔剑", rarity:"SR", color:"#ff4757", size:1.2, desc:"血色旋风"},
+  {id:"wpn_holy", type:"weapon", name:"圣剑", rarity:"SSR", color:"#fde68a", size:1.3, desc:"金色圣剑"},
+  {id:"wpn_abyss", type:"weapon", name:"深渊剑", rarity:"SSR", color:"#a855f7", size:1.35, desc:"深渊漩涡"},
+];
+var RARITY_COLOR = {N:"#9aa7b8", R:"#60a5fa", SR:"#c084fc", SSR:"#fbbf24"};
+var RARITY_NAME = {N:"普通", R:"稀有", SR:"超稀有", SSR:"传说"};
+
+function gachaPull(){
+  if(meta.shards < 100){ toast("碎片不足"); return; }
+  meta.shards -= 100;
+  // 按稀有度概率
+  var r = Math.random();
+  var rarity = r < 0.5 ? "N" : r < 0.8 ? "R" : r < 0.95 ? "SR" : "SSR";
+  var pool = GACHA_POOL.filter(function(g){ return g.rarity === rarity; });
+  var item = pool[Math.floor(Math.random()*pool.length)];
+  if(!meta.gacha) meta.gacha = {};
+  if(meta.gacha[item.id]){
+    // 重复转碎片
+    meta.shards += 30;
+    document.getElementById("gachaResult").innerHTML = '<span style="color:#9aa7b8;">重复获得「'+item.name+'」→ 30碎片</span>';
+  } else {
+    meta.gacha[item.id] = true;
+    document.getElementById("gachaResult").innerHTML = '<span style="color:'+RARITY_COLOR[rarity]+';font-weight:bold;">获得【'+RARITY_NAME[rarity]+'】'+item.name+'</span>';
+  }
+  saveMeta(); updateShardDisplay(); renderGacha();
+}
+
+function renderGacha(){
+  var c = document.getElementById("gachaCollection");
+  if(!meta.gacha) meta.gacha = {};
+  c.innerHTML = GACHA_POOL.map(function(g){
+    var owned = meta.gacha[g.id];
+    var used = meta.equipped && meta.equipped[g.type] === g.id;
+    return '<div style="background:'+(owned?'#1c2330':'#11151c')+';border:1px solid '+RARITY_COLOR[g.rarity]+';border-radius:8px;padding:8px;text-align:center;opacity:'+(owned?1:0.4)+';">' +
+      '<div style="color:'+RARITY_COLOR[g.rarity]+';font-size:11px;">['+RARITY_NAME[g.rarity]+']</div>' +
+      '<div style="font-size:13px;font-weight:bold;margin:4px 0;">'+g.name+'</div>' +
+      '<div style="font-size:10px;color:#9aa7b8;">'+g.desc+'</div>' +
+      (owned ? '<button class="buy-btn" onclick="equipItem(\''+g.id+'\')" style="margin-top:6px;width:100%;">'+(used?'使用中':'装备')+'</button>' : '<div style="font-size:10px;color:#666;margin-top:6px;">未获得</div>') +
+      '</div>';
+  }).join("");
+}
+function equipItem(id){
+  var item = GACHA_POOL.find(function(g){ return g.id===id; });
+  if(!meta.equipped) meta.equipped = {};
+  meta.equipped[item.type] = id;
+  saveMeta(); renderGacha();
+  toast("已装备 "+item.name);
+}
 
 /* ===== 升级池（15种，5大派系） ===== */
 var UP = [
@@ -461,6 +541,13 @@ function reset(){
     var lv = meta.upgrades[u.id]||0;
     if(lv > 0) u.apply(lv);
   });
+  // 应用扭蛋装备
+  if(meta.equipped){
+    if(meta.equipped.weapon){
+      var wp = GACHA_POOL.find(function(g){ return g.id===meta.equipped.weapon; });
+      if(wp){ player.projSize *= wp.size; }
+    }
+  }
   enemies.length = 0; shots.length = 0; drops.length = 0; parts.length = 0;
   rings.length = 0; dying.length = 0; familiars.length = 0; thunderFx.length = 0;
   chests.length = 0; supplies.length = 0; enemyBullets.length = 0;
@@ -1068,11 +1155,13 @@ function draw(){
     ctx.fillStyle = "#0a1628";
     ctx.fillRect(cam.x, cam.y, W, H);
   }
-  // 边界墙壁
-  ctx.strokeStyle = "#3a4a6a"; ctx.lineWidth = 40;
+  // 边界 - 魔法能量屏障
+  ctx.strokeStyle = "rgba(127,216,255,0.15)"; ctx.lineWidth = 50;
   ctx.strokeRect(0, 0, WW, WH);
-  ctx.strokeStyle = "rgba(127,216,255,0.3)"; ctx.lineWidth = 2;
-  ctx.strokeRect(20, 20, WW-40, WH-40);
+  ctx.strokeStyle = "rgba(127,216,255,0.5)"; ctx.lineWidth = 3;
+  ctx.shadowColor = "#7fd8ff"; ctx.shadowBlur = 20;
+  ctx.strokeRect(25, 25, WW-50, WH-50);
+  ctx.shadowBlur = 0;
 
   // 宝箱
   for(var ci=0;ci<chests.length;ci++){
