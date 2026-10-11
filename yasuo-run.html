@@ -9,7 +9,7 @@
 :root{--bg:#0d1117;--card:#161b22;--panel:#1c2330;--line:#2a3242;--text:#e6edf3;--dim:#9aa7b8;--muted:#6b7686;--gold:#c8aa6e;--wind:#7fd8ff;--shard:#67e8f9;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 body{background:var(--bg);color:var(--text);font-family:"Microsoft YaHei","PingFang SC",system-ui,sans-serif;min-height:100vh;overflow-x:hidden;}
-.wrap{max-width:680px;margin:0 auto;padding:16px 14px 36px;position:relative;}
+.wrap{max-width:960px;margin:0 auto;padding:16px 14px 36px;position:relative;}
 .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
 .top h1{font-size:20px;color:var(--wind);}
 .back{color:var(--dim);text-decoration:none;font-size:13px;}
@@ -97,7 +97,7 @@ canvas{display:block;width:100%;height:auto;border-radius:10px;background:#070d1
   </div>
   <p class="sub">类「吸血鬼幸存者 / 雨中冒险」：亚索自动旋风斩迎敌，拾经验宝石升级，15 种强化分 5 大派系自由搭配。局外可用风之碎片永久强化，已获得强化显示在右侧。</p>
   <div class="stage">
-    <canvas id="cv" width="960" height="640"></canvas>
+    <canvas id="cv" width="1280" height="800"></canvas>
   </div>
   <div class="hud">
     <div class="it">存活 <b id="t">00:00</b></div>
@@ -204,7 +204,7 @@ canvas{display:block;width:100%;height:auto;border-radius:10px;background:#070d1
 (function(){
 "use strict";
 var cv = document.getElementById("cv"), ctx = cv.getContext("2d");
-var W = 960, H = 640, WW = 2400, WH = 1600;
+var W = 1280, H = 800, WW = 3000, WH = 2000;
 var IMG = {};
 function loadImg(key, src){ var im = new Image(); im.onload = function(){ IMG[key] = im; }; im.src = src; }
 ["yasuo","slime","bat","skel","boss","gem","heal","tornado","ground"].forEach(function(k){ loadImg(k, "assets/run2/" + k + ".webp"); });
