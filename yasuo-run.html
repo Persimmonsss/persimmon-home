@@ -87,7 +87,7 @@ canvas{display:block;width:100%;height:auto;border-radius:10px;background:#070d1
 <body>
 <div class="wrap">
   <div class="top">
-    <h1>🌪️ 疾风幸存者 · 亚索 <span style="font-size:12px;color:var(--muted);font-weight:normal;">v2.2</span></h1>
+    <h1>🌪️ 疾风幸存者 · 亚索 <span style="font-size:12px;color:var(--muted);font-weight:normal;">v2.3</span></h1>
     <a class="back" href="index.html">← 返回工具箱</a>
   </div>
   <div class="meta-bar">
@@ -605,8 +605,8 @@ function update(dt){
   if(joy){ mx = joy.dx; my = joy.dy; }
   var len = Math.sqrt(mx*mx+my*my);
   if(len>0){ mx/=len; my/=len; player.moveDir = mx; player.moving = true; } else { player.moving = false; }
-  player.x = clamp(player.x + mx*player.speed*dt, 26, WW-26);
-  player.y = clamp(player.y + my*player.speed*dt, 26, WH-26);
+  player.x = clamp(player.x + mx*player.speed*dt, 60, WW-60);
+  player.y = clamp(player.y + my*player.speed*dt, 60, WH-60);
   if(player.attackAnim > 0) player.attackAnim -= dt;
   if(player.hitCd > 0) player.hitCd -= dt;
 
