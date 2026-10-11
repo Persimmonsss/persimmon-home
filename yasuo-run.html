@@ -359,7 +359,7 @@ var player = {
   slowAmt: 0, thunderChance: 0, thorns: 0,
   swordAuraCd: 0, swordAuraInt: 1.5, swordAuraOn: false,
   familiarCount: 0, attackAnim: 0, attackDir: 0, moveDir: 0, godMode: false,
-  xpMult: 1, luckOptions: 0, bossKillsThisRun: 0
+  xpMult: 1, luckOptions: 0, bossKillsThisRun: 0, hitCd: 0
 };
 var enemies = [], shots = [], drops = [], parts = [], rings = [], dying = [], familiars = [], thunderFx = [];
 var chests = [], supplies = [], enemyBullets = [];
@@ -451,7 +451,7 @@ function reset(){
   player.projSize = 1; player.pierce = 0; player.extraShot = 0; player.slowAmt = 0;
   player.thunderChance = 0; player.thorns = 0; player.swordAuraCd = 0; player.swordAuraOn = false;
   player.familiarCount = 0; player.attackAnim = 0; player.godMode = false;
-  player.xpMult = 1; player.luckOptions = 0; player.bossKillsThisRun = 0;
+  player.xpMult = 1; player.luckOptions = 0; player.bossKillsThisRun = 0; player.hitCd = 0;
   // 应用永久升级
   META_UPGRADES.forEach(function(u){
     var lv = meta.upgrades[u.id]||0;
@@ -598,6 +598,7 @@ function update(dt){
   player.x = clamp(player.x + mx*player.speed*dt, 26, WW-26);
   player.y = clamp(player.y + my*player.speed*dt, 26, WH-26);
   if(player.attackAnim > 0) player.attackAnim -= dt;
+  if(player.hitCd > 0) player.hitCd -= dt;
 
   if(player.regen>0) player.hp = Math.min(player.maxHp, player.hp + player.regen*dt);
 
@@ -692,8 +693,8 @@ function update(dt){
     bl.x += Math.cos(bl.a)*bl.sp*dt; bl.y += Math.sin(bl.a)*bl.sp*dt;
     bl.life -= dt;
     if(bl.life<=0 || dist2(bl.x,bl.y,player.x,player.y) < 30*30){
-      if(!player.godMode && !gmGod && dist2(bl.x,bl.y,player.x,player.y) < 30*30){
-        player.hp -= bl.dmg; sfx("hurt"); shake = 0.2;
+      if(!player.godMode && !gmGod && player.hitCd <= 0 && dist2(bl.x,bl.y,player.x,player.y) < 30*30){
+        player.hp -= bl.dmg; player.hitCd = 0.8; sfx("hurt"); shake = 0.2;
         burst(player.x, player.y, 6, "#ff5d5d");
         if(player.hp<=0){ player.hp=0; over(); return; }
       }
@@ -897,8 +898,9 @@ function update(dt){
     }
     if(e3.flash>0) e3.flash -= dt;
     var cr = e3.r + 24;
-    if(d3 < cr && !player.godMode && !gmGod){
+    if(d3 < cr && !player.godMode && !gmGod && player.hitCd <= 0){
       player.hp -= e3.dmg;
+      player.hitCd = 0.8;
       if(player.thorns > 0){
         e3.hp -= e3.dmg * player.thorns;
         burst(e3.x, e3.y, 5, "#2ecc71");
@@ -1248,6 +1250,7 @@ function draw(){
     ctx.translate(pDrawX, pDrawY);
     ctx.rotate(pLean);
     if(gmGod){ ctx.shadowColor = "#ffd700"; ctx.shadowBlur = 20; }
+    if(player.hitCd > 0 && Math.floor(tNow*20)%2===0) ctx.globalAlpha = 0.3;
     ctx.drawImage(im3, -ps/2, -ps/2, ps, ps);
     ctx.restore();
   } else { ctx.fillStyle="#7fd8ff"; ctx.beginPath(); ctx.arc(player.x,player.y,20,0,6.283); ctx.fill(); }
