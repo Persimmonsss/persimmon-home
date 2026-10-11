@@ -197,7 +197,7 @@ canvas{display:block;width:100%;height:auto;border-radius:10px;background:#070d1
 
 <!-- 隐藏 img 占位 -->
 <div style="display:none" aria-hidden="true">
-  <img src="assets/run2/yasuo.webp" alt=""><img src="assets/run2/slime.webp" alt=""><img src="assets/run2/bat.webp" alt=""><img src="assets/run2/skel.webp" alt=""><img src="assets/run2/boss.webp" alt=""><img src="assets/run2/gem.webp" alt=""><img src="assets/run2/heal.webp" alt=""><img src="assets/run2/tornado.webp" alt=""><img src="assets/run2/ground.webp" alt=""><img src="assets/run2/yasuo_sheet.png" alt=""><img src="assets/run2/faction_icons.png" alt="">
+  <img src="assets/run2/yasuo.webp?v=1.6" alt=""><img src="assets/run2/slime.webp?v=1.6" alt=""><img src="assets/run2/bat.webp?v=1.6" alt=""><img src="assets/run2/skel.webp?v=1.6" alt=""><img src="assets/run2/boss.webp?v=1.6" alt=""><img src="assets/run2/gem.webp?v=1.6" alt=""><img src="assets/run2/heal.webp?v=1.6" alt=""><img src="assets/run2/tornado.webp?v=1.6" alt=""><img src="assets/run2/ground.webp?v=1.6" alt=""><img src="assets/run2/yasuo_sheet.png?v=1.6" alt=""><img src="assets/run2/faction_icons.png?v=1.6" alt="">
 </div>
 
 <script>
@@ -208,9 +208,8 @@ var W = 1280, H = 800, WW = 3000, WH = 2000;
 var IMG = {};
 function loadImg(key, src){ var im = new Image(); im.onload = function(){ IMG[key] = im; }; im.src = src; }
 ["yasuo","slime","bat","skel","boss","gem","heal","tornado","ground","yasuo_sheet","faction_icons"].forEach(function(k){
-  if(k==="yasuo_sheet") loadImg(k, "assets/run2/yasuo_sheet.png");
-  else if(k==="faction_icons") loadImg(k, "assets/run2/faction_icons.png");
-  else loadImg(k, "assets/run2/" + k + ".webp");
+  var ext = (k==="yasuo_sheet" || k==="faction_icons") ? "png" : "webp";
+  loadImg(k, "assets/run2/" + k + "." + ext + "?v=1.6");
 });
 
 /* ===== 音效 ===== */
