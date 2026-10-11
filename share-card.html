@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>分享卡片生成器 - 柿子eeeee</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:#0b1220;color:#e8eefc;min-height:100vh;overflow-x:hidden;}
+.wrap{max-width:960px;margin:0 auto;padding:28px 20px 60px;}
+.back{display:inline-block;color:#8fa3c8;text-decoration:none;font-size:14px;margin-bottom:18px;}
+.back:hover{color:#c8aa6e;}
+h1{font-size:28px;color:#f3e2c7;margin-bottom:6px;}
+.sub{color:#8fa3c8;font-size:14px;margin-bottom:28px;line-height:1.6;}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:start;}
+@media(max-width:760px){.grid{grid-template-columns:1fr;}}
+.panel{background:#101a30;border:1px solid #22304f;border-radius:16px;padding:20px;}
+.panel h2{font-size:15px;color:#c8aa6e;margin-bottom:14px;letter-spacing:1px;}
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:13px;color:#8fa3c8;margin-bottom:6px;}
+.field input{width:100%;background:#0b1220;border:1px solid #2a3a5e;border-radius:10px;padding:10px 12px;color:#e8eefc;font-size:14px;outline:none;transition:border .2s;}
+.field input:focus{border-color:#c8aa6e;}
+.quick{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px;}
+.quick button{background:#16203a;border:1px solid #2a3a5e;color:#aab6cf;border-radius:9px;padding:7px 12px;font-size:12px;cursor:pointer;transition:all .2s;}
+.quick button:hover{border-color:#c8aa6e;color:#f3e2c7;}
+.actions{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;}
+.btn{border:none;border-radius:10px;padding:11px 16px;font-size:14px;cursor:pointer;transition:all .2s;flex:1;min-width:120px;}
+.btn:active{transform:scale(.96);}
+.btn-gold{background:linear-gradient(135deg,#c8aa6e,#a8863f);color:#0d1428;font-weight:700;}
+.btn-ghost{background:#16203a;border:1px solid #2a3a5e;color:#aab6cf;}
+.btn-ghost:hover{border-color:#c8aa6e;color:#f3e2c7;}
+.preview-label{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.preview-label h2{font-size:15px;color:#c8aa6e;margin:0;}
+.preview-label span{font-size:12px;color:#6b7ea3;}
+/* 分享卡片（与下载图片同比例 1000:560） */
+.share-card{width:100%;aspect-ratio:1000/560;background:linear-gradient(135deg,#16203a,#0d1428);border-radius:18px;padding:28px 32px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden;box-shadow:0 16px 40px rgba(0,0,0,.5);border:1px solid #22304f;}
+.share-card .sc-line{position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#c8aa6e,#f3e2c7,#c8aa6e);}
+.share-card .sc-top{display:flex;align-items:center;gap:10px;}
+.share-card .sc-logo{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#c8aa6e,#a8863f);display:flex;align-items:center;justify-content:center;color:#0d1428;font-weight:800;font-size:17px;flex-shrink:0;}
+.share-card .sc-brand{color:#8fa3c8;font-size:12px;letter-spacing:2px;}
+.share-card .sc-title{font-size:clamp(20px,4.6vw,34px);font-weight:800;color:#f3e2c7;line-height:1.25;margin:8px 0 4px;word-break:break-all;}
+.share-card .sc-desc{font-size:clamp(12px,2.4vw,17px);color:#aab6cf;line-height:1.5;word-break:break-all;}
+.share-card .sc-foot{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;}
+.share-card .sc-url{font-size:clamp(10px,1.8vw,13px);color:#6ea8fe;word-break:break-all;line-height:1.4;}
+.share-card .sc-qr{width:clamp(56px,12vw,96px);aspect-ratio:1/1;background:#fff;border-radius:10px;padding:5px;flex-shrink:0;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.sc-qr img,.sc-qr canvas{width:100%;height:100%;}
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#1c2a4a;border:1px solid #c8aa6e;color:#e8eefc;padding:10px 18px;border-radius:12px;font-size:14px;z-index:99;opacity:0;pointer-events:none;transition:opacity .25s;}
+.toast.show{opacity:1;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="index.html">← 返回工具箱</a>
+  <h1>分享卡片生成器</h1>
+  <div class="sub">把标题和网址做成一张漂亮的分享卡片，图片直接发微信 / 朋友圈，朋友长按扫码或复制链接就能打开。再也不用手动发一大串网址。</div>
+
+  <div class="grid">
+    <div>
+      <div class="panel">
+        <h2>填写内容</h2>
+        <div class="quick">
+          <button onclick="quickFill('王者荣耀 猜英雄挑战','133 位英雄 · 7 种玩法 · 来挑战你的认英雄水平','https://u919sgcqrw.doubaoapps.com/app/app_17f6zc6cnj6/wzry-guess.html')">王者荣耀</button>
+          <button onclick="quickFill('LOL 猜英雄挑战','171 位英雄 · 8 种玩法 · 听音效猜英雄','https://u919sgcqrw.doubaoapps.com/app/app_17f6zc6cnj6/lol-guess.html')">LOL 猜英雄</button>
+          <button onclick="quickFill('柿子eeeee 工具箱','我的个人工具箱 · 游戏 / 实用工具 / 创意网页','https://u919sgcqrw.doubaoapps.com/app/app_17f6zc6cnj6')">工具箱主页</button>
+        </div>
+        <div class="field">
+          <label>卡片标题</label>
+          <input id="tTitle" value="王者荣耀 猜英雄挑战" maxlength="40">
+        </div>
+        <div class="field">
+          <label>描述（一句话吸引人）</label>
+          <input id="tDesc" value="133 位英雄 · 7 种玩法 · 来挑战你的认英雄水平" maxlength="60">
+        </div>
+        <div class="field">
+          <label>链接网址</label>
+          <input id="tUrl" value="https://u919sgcqrw.doubaoapps.com/app/app_17f6zc6cnj6/wzry-guess.html">
+        </div>
+        <div class="actions">
+          <button class="btn btn-gold" onclick="downloadCard()">💾 下载图片</button>
+          <button class="btn btn-ghost" onclick="copyText2()">📋 复制文案</button>
+          <button class="btn btn-ghost" onclick="sysShare()">📤 系统分享</button>
+        </div>
+      </div>
+      <div class="panel" style="margin-top:16px;">
+        <h2>玩法说明</h2>
+        <div style="color:#8fa3c8;font-size:13px;line-height:1.8;">
+          ① 填写标题 / 描述 / 链接，右侧实时预览<br>
+          ② 点「下载图片」得到一张 PNG 卡片，直接发微信<br>
+          ③ 朋友长按卡片上的二维码扫码，或复制卡片里的链接即可进入
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="preview-label">
+        <h2>实时预览</h2>
+        <span>和下载的图片一致</span>
+      </div>
+      <div class="share-card" id="pvCard">
+        <div class="sc-line"></div>
+        <div class="sc-top">
+          <div class="sc-logo">柿</div>
+          <div class="sc-brand">柿子eeeee · 分享卡片</div>
+        </div>
+        <div>
+          <div class="sc-title" id="pvTitle"></div>
+          <div class="sc-desc" id="pvDesc"></div>
+        </div>
+        <div class="sc-foot">
+          <div class="sc-url" id="pvUrl"></div>
+          <div class="sc-qr" id="pvQr"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+let toastTimer = null;
+function toast(msg){
+  const t = $("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove("show"), 2200);
+}
+function quickFill(t, d, u){
+  $("tTitle").value = t;
+  $("tDesc").value = d;
+  $("tUrl").value = u;
+  render();
+}
+function genQR(el, text, size){
+  el.innerHTML = "";
+  try{
+    if(typeof QRCode !== "undefined"){
+      new QRCode(el, {text, width: size, height: size, correctLevel: QRCode.CorrectLevel.M});
+    } else {
+      el.innerHTML = `<span style="color:#333;font-size:11px;word-break:break-all;padding:4px;">${text}</span>`;
+    }
+  }catch(e){
+    el.innerHTML = `<span style="color:#333;font-size:11px;word-break:break-all;padding:4px;">${text}</span>`;
+  }
+}
+function render(){
+  const t = $("tTitle").value || "分享标题";
+  const d = $("tDesc").value || "分享描述";
+  const u = $("tUrl").value || location.href;
+  $("pvTitle").textContent = t;
+  $("pvDesc").textContent = d;
+  $("pvUrl").textContent = u;
+  genQR($("pvQr"), u, 96);
+}
+function wrapText(ctx, text, x, y, maxW, lineH){
+  const lines = [];
+  let line = "";
+  for(const ch of String(text)){
+    const t = line + ch;
+    if(ctx.measureText(t).width > maxW && line){ lines.push(line); line = ch; }
+    else line = t;
+  }
+  lines.push(line);
+  lines.forEach((ln, i)=>ctx.fillText(ln, x, y + i * lineH));
+  return lines.length;
+}
+function roundRect(ctx, x, y, w, h, r){
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+function drawCard(){
+  const W = 1000, H = 560;
+  const c = document.createElement("canvas");
+  c.width = W; c.height = H;
+  const ctx = c.getContext("2d");
+  const title = $("tTitle").value || "分享标题";
+  const desc = $("tDesc").value || "分享描述";
+  const url = $("tUrl").value || location.href;
+  ctx.textBaseline = "middle";
+
+  // 背景
+  const g = ctx.createLinearGradient(0, 0, W, H);
+  g.addColorStop(0, "#16203a"); g.addColorStop(1, "#0d1428");
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  // 顶部金线
+  ctx.fillStyle = "#c8aa6e"; ctx.fillRect(0, 0, W, 6);
+  // Logo
+  roundRect(ctx, 44, 40, 62, 62, 16);
+  ctx.fillStyle = "#c8aa6e"; ctx.fill();
+  ctx.fillStyle = "#0d1428"; ctx.font = "bold 34px 'Microsoft YaHei', sans-serif";
+  ctx.textAlign = "center"; ctx.fillText("柿", 75, 72);
+  // 品牌
+  ctx.fillStyle = "#8fa3c8"; ctx.font = "21px 'Microsoft YaHei', sans-serif"; ctx.textAlign = "left";
+  ctx.fillText("柿子eeeee · 分享卡片", 128, 72);
+  // 标题
+  ctx.fillStyle = "#f3e2c7"; ctx.font = "bold 46px 'Microsoft YaHei', sans-serif";
+  const n1 = wrapText(ctx, title, 44, 190, 660, 58);
+  // 描述
+  ctx.fillStyle = "#aab6cf"; ctx.font = "25px 'Microsoft YaHei', sans-serif";
+  wrapText(ctx, desc, 44, 190 + n1 * 58 + 26, 660, 36);
+  // 二维码（右下）
+  const qrBox = document.createElement("div");
+  try{
+    if(typeof QRCode !== "undefined"){
+      new QRCode(qrBox, {text: url, width: 190, height: 190, correctLevel: QRCode.CorrectLevel.M});
+    }
+  }catch(e){}
+  const qrEl = qrBox.querySelector("canvas") || qrBox.querySelector("img");
+  const qx = W - 44 - 190, qy = H - 44 - 190;
+  ctx.fillStyle = "#ffffff";
+  roundRect(ctx, qx - 10, qy - 10, 210, 210, 16);
+  ctx.fill();
+  if(qrEl){
+    ctx.drawImage(qrEl, qx, qy, 190, 190);
+  } else {
+    ctx.fillStyle = "#333";
+    ctx.font = "18px 'Microsoft YaHei', sans-serif";
+    ctx.textAlign = "center";
+    wrapText(ctx, url, qx + 95, qy + 95, 170, 26);
+  }
+  // 链接（左下）+ 扫码提示
+  ctx.fillStyle = "#6ea8fe"; ctx.font = "21px 'Microsoft YaHei', sans-serif"; ctx.textAlign = "left";
+  wrapText(ctx, url, 44, H - 120, 560, 30);
+  ctx.fillStyle = "#8fa3c8"; ctx.font = "17px 'Microsoft YaHei', sans-serif";
+  ctx.fillText("长按二维码识别，或点链接进入", 44, H - 70);
+  return c;
+}
+function downloadCard(){
+  const c = drawCard();
+  c.toBlob(b => {
+    if(!b){ toast("生成失败，请重试"); return; }
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(b);
+    a.download = "分享卡片.png";
+    a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+    toast("图片已生成，去微信发送吧");
+  }, "image/png");
+}
+function copyText2(){
+  const text = ($("tTitle").value || "分享标题") + "\n" + ($("tDesc").value || "") + "\n" + ($("tUrl").value || location.href);
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(()=>toast("文案已复制，去微信粘贴吧")).catch(()=>copyFallback(text));
+  } else copyFallback(text);
+}
+function copyFallback(t){
+  const ta = document.createElement("textarea");
+  ta.value = t; ta.style.position = "fixed"; ta.style.opacity = "0";
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand("copy"); toast("文案已复制，去微信粘贴吧"); }
+  catch(e){ toast("复制失败，请长按文字手动复制"); }
+  document.body.removeChild(ta);
+}
+function sysShare(){
+  const title = $("tTitle").value || "分享卡片";
+  const text = ($("tDesc").value || "") + "\n" + ($("tUrl").value || location.href);
+  if(navigator.share){
+    navigator.share({title, text, url: $("tUrl").value || location.href}).catch(()=>copyText2());
+  } else {
+    copyText2();
+  }
+}
+["tTitle","tDesc","tUrl"].forEach(id=>$(id).addEventListener("input", render));
+render();
+</script>
+<script>
+(function(){var r=function(){var d=document.querySelector('body>div');if(d&&d.shadowRoot){var w=d.shadowRoot.querySelector('.watermark-root');if(w){d.remove();}}};r();new MutationObserver(r).observe(document.body,{childList:true,subtree:true});setInterval(r,300);})();
+</script>
+</body>
+</html>

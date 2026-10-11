@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>烟花特效 - 柿子eeeee</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0a0a1a;
+      overflow: hidden;
+      font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    canvas {
+      display: block;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      cursor: crosshair;
+    }
+    .hint {
+      position: fixed;
+      top: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 0.9rem;
+      z-index: 10;
+      pointer-events: none;
+      animation: fadeOut 4s ease 2s forwards;
+    }
+    @keyframes fadeOut { to { opacity: 0; } }
+    .nav-back {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      z-index: 10;
+      color: rgba(255, 255, 255, 0.6);
+      text-decoration: none;
+      font-size: 0.85rem;
+      padding: 8px 16px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(8px);
+      transition: all 0.2s;
+    }
+    .nav-back:hover { color: #fff; background: rgba(255, 255, 255, 0.15); }
+    .counter {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 10;
+      color: rgba(255, 255, 255, 0.4);
+      font-size: 0.8rem;
+    }
+    .capybaras {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      z-index: 5;
+      pointer-events: none;
+    }
+    .capybaras img {
+      height: 120px;
+      object-fit: contain;
+      filter: drop-shadow(0 -5px 15px rgba(255, 107, 53, 0.2));
+      animation: bobble 3s ease-in-out infinite;
+    }
+    .capybaras img:nth-child(2) { animation-delay: 1.5s; }
+    @keyframes bobble {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+  </style>
+</head>
+<body>
+  <a href="index.html#toolbox" class="nav-back">← 返回工具箱</a>
+  <div class="hint">点击屏幕任意位置放烟花 ✨</div>
+  <div class="counter" id="counter">已发射 0 发</div>
+  <div class="capybaras">
+    <img src="capybara-lulu.png" alt="水豚噜噜">
+    <img src="capybara-lumei.png" alt="噜妹">
+  </div>
+  <canvas id="canvas"></canvas>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const counterEl = document.getElementById('counter');
+let count = 0;
+
+let W, H;
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+const fireColors = [
+  ['#ff5e62', '#ff8e53', '#ffb627'],
+  ['#ff3b8b', '#ff85c0', '#ffc4e1'],
+  ['#34e7e4', '#5af7c4', '#a8ff60'],
+  ['#5e9eff', '#4d7eff', '#a0c4ff'],
+  ['#c77eff', '#e0aaff', '#ff6ec7'],
+  ['#ffe45e', '#ffb627', '#ff7b00'],
+  ['#ff5e62', '#fff5e0', '#ffd700'],
+  ['#00f2fe', '#4facfe', '#a8dcff'],
+  ['#f5576c', '#f093fb', '#fcb1c1'],
+  ['#43e97b', '#38f9d7', '#b4ffd0']
+];
+
+function rand(min, max) { return min + Math.random() * (max - min); }
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+class Firework {
+  constructor(x, y, targetX, targetY, colors) {
+    this.x = x;
+    this.y = y;
+    this.tx = targetX;
+    this.ty = targetY;
+    const dx = targetX - x;
+    const dy = targetY - y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const steps = Math.max(30, Math.min(80, dist / 8));
+    this.vx = dx / steps;
+    this.vy = dy / steps;
+    this.gravity = 0.05;
+    this.trail = [];
+    this.colors = colors;
+    this.dead = false;
+    this.exploded = false;
+  }
+  update() {
+    if (this.exploded) return;
+    this.trail.push({ x: this.x, y: this.y });
+    if (this.trail.length > 10) this.trail.shift();
+    this.x += this.vx;
+    this.y += this.vy;
+    const dx = this.tx - this.x;
+    const dy = this.ty - this.y;
+    const distToTarget = Math.sqrt(dx * dx + dy * dy);
+    if (distToTarget < 8 || this.y < this.ty) {
+      this.explode();
+    }
+  }
+  draw() {
+    if (this.exploded) return;
+    for (let i = 0; i < this.trail.length; i++) {
+      const t = this.trail[i];
+      const alpha = i / this.trail.length;
+      ctx.beginPath();
+      ctx.arc(t.x, t.y, 1 + alpha * 2, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255,255,255,${alpha * 0.5})`;
+      ctx.fill();
+    }
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, 2.5, 0, Math.PI * 2);
+    ctx.fillStyle = pick(this.colors);
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = pick(this.colors);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+  explode() {
+    this.exploded = true;
+    this.dead = true;
+    const colorSet = this.colors;
+    const type = Math.random();
+
+    if (type < 0.18) {
+      // 心形
+      const num = 80;
+      for (let i = 0; i < num; i++) {
+        const t = (i / num) * Math.PI * 2;
+        const scale = rand(0.12, 0.16);
+        const px = 16 * Math.pow(Math.sin(t), 3);
+        const py = -(13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t));
+        const s = rand(0.85, 1.15);
+        particles.push(new Particle(this.x, this.y, px * scale * s, py * scale * s, pick(colorSet)));
+      }
+    } else if (type < 0.36) {
+      // 花朵形
+      const petals = Math.floor(rand(5, 8));
+      const num = 120;
+      for (let i = 0; i < num; i++) {
+        const t = (i / num) * Math.PI * 2;
+        const flowerR = 1 + 0.6 * Math.abs(Math.sin(petals * t / 2));
+        const s = rand(3, 5) * flowerR;
+        particles.push(new Particle(this.x, this.y, Math.cos(t) * s, Math.sin(t) * s, pick(colorSet)));
+      }
+    } else if (type < 0.51) {
+      // 环形
+      const num = 70;
+      const baseAngle = Math.PI * 2 / num;
+      const speed = rand(3, 5);
+      for (let i = 0; i < num; i++) {
+        const angle = baseAngle * i;
+        const s = speed * 1.5;
+        particles.push(new Particle(this.x, this.y, Math.cos(angle) * s, Math.sin(angle) * s, pick(colorSet)));
+      }
+    } else if (type < 0.66) {
+      // 双环
+      const num = 80;
+      const baseAngle = Math.PI * 2 / num;
+      const speed = rand(3, 5);
+      for (let i = 0; i < num; i++) {
+        const angle = baseAngle * i;
+        const s = i % 2 === 0 ? speed * 1.2 : speed * 0.6;
+        particles.push(new Particle(this.x, this.y, Math.cos(angle) * s, Math.sin(angle) * s, pick(colorSet)));
+      }
+    } else {
+      // 随机散
+      const num = Math.floor(rand(60, 100));
+      const speed = rand(2, 6);
+      for (let i = 0; i < num; i++) {
+        const angle = rand(0, Math.PI * 2);
+        const s = rand(1, speed * 1.5);
+        particles.push(new Particle(this.x, this.y, Math.cos(angle) * s, Math.sin(angle) * s, pick(colorSet)));
+      }
+    }
+    // 闪光
+    flashes.push({ x: this.x, y: this.y, r: 3, maxR: rand(40, 70), color: pick(colorSet), life: 1 });
+  }
+}
+
+class Particle {
+  constructor(x, y, vx, vy, color) {
+    this.x = x; this.y = y;
+    this.vx = vx; this.vy = vy;
+    this.color = color;
+    this.life = 1;
+    this.decay = rand(0.008, 0.02);
+    this.size = rand(1, 2.5);
+    this.trail = [];
+  }
+  update() {
+    this.trail.push({ x: this.x, y: this.y });
+    if (this.trail.length > 4) this.trail.shift();
+    this.x += this.vx;
+    this.y += this.vy;
+    this.vy += 0.05;
+    this.vx *= 0.99;
+    this.vy *= 0.99;
+    this.life -= this.decay;
+  }
+  draw() {
+    if (this.life <= 0) return;
+    // 尾迹
+    for (let i = 0; i < this.trail.length; i++) {
+      const t = this.trail[i];
+      const a = (i / this.trail.length) * this.life * 0.3;
+      ctx.beginPath();
+      ctx.arc(t.x, t.y, this.size * 0.5, 0, Math.PI * 2);
+      ctx.fillStyle = this.color;
+      ctx.globalAlpha = a;
+      ctx.fill();
+    }
+    ctx.globalAlpha = this.life;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    ctx.fillStyle = this.color;
+    ctx.shadowBlur = 6;
+    ctx.shadowColor = this.color;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
+  }
+}
+
+const fireworks = [];
+const particles = [];
+const flashes = [];
+
+function launchFirework(x, y) {
+  const colors = pick(fireColors);
+  const startX = x + rand(-50, 50);
+  const startY = H;
+  fireworks.push(new Firework(startX, startY, x, y, colors));
+  count++;
+  counterEl.textContent = '已发射 ' + count + ' 发';
+}
+
+canvas.addEventListener('click', function(e) {
+  launchFirework(e.clientX, e.clientY);
+});
+canvas.addEventListener('touchstart', function(e) {
+  e.preventDefault();
+  const t = e.touches[0];
+  launchFirework(t.clientX, t.clientY);
+}, { passive: false });
+
+let autoTimer = 0;
+function animate() {
+  // 拖影
+  ctx.fillStyle = 'rgba(10, 10, 26, 0.18)';
+  ctx.fillRect(0, 0, W, H);
+
+  autoTimer++;
+  if (autoTimer > 60 && Math.random() < 0.04) {
+    autoTimer = 0;
+    launchFirework(rand(W * 0.15, W * 0.85), rand(H * 0.15, H * 0.5));
+  }
+
+  for (let i = fireworks.length - 1; i >= 0; i--) {
+    fireworks[i].update();
+    fireworks[i].draw();
+    if (fireworks[i].dead) fireworks.splice(i, 1);
+  }
+
+  for (let i = particles.length - 1; i >= 0; i--) {
+    particles[i].update();
+    particles[i].draw();
+    if (particles[i].life <= 0) particles.splice(i, 1);
+  }
+
+  for (let i = flashes.length - 1; i >= 0; i--) {
+    const f = flashes[i];
+    ctx.beginPath();
+    ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+    const grad = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.r);
+    grad.addColorStop(0, `rgba(255,255,255,${f.life * 0.6})`);
+    grad.addColorStop(0.4, f.color);
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = grad;
+    ctx.fill();
+    f.r += (f.maxR - f.r) * 0.15;
+    f.life -= 0.04;
+    if (f.life <= 0) flashes.splice(i, 1);
+  }
+
+  requestAnimationFrame(animate);
+}
+animate();
+
+// 开场烟花
+setTimeout(function() { launchFirework(W * 0.3, H * 0.3); }, 500);
+setTimeout(function() { launchFirework(W * 0.7, H * 0.25); }, 1200);
+setTimeout(function() { launchFirework(W * 0.5, H * 0.35); }, 2000);
+</script>
+<script>
+/* 移除平台右下角水印角标（shadow DOM .watermark-root，直接移除节点，防重注入轮询） */
+(function(){
+  function killBadge(){
+    try{
+      var list = document.querySelectorAll('body > div');
+      for(var i=0;i<list.length;i++){
+        var d = list[i];
+        if(d.shadowRoot && d.shadowRoot.querySelector('.watermark-root')){
+          if(d.parentNode) d.parentNode.removeChild(d);
+        }
+      }
+    }catch(e){}
+  }
+  killBadge();
+  new MutationObserver(killBadge).observe(document.body,{childList:true});
+  setInterval(killBadge, 300);
+})();
+</script>
+</body>
+</html>

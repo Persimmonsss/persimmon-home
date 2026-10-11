@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>王者荣耀 猜英雄 - 柿子工具箱</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+<style>
+:root{
+  --bg:#0a0e1a; --bg2:#0f1526; --card:#141c30; --card2:#1a2440;
+  --gold:#c8aa6e; --gold2:#a9873f; --wzred:#e5534b; --wzblue:#4da3ff;
+  --text:#e8e6e3; --muted:#8a93a8; --ok:#3fb950; --warn:#d29922; --bad:#e5534b;
+  --cell-ok:#1b5e20; --cell-part:#7a4d0d; --cell-bad:#6b1f1a;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+button{font-family:inherit;}
+body{background:radial-gradient(1200px 600px at 20% -10%, #16203a 0%, var(--bg) 55%);color:var(--text);font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;min-height:100vh;}
+a{color:var(--gold);text-decoration:none;}
+.wrap{max-width:980px;margin:0 auto;padding:16px;}
+/* header */
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 0;}
+.brand{display:flex;align-items:center;gap:10px;font-size:20px;font-weight:700;}
+.brand .dot{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#4da3ff,#7b5cff);display:flex;align-items:center;justify-content:center;font-size:18px;}
+.streak{background:var(--card);border:1px solid #223;border-radius:12px;padding:6px 14px;font-size:14px;color:var(--muted);}
+.streak b{color:var(--gold);font-size:18px;margin-left:4px;}
+/* tabs */
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 16px;}
+.tab{flex:1;min-width:100px;padding:10px 8px;border-radius:12px;background:var(--card);border:1px solid #22314d;color:var(--muted);cursor:pointer;text-align:center;font-size:13px;transition:.15s;user-select:none;}
+.tab:hover{border-color:var(--gold);color:var(--text);}
+.tab.active{background:linear-gradient(135deg,#1c2a4a,#14203a);border-color:var(--gold);color:var(--gold);font-weight:600;}
+.tab .ic{display:block;font-size:18px;margin-bottom:2px;}
+/* card */
+.card{background:var(--card);border:1px solid #22314d;border-radius:16px;padding:20px;margin-bottom:16px;position:relative;}
+.card::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:linear-gradient(90deg,var(--gold),transparent);opacity:.7;}
+.qnum{color:var(--muted);font-size:13px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:8px;}
+.qnum .hint-left{color:var(--gold);}
+.qnum .actions{display:flex;gap:8px;align-items:center;}
+/* 图例 */
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin:10px 0 16px;padding:10px 12px;background:var(--bg2);border:1px solid #22314d;border-radius:10px;font-size:12px;color:var(--muted);}
+.legend .lg{display:inline-flex;align-items:center;gap:5px;}
+.legend .sw{width:14px;height:14px;border-radius:4px;display:inline-block;}
+.sw-ok{background:var(--cell-ok);} .sw-part{background:var(--cell-part);} .sw-bad{background:var(--cell-bad);}
+/* 输入 */
+.guess-row{display:flex;gap:10px;margin-top:14px;position:relative;}
+.guess-input-wrap{position:relative;flex:1;}
+#guessInput{width:100%;padding:12px 14px;border-radius:12px;background:var(--bg2);border:1px solid #2a3a5e;color:var(--text);font-size:15px;outline:none;transition:.15s;}
+#guessInput:focus{border-color:var(--gold);}
+.btn{padding:12px 22px;border-radius:12px;border:1px solid #2a3a5e;background:var(--card2);color:var(--text);cursor:pointer;font-size:14px;transition:.15s;white-space:nowrap;}
+.btn:hover{border-color:var(--gold);}
+.btn-gold{background:linear-gradient(135deg,#c8aa6e,#a9873f);border:none;color:#0a0e1a;font-weight:700;}
+.btn-gold:hover{filter:brightness(1.1);}
+.btn-ghost{background:transparent;color:var(--muted);}
+.btn-ghost:hover{color:var(--gold);border-color:var(--gold);}
+/* 下拉匹配 */
+.suggest{position:absolute;left:0;right:0;top:calc(100% + 6px);background:#0d1626;border:1px solid #2a3a5e;border-radius:12px;max-height:300px;overflow-y:auto;z-index:100;display:none;box-shadow:0 12px 32px rgba(0,0,0,.5);}
+.suggest.show{display:block;}
+.sug-item{display:flex;align-items:center;gap:10px;padding:8px 12px;cursor:pointer;border-bottom:1px solid #16213a;}
+.sug-item:last-child{border-bottom:none;}
+.sug-item:hover,.sug-item.sel{background:#1c2a4a;}
+.sug-item img{width:34px;height:34px;border-radius:8px;background:#000;object-fit:cover;}
+.sug-item .nm{font-size:14px;font-weight:600;}
+.sug-item .tt{font-size:12px;color:var(--muted);margin-left:6px;}
+/* 对比表（经典） */
+.tbl-wrap{overflow-x:auto;margin-top:16px;border-radius:10px;border:1px solid #22314d;}
+table.cmp{border-collapse:collapse;width:100%;min-width:640px;font-size:13px;}
+table.cmp th{background:#0d1626;color:var(--muted);padding:8px 10px;font-weight:600;text-align:left;border-bottom:1px solid #22314d;white-space:nowrap;}
+table.cmp th:first-child,table.cmp td:first-child{position:sticky;left:0;z-index:2;background:#0d1626;}
+table.cmp td{padding:8px 10px;border-bottom:1px solid #16213a;white-space:nowrap;}
+table.cmp tr:last-child td{border-bottom:none;}
+table.cmp td.cell-ok{background:var(--cell-ok);color:#d7ffe3;font-weight:600;}
+table.cmp td.cell-part{background:var(--cell-part);color:#ffe8b3;font-weight:600;}
+table.cmp td.cell-bad{background:var(--cell-bad);color:#ffd6d3;}
+td.hero-cell{display:flex;align-items:center;gap:8px;background:#0d1626;color:var(--text);font-weight:600;}
+td.hero-cell img{width:32px;height:32px;border-radius:6px;background:#000;object-fit:cover;}
+td .arr{font-size:12px;margin-left:2px;}
+/* 题面 */
+.qarea{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:230px;background:var(--bg2);border:1px dashed #2a3a5e;border-radius:12px;padding:20px;text-align:center;}
+.qarea #qbody{width:100%;}
+.splash-box{width:100%;height:230px;border-radius:10px;overflow:hidden;position:relative;background:#000;}
+.splash-box img{width:100%;height:100%;object-fit:cover;transition:transform .3s;}
+.splash-box.imgfail::after{content:"图片加载失败，请检查网络后重试";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px;}
+.icon-row{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;}
+.icon-row .ab{width:82px;height:86px;border-radius:12px;background:#0d1626;border:1px solid #2a3a5e;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:12px;color:var(--muted);}
+.icon-row .ab img{width:54px;height:54px;border-radius:8px;object-fit:cover;}
+.icon-row .ab.off{opacity:.4;cursor:not-allowed;}
+.qz-q{font-size:17px;font-weight:600;line-height:1.7;max-width:640px;margin-bottom:4px;}
+.ask-wrap{display:flex;flex-direction:column;gap:12px;}
+.ask-input-row{display:flex;gap:8px;}
+.ask-input-row input{flex:1;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;color:var(--text);font-size:14px;outline:none;transition:border .2s;}
+.ask-input-row input:focus{border-color:var(--gold);}
+.ask-chips{display:flex;flex-wrap:wrap;gap:7px;max-height:170px;overflow-y:auto;padding-right:2px;}
+.ask-chip{background:var(--panel);border:1px solid var(--line);color:var(--dim);border-radius:999px;padding:7px 13px;font-size:12.5px;cursor:pointer;transition:all .2s;text-align:left;}
+.ask-chip:hover{border-color:var(--gold);color:#f3e2c7;}
+.ask-chip.done{opacity:.38;text-decoration:line-through;pointer-events:none;}
+.ask-log{display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;}
+.ask-row{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:9px 13px;font-size:13px;animation:feedIn .25s ease;}
+.ask-row .aq{color:var(--text);flex:1;}
+.ask-row .aa{font-weight:700;flex-shrink:0;}
+.ask-row.yes .aa{color:#7ed18c;}
+.ask-row.no .aa{color:#e58a7a;}
+.ask-remain{font-size:13px;color:var(--gold);font-weight:700;}
+.qz-note{font-size:13px;color:var(--muted);margin-top:8px;max-width:640px;}
+.hint-text{margin-top:10px;color:var(--muted);font-size:13px;line-height:1.7;}
+.big-text{font-size:26px;font-weight:700;line-height:1.6;color:var(--text);letter-spacing:2px;}
+.big-text .qt{color:var(--gold);}
+/* 选项（问答） */
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:560px;margin:14px auto 0;}
+.opt-btn{padding:14px 16px;border-radius:12px;background:var(--card2);border:1px solid #2a3a5e;color:var(--text);font-size:15px;cursor:pointer;transition:.15s;font-weight:600;text-align:center;}
+.opt-btn:hover{border-color:var(--gold);color:var(--gold);}
+.opt-btn.ok{background:var(--cell-ok);border-color:var(--ok);color:#d7ffe3;}
+.opt-btn.bad{background:var(--cell-bad);border-color:var(--bad);color:#ffd6d3;}
+.opt-btn.dis{opacity:.4;cursor:not-allowed;}
+/* feed */
+.feed{margin-top:12px;display:flex;flex-direction:column;gap:8px;}
+.feed .row{padding:10px 14px;border-radius:10px;font-size:14px;}
+.feed .row.ok{background:rgba(63,185,80,.12);border:1px solid var(--cell-ok);color:#a7f3bd;}
+.feed .row.bad{background:rgba(229,83,75,.12);border:1px solid var(--cell-bad);color:#fecaca;}
+.feed .row.info{background:rgba(210,153,34,.12);border:1px solid var(--cell-part);color:#fde68a;}
+/* modal */
+.modal-mask{position:fixed;inset:0;background:rgba(4,8,16,.8);z-index:100;display:none;align-items:center;justify-content:center;padding:20px;}
+.modal-mask.show{display:flex;}
+.modal{background:linear-gradient(160deg,#16203a,#0d1428);border:1px solid var(--gold);border-radius:20px;max-width:420px;width:100%;padding:26px;text-align:center;box-shadow:0 24px 80px rgba(0,0,0,.7);max-height:90vh;overflow-y:auto;}
+.modal .m-hero{width:96px;height:96px;border-radius:14px;object-fit:cover;border:2px solid var(--gold);background:#000;}
+.modal h2{color:var(--gold);font-size:26px;margin:12px 0 4px;}
+.modal .m-name{font-size:18px;font-weight:700;margin-bottom:4px;}
+.modal .m-tries{color:var(--muted);font-size:14px;margin:10px 0;}
+.modal .m-stats{background:var(--bg2);border-radius:12px;padding:12px;margin:12px 0;text-align:left;}
+.modal .m-stats h3{font-size:13px;color:var(--muted);margin-bottom:8px;}
+.bar-row{display:flex;align-items:center;gap:8px;font-size:12px;margin:3px 0;color:var(--muted);}
+.bar-row .bar{flex:1;height:16px;background:#0d1626;border-radius:4px;overflow:hidden;position:relative;}
+.bar-row .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:4px;}
+.bar-row .n{width:14px;text-align:right;}
+.modal .m-actions{display:flex;gap:10px;justify-content:center;margin-top:14px;flex-wrap:wrap;}
+.modal .m-share{background:var(--bg2);border:1px solid #2a3a5e;border-radius:10px;padding:10px 12px;margin-top:12px;font-size:12px;color:var(--muted);word-break:break-all;text-align:left;max-height:110px;overflow-y:auto;}
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:#1c2a4a;border:1px solid var(--gold);color:var(--text);padding:10px 18px;border-radius:12px;font-size:14px;z-index:200;display:none;box-shadow:0 8px 30px rgba(0,0,0,.5);}
+.toast.show{display:block;animation:toastin .25s;}
+@keyframes toastin{from{opacity:0;transform:translate(-50%,8px);}to{opacity:1;transform:translate(-50%,0);}}
+@media (max-width:640px){
+  .tabs{gap:6px;}
+  .tab{min-width:70px;font-size:12px;padding:8px 4px;}
+  .modal{max-width:96%;padding:20px;}
+  .opts{grid-template-columns:1fr;}
+  .big-text{font-size:22px;}
+}
+/* ===== 丝滑动效 ===== */
+.card,.btn,.tab,.sug-item,.opt-btn{transition:all .22s ease;}
+.card:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(0,0,0,.35);}
+.btn:active{transform:scale(.95);}
+@keyframes feedIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+#feed .row{animation:feedIn .32s ease both;}
+@keyframes modalPop{from{opacity:0;transform:scale(.92) translateY(14px);}to{opacity:1;transform:scale(1) translateY(0);}}
+.modal-mask .modal{animation:modalPop .3s cubic-bezier(.2,.9,.3,1.15) both;}
+@keyframes rowFlash{0%{background:rgba(200,168,110,.30);}100%{background:transparent;}}
+.cmp tbody tr:first-child{animation:rowFlash 1.4s ease .25s both;}
+@keyframes streakPop{0%{transform:scale(1);}40%{transform:scale(1.35);}100%{transform:scale(1);}}
+#streakNum{display:inline-block;}
+.streak-pop{animation:streakPop .45s ease;}
+.splash-box,.splash-box img{transition:transform .55s cubic-bezier(.25,.8,.3,1);}
+@keyframes toastIn{from{opacity:0;transform:translate(-50%,10px);}to{opacity:1;transform:translate(-50%,0);}}
+.toast{animation:toastIn .25s ease both;}
+html{scroll-behavior:smooth;}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="brand"><div class="dot">🛡️</div>王者荣耀 猜英雄</div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="streak">连胜 <b id="streakNum">0</b></div>
+      <button class="btn btn-ghost" id="topShareBtn" style="padding:5px 10px;font-size:12px;">📤 分享</button>
+    </div>
+  </div>
+  <div class="tabs" id="tabs">
+    <div class="tab active" data-mode="classic"><span class="ic">⚔️</span>经典</div>
+    <div class="tab" data-mode="title"><span class="ic">🏷</span>称号</div>
+    <div class="tab" data-mode="skill"><span class="ic">🧩</span>技能</div>
+    <div class="tab" data-mode="splash"><span class="ic">🖼</span>原画</div>
+    <div class="tab" data-mode="skin"><span class="ic">✨</span>皮肤</div>
+    <div class="tab" data-mode="quote"><span class="ic">🎤</span>台词</div>
+    <div class="tab" data-mode="quiz"><span class="ic">🧠</span>问答</div>
+    <div class="tab" data-mode="ask"><span class="ic">❓</span>提问猜英雄</div>
+  </div>
+  <div class="card">
+    <div class="qnum">
+      <span class="mode-title" id="modeTitle">经典模式</span>
+      <span class="actions">
+        <span class="hint-left" id="hintLeft"></span>
+        <button class="btn btn-ghost" id="hintBtn" style="padding:6px 12px;font-size:13px;">💡 提示</button>
+      </span>
+    </div>
+    <div class="legend" id="legend" style="display:none;">
+      <span class="lg"><span class="sw sw-ok"></span>正确</span>
+      <span class="lg"><span class="sw sw-part"></span>部分正确</span>
+      <span class="lg"><span class="sw sw-bad"></span>错误</span>
+      <span class="lg"><span class="sw sw-bad"></span>⬇ 更低</span>
+      <span class="lg"><span class="sw sw-bad"></span>⬆ 更高</span>
+    </div>
+    <div class="qarea" id="qarea"><div id="qbody"></div></div>
+    <div class="guess-row">
+      <div class="guess-input-wrap">
+        <input id="guessInput" placeholder="输入英雄名字（支持中文 / 拼音 / 外号）" autocomplete="off">
+        <div class="suggest" id="suggest"></div>
+      </div>
+      <button class="btn btn-gold" id="guessBtn">猜！</button>
+      <button class="btn btn-ghost" id="skipBtn">跳过</button>
+    </div>
+    <div class="feed" id="feed"></div>
+    <div class="tbl-wrap" id="tblWrap" style="display:none;"></div>
+  </div>
+  <div style="text-align:center;color:var(--muted);font-size:12px;padding:10px 0;">
+    数据来源：王者荣耀官网公开数据 · 粉丝自制，与腾讯游戏无关 ·
+    <a href="index.html">← 返回工具箱</a>
+  </div>
+</div>
+
+<!-- 分享面板 -->
+<div class="modal-mask" id="shareModal">
+  <div class="modal" style="max-width:380px;text-align:center;">
+    <h2 style="margin:0 0 6px;">分享给朋友</h2>
+    <div style="color:var(--muted);font-size:13px;margin-bottom:12px;">朋友扫二维码或点链接，立刻开玩</div>
+    <div id="shareQr" style="display:inline-block;background:#fff;padding:8px;border-radius:10px;margin-bottom:12px;"></div>
+    <div class="m-share" id="shareModalText" style="max-height:70px;"></div>
+    <div class="m-actions" style="flex-direction:column;gap:8px;margin-top:12px;">
+      <button class="btn btn-gold" id="shareCopyBtn" style="width:100%;">📋 复制文案</button>
+      <button class="btn btn-ghost" id="shareSysBtn" style="width:100%;">📤 系统分享</button>
+      <button class="btn btn-ghost" id="shareCloseBtn" style="width:100%;">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 胜利弹窗 -->
+<div class="modal-mask" id="modal">
+  <div class="modal">
+    <img class="m-hero" id="mHero" alt="">
+    <h2>胜利！</h2>
+    <div class="m-name" id="mName"></div>
+    <div class="m-tries" id="mTries"></div>
+    <div class="m-stats">
+      <h3 id="mStatsTitle">统计数据</h3>
+      <div id="mStats"></div>
+    </div>
+    <div class="m-actions">
+      <button class="btn btn-gold" id="mAgain">再来一题</button>
+      <button class="btn" id="mCopy">📋 复制结果</button>
+      <button class="btn btn-ghost" id="mShareBtn">📤 分享到微信</button>
+    </div>
+    <div class="m-share" id="mShare"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===================== 常量与映射 ===================== */
+const MODE_NAMES = {classic:"经典模式", title:"称号模式", skill:"技能模式", splash:"原画模式", skin:"皮肤模式", quote:"台词模式", quiz:"知识问答", ask:"提问猜英雄"};
+const $ = id=>document.getElementById(id);
+let HEROES = [], state = {};
+const STAT_KEY = "wzry_guess_stats_v1";
+function loadStats(){
+  try{ return Object.assign({streak:0,maxStreak:0,total:0,won:0,bestTries:{},modeWins:{},heroes:{}}, JSON.parse(localStorage.getItem(STAT_KEY)) || {}); }
+  catch(e){ return {streak:0,maxStreak:0,total:0,won:0,bestTries:{},modeWins:{},heroes:{}}; }
+}
+function saveStats(s){ try{ localStorage.setItem(STAT_KEY, JSON.stringify(s)); }catch(e){} }
+function setStreak(n){
+  const el = $("streakNum");
+  el.textContent = n;
+  el.classList.remove("streak-pop");
+  void el.offsetWidth;
+  el.classList.add("streak-pop");
+}
+let stats = loadStats();
+const ALIAS = {"乔妹":"小乔","子龙":"赵云","墨老":"墨子","狐狸":"妲己","苏妲己":"妲己","政哥":"嬴政","大小姐":"孙尚香","香香":"孙尚香","鲁班":"鲁班七号","小鲁班":"鲁班七号","卤蛋":"鲁班七号","小短腿":"鲁班七号","阿木木":"鲁班七号","鱼":"庄周","咸鱼":"庄周","老庄":"庄周","阿斗":"刘禅","渐离":"高渐离","琴师":"高渐离","荆轲":"阿轲","轲":"阿轲","刺客":"阿轲","大锤":"钟无艳","小膑":"孙膑","阿膑":"孙膑","医生":"扁鹊","鹊":"扁鹊","猴子":"孙悟空","大圣":"孙悟空","猴哥":"孙悟空","美猴王":"孙悟空","孙猴子":"孙悟空","六耳":"心魔六耳","心魔":"心魔六耳","布布":"吕布","奉先":"吕布","吕奉先":"吕布","大都督":"周瑜","嘟嘟":"周瑜","惇惇":"夏侯惇","独眼":"夏侯惇","洛神":"甄姬","甄姬妹妹":"甄姬","曹阿瞒":"曹操","曹贼":"曹操","奸雄":"曹操","疯狗":"典韦","恶来":"典韦","宫本":"宫本武藏","剑圣":"宫本武藏","剑仙":"李白","李太白":"李白","青莲":"李白","马可":"马可波罗","马克":"马可波罗","狄大人":"狄仁杰","狄公":"狄仁杰","达摩祖师":"达摩","霸王":"项羽","西楚霸王":"项羽","女帝":"武则天","武媚娘":"武则天","夫子":"老夫子","孔夫子":"老夫子","关二爷":"关羽","武圣":"关羽","关公":"关羽","蝉":"貂蝉","貂蝉妹妹":"貂蝉","安琪":"安琪拉","火女":"安琪拉","金金":"程咬金","月光":"露娜","月神":"露娜","姜太公":"姜子牙","汉高祖":"刘邦","刘季":"刘邦","韩跳跳":"韩信","兵仙":"韩信","昭君":"王昭君","冰雪":"王昭君","兰陵":"兰陵王","木兰":"花木兰","花姐":"花木兰","花将军":"花木兰","火舞":"不知火舞","不知火":"不知火舞","露露":"娜可露露","玛玛哈哈":"娜可露露","橘子":"橘右京","橘神":"橘右京","右京":"橘右京","牛哥":"牛魔","牛魔王":"牛魔","太阳":"后羿","射日":"后羿","玄德":"刘备","刘皇叔":"刘备","三爷":"张飞","张三爷":"张飞","翼德":"张飞","小芳":"李元芳","元芳":"李元芳","虞美人":"虞姬","老钟":"钟馗","二郎神":"杨戬","二郎":"杨戬","女神":"雅典娜","圣斗士":"雅典娜","奶妈":"蔡文姬","蔡蔡":"蔡文姬","文姬":"蔡文姬","太乙":"太乙真人","真人":"太乙真人","三太子":"哪吒","哪吒三太子":"哪吒","诸葛":"诸葛亮","亮亮":"诸葛亮","卧龙":"诸葛亮","诸葛村夫":"诸葛亮","老黄":"黄忠","炮台":"黄忠","黄老爷":"黄忠","乔姐":"大乔","大乔姐姐":"大乔","东皇":"东皇太一","太一":"东皇太一","干将":"干将莫邪","双剑":"干将莫邪","鬼谷":"鬼谷子","铠爹":"铠","爹":"铠","魔铠":"铠","守约":"百里守约","约约":"百里守约","约":"百里守约","玄策":"百里玄策","钩子":"百里玄策","小疯子":"百里玄策","苏烈哥哥":"苏烈","猫":"梦奇","梦梦":"梦奇","奇奇":"梦奇","娲皇":"女娲","女娲娘娘":"女娲","小明":"明世隐","隐":"明世隐","阿离":"公孙离","离":"公孙离","环环":"杨玉环","玉环":"杨玉环","老虎":"裴擒虎","虎子":"裴擒虎","虎":"裴擒虎","星":"弈星","铁":"狂铁","铁子":"狂铁","元哥":"元歌","傀儡师":"元歌","仲达":"司马懿","司马":"司马懿","山山":"盾山","肉盾":"盾山","伽罗姐姐":"伽罗","罗":"伽罗","猫咪":"沈梦溪","梦溪":"沈梦溪","婉儿":"上官婉儿","八戒":"猪八戒","猪刚鬣":"猪八戒","猪猪":"猪八戒","小鹿":"瑶","鹿":"瑶","瑶瑶":"瑶","鸟人":"云中君","云中":"云中君","中二":"曜","曜仔":"曜","中二少年":"曜","神威":"马超","马儿":"马超","施施":"西施","西施姐姐":"西施","鲁大":"鲁班大师","大师":"鲁班大师","镜姐":"镜","阿镜":"镜","蒙恬将军":"蒙恬","朵":"阿古朵","阿古":"阿古朵","夏洛":"夏洛特","鲨鱼":"澜","澜朋友":"澜","雷震子":"司空震","震":"司空震","司空":"司空震","精灵":"艾琳","金蝉子":"金蝉","唐僧":"金蝉","阿暃":"暃","玉城":"暃","启":"桑启","娅":"戈娅","月":"海月","怀真":"赵怀真","小满":"姬小满","阿连":"亚连","龙太子":"敖隐","司命":"大司命","元流之子":"元流之子(法师)","元流":"元流之子(法师)","司缘":"少司缘","阿影":"影","苍狼":"苍","狼":"苍","空空":"空空儿","仲谋":"孙权","禹":"大禹","雅那":"卢雅那","摩诘":"王维","诗佛":"王维"};
+
+/* ===================== 题库 ===================== */
+const QUOTES = [
+  {text:"鲁班大师，智商250，膜拜。记得膜拜！", hero:"鲁班七号"},
+  {text:"恋爱和战斗，都要勇往直前", hero:"小乔"},
+  {text:"请尽情吩咐妲己，主人", hero:"妲己"},
+  {text:"寒冰永不腐朽", hero:"王昭君"},
+  {text:"美貌是一种罪孽，暴雪也无法掩埋", hero:"王昭君"},
+  {text:"果然，先爱上的那个人是输家", hero:"甄姬"},
+  {text:"要成为光，因为有怕黑的人", hero:"瑶"},
+  {text:"战争因你所需而来，却不因你所欲而止", hero:"马超"},
+  {text:"若世有神明，亦会胜他半子", hero:"弈星"},
+  {text:"少女怎么会拒绝闪耀的宝藏", hero:"西施"},
+  {text:"弱小，并非服从恐惧的理由", hero:"虞姬"},
+  {text:"绵延万万里的脊梁，撑起家国傲骨", hero:"苏烈"},
+  {text:"什么都不懂的时候，我曾拥有了全部", hero:"诸葛亮"},
+  {text:"天下如棋，一步三算", hero:"诸葛亮"},
+  {text:"没有想保护的人，枪就成了无用的玩具", hero:"百里守约"},
+  {text:"给我一个目标，还你一片寂静", hero:"百里守约"},
+  {text:"谁记得你，谁需要你，谁才不会再次离开你", hero:"明世隐"},
+  {text:"即使片刻的幸福，命运，也会暗中标出价格", hero:"杨玉环"},
+  {text:"不知古道上的风从何处而起，可他去往的是故里", hero:"伽罗"},
+  {text:"世人不懂，胜负和爱恨，那都不是神明掌管的范畴", hero:"貂蝉"},
+  {text:"迄今所有人生都大写着失败，但不妨碍我继续向前", hero:"狂铁"},
+  {text:"勇气是唯一的信仰", hero:"狂铁"},
+  {text:"守望着天空大海和你的回忆", hero:"大乔"},
+  {text:"不戴金箍不能救你，戴上金箍不能爱你", hero:"孙悟空"},
+  {text:"一个人可以被毁灭，但绝不会被打败", hero:"铠"},
+  {text:"士以进死为荣，退生为辱", hero:"蒙恬"},
+  {text:"逃避解决不了战争，只会解决你自己", hero:"花木兰"},
+  {text:"就算失败也要摆出豪迈的姿态", hero:"程咬金"},
+  {text:"自己选择的路，再荒谬也要走完", hero:"关羽"},
+  {text:"一次不行，那就再来十次", hero:"廉颇"},
+  {text:"到达胜利之前，无法回头", hero:"韩信"},
+  {text:"心怀不惧，方能翱翔于天际", hero:"赵云"},
+  {text:"有些罪不会消失，有些事非做不可", hero:"张飞"},
+  {text:"震惊长安第一拳", hero:"裴擒虎"},
+  {text:"没有人是天生的失败者", hero:"蔡文姬"},
+  {text:"蝴蝶是我，我就是蝴蝶", hero:"庄周"},
+  {text:"浮生若梦，为欢几何", hero:"李白"},
+  {text:"彪悍的人生不需要解释", hero:"黄忠"},
+  {text:"弱者才在乎耻辱", hero:"韩信"},
+  {text:"在出色的猎手，总有成为猎物的一天", hero:"镜"}
+];
+const SKINS = [
+  {"hero":"吕布","key":123,"skin":"逐霄战戟","idx":11,"img":"https://game.gtimg.cn/images/yxzj/img201606/skin/hero-info/123/123-bigskin-11.jpg"},
+  {"hero":"周瑜","key":124,"skin":"赤莲之焰","idx":4,"img":"https://game.gtimg.cn/images/yxzj/img201606/skin/hero-info/124/124-bigskin-4.jpg"},
+  {"hero":"干将莫邪","key":182,"skin":"久胜战神","idx":4,"img":"https://game.gtimg.cn/images/yxzj/img201606/skin/hero-info/182/182-bigskin-4.jpg"},
+  {"hero":"曜","key":522,"skin":"云鹰飞将","idx":3,"img":"https://game.gtimg.cn/images/yxzj/img201606/skin/hero-info/522/522-bigskin-3.jpg"},
+  {"hero":"花木兰","key":154,"skin":"冠军飞将","idx":6,"img":"https://game.gtimg.cn/images/yxzj/img201606/skin/hero-info/154/154-bigskin-6.jpg"},
+  {"hero":"西施","key":523,"skin":"游龙清影","idx":4,"img":"https://game.gtimg.cn/images/yxzj/img201606/skin/hero-info/523/523-bigskin-4.jpg"},
+  {"hero":"貂蝉","key":141,"skin":"猫影幻舞","idx":6,"img":"https://game.gtimg.cn/images/yxzj/img201606/skin/hero-info/141/141-bigskin-6.jpg"},
+  {"hero":"镜","key":531,"skin":"炽阳神光","idx":3,"img":"https://game.gtimg.cn/images/yxzj/img201606/skin/hero-info/531/531-bigskin-3.jpg"},
+  {"hero":"上官婉儿","key":513,"skin":"天狼绘梦者","idx":4,"img":"https://game.gtimg.cn/images/yxzj/img201606/skin/hero-info/513/513-bigskin-4.jpg"},
+  {"hero":"东皇太一","key":187,"skin":"逐梦之光","idx":3,"img":"https://game.gtimg.cn/images/yxzj/img201606/skin/hero-info/187/187-bigskin-3.jpg"},
+  {"hero":"云中君","key":506,"skin":"时之祈愿","idx":4,"img":"https://game.gtimg.cn/images/yxzj/img201606/skin/hero-info/506/506-bigskin-4.jpg"},
+  {"hero":"伽罗","key":508,"skin":"天狼溯光者","idx":5,"img":"https://game.gtimg.cn/images/yxzj/img201606/skin/hero-info/508/508-bigskin-5.jpg"},
+  {"hero":"吕布","key":123,"skin":"末日机甲","idx":4,"img":"https://game.gtimg.cn/images/yxzj/img201606/skin/hero-info/123/123-bigskin-4.jpg"},
+  {"hero":"哪吒","key":180,"skin":"逐梦之翼","idx":3,"img":"https://game.gtimg.cn/images/yxzj/img201606/skin/hero-info/180/180-bigskin-3.jpg"},
+  {"hero":"孙尚香","key":111,"skin":"末日机甲","idx":6,"img":"https://game.gtimg.cn/images/yxzj/img201606/skin/hero-info/111/111-bigskin-6.jpg"},
+  {"hero":"孙悟空","key":167,"skin":"至尊宝","idx":5,"img":"https://game.gtimg.cn/images/yxzj/img201606/skin/hero-info/167/167-bigskin-5.jpg"},
+  {"hero":"孙策","key":510,"skin":"末日机甲","idx":4,"img":"https://game.gtimg.cn/images/yxzj/img201606/skin/hero-info/510/510-bigskin-4.jpg"},
+  {"hero":"孙膑","key":118,"skin":"天狼运算者","idx":6,"img":"https://game.gtimg.cn/images/yxzj/img201606/skin/hero-info/118/118-bigskin-6.jpg"},
+  {"hero":"孙膑","key":118,"skin":"寅虎·展翼","idx":7,"img":"https://game.gtimg.cn/images/yxzj/img201606/skin/hero-info/118/118-bigskin-7.jpg"},
+  {"hero":"小乔","key":106,"skin":"天鹅之梦","idx":3,"img":"https://game.gtimg.cn/images/yxzj/img201606/skin/hero-info/106/106-bigskin-3.jpg"},
+  {"hero":"廉颇","key":105,"skin":"寅虎·御盾","idx":4,"img":"https://game.gtimg.cn/images/yxzj/img201606/skin/hero-info/105/105-bigskin-4.jpg"},
+  {"hero":"张良","key":156,"skin":"幽兰居士","idx":4,"img":"https://game.gtimg.cn/images/yxzj/img201606/skin/hero-info/156/156-bigskin-4.jpg"},
+  {"hero":"曹操","key":128,"skin":"天狼征服者","idx":6,"img":"https://game.gtimg.cn/images/yxzj/img201606/skin/hero-info/128/128-bigskin-6.jpg"},
+  {"hero":"李信","key":507,"skin":"一念神魔","idx":3,"img":"https://game.gtimg.cn/images/yxzj/img201606/skin/hero-info/507/507-bigskin-3.jpg"},
+  {"hero":"李白","key":131,"skin":"凤求凰","idx":4,"img":"https://game.gtimg.cn/images/yxzj/img201606/skin/hero-info/131/131-bigskin-4.jpg"},
+  {"hero":"李白","key":131,"skin":"鸣剑·曳影","idx":6,"img":"https://game.gtimg.cn/images/yxzj/img201606/skin/hero-info/131/131-bigskin-6.jpg"},
+];
+const QUIZ = [
+  {q:"2024 年王者荣耀 KPL 年度总决赛冠军是哪支战队？", opts:["成都AG超玩会","重庆狼队","北京WB","武汉eStarPro"], a:0, note:"2024.11 AG 4-3 重庆狼队，捧起 KPL 年度总决赛首座至尊奖杯。"},
+  {q:"FMVP 皮肤「冠军飞将」属于哪位英雄？", opts:["花木兰","关羽","镜","吕布"], a:0, note:"2019 世冠 Fly 的 FMVP 皮肤，归属花木兰。"},
+  {q:"FMVP 皮肤「久胜战神」属于哪位英雄？", opts:["干将莫邪","姜子牙","墨子","安琪拉"], a:0, note:"2020 世冠久诚的 FMVP 皮肤，归属干将莫邪。"},
+  {q:"FMVP 皮肤「炽阳神光」属于哪位英雄？", opts:["镜","露娜","雅典娜","嫦娥"], a:0, note:"2021 冬冠暖阳的 FMVP 皮肤，归属镜。"},
+  {q:"FMVP 皮肤「游龙清影」属于哪位英雄？", opts:["西施","大乔","瑶","王昭君"], a:0, note:"2021 世冠清融的 FMVP 皮肤，归属西施。"},
+  {q:"QGhappy 现在叫什么队名？", opts:["重庆狼队","成都AG超玩会","南京Hero久竞","深圳DYG"], a:0, note:"QG 于 2021 年更名为重庆狼队。"},
+  {q:"王者荣耀正式上线是在哪一年？", opts:["2015","2013","2017","2019"], a:0, note:"2015 年 10 月 28 日公测，2025 年已十周年。"},
+  {q:"截至 2026 年 9 月，王者荣耀官方英雄总数约为多少？", opts:["133","98","150","171"], a:0, note:"官方英雄列表数据显示 133 位（2026.09 更新，含最新英雄王维）。"},
+  {q:"2026 年 9 月上线的最新英雄是？", opts:["王维","空空儿","影","小满"], a:0, note:"王维「空山遗客」于 2026.09.23 上线。"},
+  {q:"孙尚香通常走哪条分路？", opts:["发育路","对抗路","中路","游走"], a:0, note:"射手位英雄常规走发育路。"},
+  {q:"击杀主宰后，己方会得到什么？", opts:["主宰先锋","暴君buff","红buff","视野之灵"], a:0, note:"击杀主宰会刷新 3 波主宰先锋推进兵线。"},
+  {q:"蓝 buff 能给英雄带来什么增益？", opts:["回蓝和减CD","攻击吸血","移速加成","护盾"], a:0, note:"蓝 buff 提供法力回复与冷却缩减。"},
+  {q:"装备「贤者的庇护」俗称是什么？", opts:["复活甲","护盾鞋","吸血刀","金身"], a:0, note:"其被动为死亡后原地复活一次，玩家俗称复活甲。"},
+  {q:"「破晓」最适合哪类英雄出？", opts:["射手","坦克","辅助","法师"], a:0, note:"破晓提供攻速、暴击与穿透，是射手后期神装。"},
+  {q:"「五虎上将」皮肤系列不包括以下哪位？", opts:["吕布","赵云","关羽","马超"], a:0, note:"五虎上将：赵云、关羽、张飞、马超、黄忠。"},
+  {q:"鲁班七号的被动技能是什么？", opts:["火力压制","河豚手雷","无敌鲨嘴炮","空中支援"], a:0, note:"被动「火力压制」：连续普攻第 5 下变扫射。"},
+  {q:"妲己、安琪拉、亚瑟常被称为？", opts:["新手三杰","长城守卫军","稷下三贤","海都三霸"], a:0, note:"三人是最早的新手赠送英雄，常称新手三杰。"},
+  {q:"嬴政这位英雄如何获取？", opts:["点券购买","金币购买","活动免费送","星元兑换"], a:0, note:"嬴政是唯一的点券直售英雄。"},
+  {q:"「河道之灵」通常什么时候刷新？", opts:["开局2分钟","开局30秒","开局10分钟","不刷新"], a:0, note:"2 分钟时中路河道刷新河道之灵。"},
+  {q:"后羿大招「灼日之矢」命中远距离敌人时有什么效果？", opts:["眩晕更久","伤害减半","加速自己","无敌一秒"], a:0, note:"箭飞得越远眩晕时间越长，是全图支援神技。"},
+  {q:"对抗路与发育路在蓝方（左下角）阵营如何分布？", opts:["对抗路在上路，发育路在下路","对抗路在下路","发育路在野区","都在中路"], a:0, note:"蓝方视角：发育路（射手）在下路，对抗路在上路。"},
+  {q:"王者荣耀「防御塔」第一座塔被摧毁后出现什么？", opts:["被摧毁方视野暴露","全队获得金币","小兵变强","野怪消失"], a:0, note:"一塔告破会暴露该区域视野，影响防守。"},
+  {q:"「要成为光，因为有怕黑的人」是哪位英雄的台词？", opts:["瑶","大乔","蔡文姬","明世隐"], a:0, note:"瑶的经典台词。（干扰项均为辅助英雄的台词）"},
+  {q:"「司空震」的定位是什么？", opts:["法师/战士","纯辅助","纯射手","打野刺客"], a:0, note:"司空震是法术输出的战士型英雄。"},
+  {q:"2024 年 KPL 年度总决赛 FMVP 是谁？", opts:["一诺","小胖","Fly","Cat"], a:0, note:"2024 年度总决赛 FMVP 为成都AG一诺（徐必成）。"},
+  {q:"「至尊宝」皮肤属于哪位英雄？", opts:["孙悟空","李白","韩信","裴擒虎"], a:0, note:"大话西游联动皮肤至尊宝，归属孙悟空。"},
+  {q:"「凤求凰」皮肤属于哪位英雄？", opts:["李白","诸葛亮","赵云","韩信"], a:0, note:"鸡年限定皮肤凤求凰，归属李白。"},
+  {q:"「时之祈愿」是瑶与哪位英雄的情侣皮肤？", opts:["云中君","曜","铠","百里守约"], a:0, note:"2022 情人节皮肤，瑶与时之祈愿、云中君同名系列。"},
+  {q:"王者荣耀中「红 buff」的主要效果是？", opts:["普攻减速和灼烧","回蓝","减CD","提供护盾"], a:0, note:"红 buff 让普攻附带减速与持续灼烧伤害。"},
+  {q:"「若世有神明，亦会胜他半子」是哪位英雄的台词？", opts:["弈星","诸葛亮","西施","杨玉环"], a:0, note:"弈星的经典台词。（干扰项均为法师英雄的台词）"},
+  {q:"「震惊长安第一拳」是哪位英雄的台词？", opts:["裴擒虎","孙悟空","吕布","关羽"], a:0, note:"裴擒虎的经典台词。"},
+  {q:"「鲁班大师，智商250，膜拜」是哪位英雄的台词？", opts:["鲁班七号","鲁班大师","孙膑","刘禅"], a:0, note:"鲁班七号对鲁班大师说的经典台词。"}
+];
+const FALLBACK = {"heroes":[{"key":105,"id":"lianpo","cn":"廉颇","title":"正义爆轰","class":"坦克","lanes":["对抗路","游走"],"skins":6,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/105/105.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/105/105.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/105/10500.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/105/10510.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/105/10520.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/105/10530.png"},"abil":"1111","keywords":"廉颇,正义爆轰,lianpo","emoji":"","gender":"男","year":2015,"alias":["廉颇"]},{"key":106,"id":"xiaoqiao","cn":"小乔","title":"恋之微风","class":"法师","lanes":["中路"],"skins":11,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/106/106.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/106/106.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/106/10600.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/106/10610.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/106/10620.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/106/10630.png"},"abil":"1111","keywords":"小乔,恋之微风,xiaoqiao","emoji":"","gender":"女","year":2015,"alias":["乔妹"]},{"key":107,"id":"zhaoyun","cn":"赵云","title":"苍天翔龙","class":"战士","lanes":["打野"],"skins":11,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/107/107.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/107/107.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/107/10700.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/107/10710.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/107/10720.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/107/10730.png"},"abil":"1111","keywords":"赵云,苍天翔龙,zhaoyun","emoji":"","gender":"男","year":2015,"alias":["子龙"]},{"key":108,"id":"mozi","cn":"墨子","title":"和平守望","class":"法师","lanes":["中路","游走"],"skins":7,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/108/108.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/108/108.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/108/10800.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/108/10810.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/108/10820.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/108/10830.png"},"abil":"1111","keywords":"墨子,和平守望,mozi","emoji":"","gender":"男","year":2015,"alias":["墨老"]},{"key":109,"id":"daji","cn":"妲己","title":"魅力之狐","class":"法师","lanes":["中路"],"skins":12,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/109/109.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/109/109.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/109/10900.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/109/10910.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/109/10920.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/109/10930.png"},"abil":"1111","keywords":"妲己,魅力之狐,daji","emoji":"","gender":"女","year":2015,"alias":["狐狸","苏妲己"]},{"key":110,"id":"yingzheng","cn":"嬴政","title":"王者独尊","class":"法师","lanes":["中路"],"skins":6,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/110/110.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/110/110.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/110/11000.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/110/11010.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/110/11020.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/110/11030.png"},"abil":"1111","keywords":"嬴政,王者独尊,yingzheng","emoji":"","gender":"男","year":2015,"alias":["政哥"]},{"key":111,"id":"sunshangxiang","cn":"孙尚香","title":"千金重弩","class":"射手","lanes":["发育路"],"skins":11,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/111/111.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/111/111.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/111/11100.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/111/11110.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/111/11120.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/111/11130.png"},"abil":"1111","keywords":"孙尚香,千金重弩,sunshangxiang","emoji":"","gender":"女","year":2015,"alias":["大小姐","香香"]},{"key":112,"id":"lubanqihao","cn":"鲁班七号","title":"机关造物","class":"射手","lanes":["发育路"],"skins":13,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/112/112.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/112/112.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/112/11200.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/112/11210.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/112/11220.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/112/11230.png"},"abil":"1111","keywords":"鲁班七号,机关造物,lubanqihao","emoji":"","gender":"男","year":2015,"alias":["鲁班","小鲁班","卤蛋","小短腿","阿木木"]},{"key":113,"id":"zhuangzhou","cn":"庄周","title":"逍遥梦幻","class":"辅助","lanes":["游走"],"skins":10,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/113/113.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/113/113.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/113/11300.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/113/11310.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/113/11320.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/113/11330.png"},"abil":"1111","keywords":"庄周,逍遥梦幻,zhuangzhou","emoji":"","gender":"男","year":2015,"alias":["鱼","咸鱼","老庄"]},{"key":114,"id":"liushan","cn":"刘禅","title":"暴走机关","class":"辅助","lanes":["游走"],"skins":8,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/114/114.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/114/114.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/114/11400.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/114/11410.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/114/11420.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/114/11430.png"},"abil":"1111","keywords":"刘禅,暴走机关,liushan","emoji":"","gender":"男","year":2015,"alias":["阿斗"]},{"key":115,"id":"gaojianli","cn":"高渐离","title":"叛逆吟游","class":"法师","lanes":["中路"],"skins":6,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/115/115.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/115/115.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/115/11500.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/115/11510.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/115/11520.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/115/11530.png"},"abil":"1111","keywords":"高渐离,叛逆吟游,gaojianli","emoji":"","gender":"男","year":2015,"alias":["渐离","琴师"]},{"key":116,"id":"ake","cn":"阿轲","title":"信念之刃","class":"刺客","lanes":["打野"],"skins":7,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/116/116.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/116/116.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/116/11600.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/116/11610.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/116/11620.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/116/11630.png"},"abil":"1111","keywords":"阿轲,信念之刃,ake","emoji":"","gender":"女","year":2015,"alias":["荆轲","轲","刺客"]},{"key":117,"id":"zhongwuyan","cn":"钟无艳","title":"野蛮之锤","class":"战士","lanes":["对抗路","打野"],"skins":9,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/117/117.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/117/117.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/117/11700.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/117/11710.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/117/11720.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/117/11730.png"},"abil":"1111","keywords":"钟无艳,野蛮之锤,zhongwuyan","emoji":"","gender":"女","year":2015,"alias":["大锤"]},{"key":118,"id":"sunbin","cn":"孙膑","title":"逆流之时","class":"辅助","lanes":["游走"],"skins":9,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/118/118.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/118/118.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/118/11800.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/118/11810.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/118/11820.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/118/11830.png"},"abil":"1111","keywords":"孙膑,逆流之时,sunbin","emoji":"","gender":"男","year":2015,"alias":["小膑","阿膑"]},{"key":119,"id":"bianque","cn":"扁鹊","title":"善恶怪医","class":"法师","lanes":["中路"],"skins":7,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/119/119.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/119/119.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/119/11900.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/119/11910.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/119/11920.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/119/11930.png"},"abil":"1111","keywords":"扁鹊,善恶怪医,bianque","emoji":"","gender":"男","year":2015,"alias":["医生","鹊"]},{"key":167,"id":"sunwukong","cn":"孙悟空","title":"齐天大圣","class":"刺客","lanes":["打野"],"skins":12,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/167/167.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/167/167.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/167/16700.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/167/16710.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/167/16720.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/167/16730.png"},"abil":"1111","keywords":"孙悟空,齐天大圣,sunwukong","emoji":"","gender":"男","year":2015,"alias":["猴子","大圣","猴哥","美猴王","孙猴子"]},{"key":549,"id":"xinmoliuer","cn":"心魔六耳","title":"孙悟空命格","class":"刺客","lanes":["打野","对抗路"],"skins":1,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/549/549.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/549/549.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/549/54900.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/549/54910.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/549/54920.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/549/54930.png"},"abil":"0000","keywords":"心魔六耳,孙悟空命格,xinmoliuer","emoji":"","gender":"男","year":2026,"alias":["六耳","心魔"]},{"key":120,"id":"baiqi","cn":"白起","title":"最终兵器","class":"坦克","lanes":["对抗路"],"skins":8,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/120/120.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/120/120.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/120/12000.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/120/12010.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/120/12020.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/120/12030.png"},"abil":"1111","keywords":"白起,最终兵器,baiqi","emoji":"","gender":"男","year":2015,"alias":["白起"]},{"key":121,"id":"miyue","cn":"芈月","title":"永恒之月","class":"法师","lanes":["对抗路","打野"],"skins":8,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/121/121.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/121/121.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/121/12100.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/121/12110.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/121/12120.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/121/12130.png"},"abil":"1111","keywords":"芈月,永恒之月,miyue","emoji":"","gender":"女","year":2015,"alias":["芈月"]},{"key":123,"id":"lvbu","cn":"吕布","title":"无双之魔","class":"战士","lanes":["对抗路"],"skins":11,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/123/123.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/123/123.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/123/12300.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/123/12310.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/123/12320.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/123/12330.png"},"abil":"1111","keywords":"吕布,无双之魔,lvbu","emoji":"","gender":"男","year":2015,"alias":["布布","奉先","吕奉先"]},{"key":124,"id":"zhouyv","cn":"周瑜","title":"铁血都督","class":"法师","lanes":["中路"],"skins":9,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/124/124.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/124/124.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/124/12400.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/124/12410.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/124/12420.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/124/12430.png"},"abil":"1111","keywords":"周瑜,铁血都督,zhouyv","emoji":"","gender":"男","year":2015,"alias":["大都督","嘟嘟"]},{"key":126,"id":"xiahoudun","cn":"夏侯惇","title":"不羁之风","class":"坦克","lanes":["对抗路","游走","打野"],"skins":7,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/126/126.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/126/126.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/126/12600.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/126/12610.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/126/12620.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/126/12630.png"},"abil":"1111","keywords":"夏侯惇,不羁之风,xiahoudun","emoji":"","gender":"男","year":2015,"alias":["惇惇","独眼"]},{"key":127,"id":"zhenji","cn":"甄姬","title":"洛神降临","class":"法师","lanes":["中路"],"skins":10,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/127/127.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/127/127.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/127/12700.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/127/12710.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/127/12720.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/127/12730.png"},"abil":"1111","keywords":"甄姬,洛神降临,zhenji","emoji":"","gender":"女","year":2015,"alias":["洛神","甄姬妹妹"]},{"key":128,"id":"caocao","cn":"曹操","title":"鲜血枭雄","class":"战士","lanes":["对抗路","打野"],"skins":7,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/128/128.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/128/128.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/128/12800.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/128/12810.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/128/12820.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/128/12830.png"},"abil":"1111","keywords":"曹操,鲜血枭雄,caocao","emoji":"","gender":"男","year":2015,"alias":["曹阿瞒","曹贼","奸雄"]},{"key":129,"id":"dianwei","cn":"典韦","title":"狂战士","class":"战士","lanes":["打野"],"skins":8,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/129/129.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/129/129.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/129/12900.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/129/12910.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/129/12920.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/129/12930.png"},"abil":"1111","keywords":"典韦,狂战士,dianwei","emoji":"","gender":"男","year":2015,"alias":["疯狗","恶来"]},{"key":130,"id":"gongbenwuzang","cn":"宫本武藏","title":"剑圣","class":"战士","lanes":["打野"],"skins":8,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/130/130.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/130/130.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/130/13000.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/130/13010.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/130/13020.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/130/13030.png"},"abil":"1111","keywords":"宫本武藏,剑圣,gongbenwuzang","emoji":"","gender":"男","year":2016,"alias":["宫本","剑圣"]},{"key":131,"id":"libai","cn":"李白","title":"青莲剑仙","class":"刺客","lanes":["打野"],"skins":9,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/131/131.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/131/131.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/131/13100.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/131/13110.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/131/13120.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/131/13130.png"},"abil":"1111","keywords":"李白,青莲剑仙,libai","emoji":"","gender":"男","year":2015,"alias":["剑仙","李太白","青莲"]},{"key":132,"id":"makeboluo","cn":"马可波罗","title":"远游之枪","class":"射手","lanes":["发育路"],"skins":10,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/132/132.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/132/132.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/132/13200.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/132/13210.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/132/13220.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/132/13230.png"},"abil":"1111","keywords":"马可波罗,远游之枪,makeboluo","emoji":"","gender":"男","year":2016,"alias":["马可","马克"]},{"key":133,"id":"direnjie","cn":"狄仁杰","title":"断案大师","class":"射手","lanes":["发育路"],"skins":10,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/133/133.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/133/133.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/133/13300.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/133/13310.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/133/13320.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/133/13330.png"},"abil":"1111","keywords":"狄仁杰,断案大师,direnjie","emoji":"","gender":"男","year":2015,"alias":["狄大人","狄公"]},{"key":134,"id":"damo","cn":"达摩","title":"拳僧","class":"战士","lanes":["对抗路"],"skins":7,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/134/134.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/134/134.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/134/13400.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/134/13410.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/134/13420.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/134/13430.png"},"abil":"1111","keywords":"达摩,拳僧,damo","emoji":"","gender":"男","year":2016,"alias":["达摩祖师"]},{"key":135,"id":"xiangyu","cn":"项羽","title":"霸王","class":"坦克","lanes":["对抗路","游走"],"skins":10,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/135/135.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/135/135.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/135/13500.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/135/13510.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/135/13520.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/135/13530.png"},"abil":"1111","keywords":"项羽,霸王,xiangyu","emoji":"","gender":"男","year":2015,"alias":["霸王","西楚霸王"]},{"key":136,"id":"wuzetian","cn":"武则天","title":"女帝","class":"法师","lanes":["中路"],"skins":5,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/136/136.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/136/136.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/136/13600.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/136/13610.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/136/13620.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/136/13630.png"},"abil":"1111","keywords":"武则天,女帝,wuzetian","emoji":"","gender":"女","year":2015,"alias":["女帝","武媚娘"]},{"key":139,"id":"laofuzi","cn":"老夫子","title":"万古长明","class":"战士","lanes":["对抗路"],"skins":8,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/139/139.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/139/139.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/139/13900.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/139/13910.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/139/13920.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/139/13930.png"},"abil":"1111","keywords":"老夫子,万古长明,laofuzi","emoji":"","gender":"男","year":2015,"alias":["夫子","孔夫子"]},{"key":140,"id":"guanyu","cn":"关羽","title":"一骑当千","class":"战士","lanes":["对抗路"],"skins":8,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/140/140.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/140/140.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/140/14000.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/140/14010.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/140/14020.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/140/14030.png"},"abil":"1111","keywords":"关羽,一骑当千,guanyu","emoji":"","gender":"男","year":2015,"alias":["关二爷","武圣","关公"]},{"key":141,"id":"diaochan","cn":"貂蝉","title":"绝世舞姬","class":"法师","lanes":["中路","对抗路"],"skins":12,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/141/141.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/141/141.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/141/14100.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/141/14110.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/141/14120.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/141/14130.png"},"abil":"1111","keywords":"貂蝉,绝世舞姬,diaochan","emoji":"","gender":"女","year":2015,"alias":["蝉","貂蝉妹妹"]},{"key":142,"id":"anqila","cn":"安琪拉","title":"暗夜萝莉","class":"法师","lanes":["中路"],"skins":10,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/142/142.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/142/142.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/142/14200.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/142/14210.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/142/14220.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/142/14230.png"},"abil":"1111","keywords":"安琪拉,暗夜萝莉,anqila","emoji":"","gender":"女","year":2015,"alias":["安琪","火女"]},{"key":144,"id":"chengyaojin","cn":"程咬金","title":"热烈之斧","class":"坦克","lanes":["对抗路"],"skins":10,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/144/144.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/144/144.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/144/14400.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/144/14410.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/144/14420.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/144/14430.png"},"abil":"1111","keywords":"程咬金,热烈之斧,chengyaojin","emoji":"","gender":"男","year":2015,"alias":["金金","程咬金"]},{"key":146,"id":"luna","cn":"露娜","title":"月光之女","class":"刺客","lanes":["打野"],"skins":9,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/146/146.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/146/146.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/146/14600.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/146/14610.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/146/14620.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/146/14630.png"},"abil":"1111","keywords":"露娜,月光之女,luna","emoji":"","gender":"女","year":2016,"alias":["月光","月神"]},{"key":148,"id":"jiangziya","cn":"姜子牙","title":"封神者","class":"法师","lanes":["中路","游走"],"skins":6,"time":"2022.11.10","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/148/148.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/148/148.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/148/14800.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/148/14810.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/148/14820.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/148/14830.png"},"abil":"1111","keywords":"姜子牙,封神者,jiangziya","emoji":"","gender":"男","year":2015,"alias":["姜子牙","姜太公"]},{"key":149,"id":"liubang","cn":"刘邦","title":"双面君主","class":"坦克","lanes":["对抗路","游走"],"skins":6,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/149/149.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/149/149.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/149/14900.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/149/14910.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/149/14920.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/149/14930.png"},"abil":"1111","keywords":"刘邦,双面君主,liubang","emoji":"","gender":"男","year":2015,"alias":["汉高祖","刘季"]},{"key":150,"id":"hanxin","cn":"韩信","title":"国士无双","class":"刺客","lanes":["打野"],"skins":9,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/150/150.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/150/150.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/150/15000.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/150/15010.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/150/15020.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/150/15030.png"},"abil":"1111","keywords":"韩信,国士无双,hanxin","emoji":"","gender":"男","year":2015,"alias":["韩跳跳","兵仙"]},{"key":152,"id":"wangzhaojun","cn":"王昭君","title":"冰雪之华","class":"法师","lanes":["中路","游走"],"skins":10,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/152/152.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/152/152.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/152/15200.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/152/15210.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/152/15220.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/152/15230.png"},"abil":"1111","keywords":"王昭君,冰雪之华,wangzhaojun","emoji":"","gender":"女","year":2015,"alias":["昭君","冰雪"]},{"key":153,"id":"lanlingwang","cn":"兰陵王","title":"暗影刀锋","class":"刺客","lanes":["打野"],"skins":8,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/153/153.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/153/153.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/153/15300.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/153/15310.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/153/15320.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/153/15330.png"},"abil":"1111","keywords":"兰陵王,暗影刀锋,lanlingwang","emoji":"","gender":"男","year":2016,"alias":["兰陵","兰陵王"]},{"key":154,"id":"huamulan","cn":"花木兰","title":"传说之刃","class":"战士","lanes":["对抗路"],"skins":10,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/154/154.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/154/154.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/154/15400.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/154/15410.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/154/15420.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/154/15430.png"},"abil":"1111","keywords":"花木兰,传说之刃,huamulan","emoji":"","gender":"女","year":2016,"alias":["木兰","花姐","花将军"]},{"key":156,"id":"zhangliang","cn":"张良","title":"言灵之书","class":"法师","lanes":["中路","游走"],"skins":9,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/156/156.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/156/156.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/156/15600.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/156/15610.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/156/15620.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/156/15630.png"},"abil":"1111","keywords":"张良,言灵之书,zhangliang","emoji":"","gender":"男","year":2015,"alias":["张良"]},{"key":157,"id":"buzhihuowu","cn":"不知火舞","title":"明媚烈焰","class":"刺客","lanes":["中路"],"skins":4,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/157/157.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/157/157.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/157/15700.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/157/15710.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/157/15720.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/157/15730.png"},"abil":"1111","keywords":"不知火舞,明媚烈焰,buzhihuowu","emoji":"","gender":"女","year":2016,"alias":["火舞","不知火"]},{"key":162,"id":"nakelulu","cn":"娜可露露","title":"鹰之守护","class":"刺客","lanes":["打野"],"skins":3,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/162/162.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/162/162.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/162/16200.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/162/16210.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/162/16220.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/162/16230.png"},"abil":"1111","keywords":"娜可露露,鹰之守护,nakelulu","emoji":"","gender":"女","year":2016,"alias":["露露","玛玛哈哈"]},{"key":163,"id":"jvyoujing","cn":"橘右京","title":"神梦一刀","class":"刺客","lanes":["打野","对抗路"],"skins":3,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/163/163.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/163/163.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/163/16300.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/163/16310.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/163/16320.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/163/16330.png"},"abil":"1111","keywords":"橘右京,神梦一刀,jvyoujing","emoji":"","gender":"男","year":2016,"alias":["橘子","橘神","右京"]},{"key":166,"id":"yase","cn":"亚瑟","title":"圣骑之力","class":"战士","lanes":["对抗路","打野"],"skins":9,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/166/166.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/166/166.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/166/16600.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/166/16610.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/166/16620.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/166/16630.png"},"abil":"1111","keywords":"亚瑟,圣骑之力,yase","emoji":"","gender":"男","year":2015,"alias":["亚瑟"]},{"key":168,"id":"niumo","cn":"牛魔","title":"精英酋长","class":"辅助","lanes":["游走"],"skins":8,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/168/168.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/168/168.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/168/16800.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/168/16810.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/168/16820.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/168/16830.png"},"abil":"1111","keywords":"牛魔,精英酋长,niumo","emoji":"","gender":"男","year":2015,"alias":["牛哥","牛魔王"]},{"key":169,"id":"houyi","cn":"后羿","title":"半神之弓","class":"射手","lanes":["发育路"],"skins":10,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/169/169.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/169/169.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/169/16900.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/169/16910.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/169/16920.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/169/16930.png"},"abil":"1111","keywords":"后羿,半神之弓,houyi","emoji":"","gender":"男","year":2015,"alias":["太阳","射日"]},{"key":170,"id":"liubei","cn":"刘备","title":"仁德义枪","class":"战士","lanes":["打野"],"skins":9,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/170/170.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/170/170.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/170/17000.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/170/17010.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/170/17020.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/170/17030.png"},"abil":"1111","keywords":"刘备,仁德义枪,liubei","emoji":"","gender":"男","year":2015,"alias":["玄德","刘皇叔"]},{"key":171,"id":"zhangfei","cn":"张飞","title":"禁血狂兽","class":"坦克","lanes":["游走"],"skins":6,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/171/171.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/171/171.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/171/17100.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/171/17110.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/171/17120.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/171/17130.png"},"abil":"1111","keywords":"张飞,禁血狂兽,zhangfei","emoji":"","gender":"男","year":2015,"alias":["三爷","张三爷","翼德"]},{"key":173,"id":"liyuanfang","cn":"李元芳","title":"王都密探","class":"射手","lanes":["发育路","打野"],"skins":10,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/173/173.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/173/173.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/173/17300.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/173/17310.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/173/17320.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/173/17330.png"},"abil":"1111","keywords":"李元芳,王都密探,liyuanfang","emoji":"","gender":"男","year":2015,"alias":["小芳","元芳"]},{"key":174,"id":"yuji","cn":"虞姬","title":"森之风灵","class":"射手","lanes":["发育路"],"skins":11,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/174/174.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/174/174.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/174/17400.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/174/17410.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/174/17420.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/174/17430.png"},"abil":"1111","keywords":"虞姬,森之风灵,yuji","emoji":"","gender":"女","year":2016,"alias":["虞美人"]},{"key":175,"id":"zhongkui","cn":"钟馗","title":"虚灵城判","class":"辅助","lanes":["游走"],"skins":6,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/175/175.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/175/175.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/175/17500.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/175/17510.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/175/17520.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/175/17530.png"},"abil":"1111","keywords":"钟馗,虚灵城判,zhongkui","emoji":"","gender":"男","year":2016,"alias":["老钟","钟馗"]},{"key":178,"id":"yangjian","cn":"杨戬","title":"根源之目","class":"战士","lanes":["对抗路","打野"],"skins":7,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/178/178.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/178/178.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/178/17800.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/178/17810.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/178/17820.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/178/17830.png"},"abil":"1111","keywords":"杨戬,根源之目,yangjian","emoji":"","gender":"男","year":2016,"alias":["二郎神","二郎"]},{"key":183,"id":"yadianna","cn":"雅典娜","title":"圣域余晖","class":"战士","lanes":["打野"],"skins":7,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/183/183.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/183/183.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/183/18300.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/183/18310.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/183/18320.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/183/18330.png"},"abil":"1111","keywords":"雅典娜,圣域余晖,yadianna","emoji":"","gender":"女","year":2016,"alias":["女神","圣斗士"]},{"key":184,"id":"caiwenji","cn":"蔡文姬","title":"天籁弦音","class":"辅助","lanes":["游走"],"skins":10,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/184/184.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/184/184.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/184/18400.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/184/18410.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/184/18420.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/184/18430.png"},"abil":"1111","keywords":"蔡文姬,天籁弦音,caiwenji","emoji":"","gender":"女","year":2015,"alias":["奶妈","蔡蔡","文姬"]},{"key":186,"id":"taiyizhenren","cn":"太乙真人","title":"炼金大师","class":"辅助","lanes":["游走"],"skins":6,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/186/186.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/186/186.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/186/18600.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/186/18610.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/186/18620.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/186/18630.png"},"abil":"1111","keywords":"太乙真人,炼金大师,taiyizhenren","emoji":"","gender":"男","year":2016,"alias":["太乙","真人"]},{"key":180,"id":"nezha","cn":"哪吒","title":"桀骜炎枪","class":"战士","lanes":["对抗路","打野"],"skins":6,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/180/180.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/180/180.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/180/18000.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/180/18010.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/180/18020.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/180/18030.png"},"abil":"1111","keywords":"哪吒,桀骜炎枪,nezha","emoji":"","gender":"男","year":2016,"alias":["三太子","哪吒三太子"]},{"key":190,"id":"zhugeliang","cn":"诸葛亮","title":"绝代智谋","class":"法师","lanes":["中路","打野"],"skins":9,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/190/190.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/190/190.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/190/19000.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/190/19010.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/190/19020.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/190/19030.png"},"abil":"1111","keywords":"诸葛亮,绝代智谋,zhugeliang","emoji":"","gender":"男","year":2016,"alias":["诸葛","亮亮","卧龙","诸葛村夫"]},{"key":192,"id":"huangzhong","cn":"黄忠","title":"燃魂重炮","class":"射手","lanes":["发育路"],"skins":5,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/192/192.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/192/192.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/192/19200.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/192/19210.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/192/19220.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/192/19230.png"},"abil":"1111","keywords":"黄忠,燃魂重炮,huangzhong","emoji":"","gender":"男","year":2015,"alias":["老黄","炮台","黄老爷"]},{"key":191,"id":"daqiao","cn":"大乔","title":"沧海之曜","class":"辅助","lanes":["游走","中路"],"skins":10,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/191/191.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/191/191.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/191/19100.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/191/19110.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/191/19120.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/191/19130.png"},"abil":"1111","keywords":"大乔,沧海之曜,daqiao","emoji":"","gender":"女","year":2017,"alias":["乔姐","大乔姐姐"]},{"key":187,"id":"donghuangtaiyi","cn":"东皇太一","title":"噬灭日蚀","class":"辅助","lanes":["游走","对抗路"],"skins":6,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/187/187.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/187/187.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/187/18700.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/187/18710.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/187/18720.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/187/18730.png"},"abil":"1111","keywords":"东皇太一,噬灭日蚀,donghuangtaiyi","emoji":"","gender":"男","year":2017,"alias":["东皇","太一"]},{"key":182,"id":"ganjiangmoye","cn":"干将莫邪","title":"淬命双剑","class":"法师","lanes":["中路"],"skins":9,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/182/182.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/182/182.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/182/18200.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/182/18210.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/182/18220.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/182/18230.png"},"abil":"1111","keywords":"干将莫邪,淬命双剑,ganjiangmoye","emoji":"","gender":"男","year":2017,"alias":["干将","双剑"]},{"key":189,"id":"guiguzi","cn":"鬼谷子","title":"万物有灵","class":"辅助","lanes":["游走"],"skins":8,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/189/189.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/189/189.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/189/18900.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/189/18910.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/189/18920.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/189/18930.png"},"abil":"1111","keywords":"鬼谷子,万物有灵,guiguzi","emoji":"","gender":"男","year":2017,"alias":["鬼谷","鬼谷子"]},{"key":193,"id":"kai","cn":"铠","title":"破灭刃锋","class":"战士","lanes":["打野","对抗路"],"skins":8,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/193/193.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/193/193.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/193/19300.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/193/19310.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/193/19320.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/193/19330.png"},"abil":"1111","keywords":"铠,破灭刃锋,kai","emoji":"","gender":"男","year":2017,"alias":["铠爹","爹","魔铠"]},{"key":196,"id":"bailishouyue","cn":"百里守约","title":"静谧之眼","class":"射手","lanes":["发育路"],"skins":7,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/196/196.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/196/196.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/196/19600.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/196/19610.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/196/19620.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/196/19630.png"},"abil":"1111","keywords":"百里守约,静谧之眼,bailishouyue","emoji":"","gender":"男","year":2017,"alias":["守约","约约","约"]},{"key":195,"id":"bailixuance","cn":"百里玄策","title":"嚣狂之镰","class":"刺客","lanes":["打野"],"skins":7,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/195/195.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/195/195.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/195/19500.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/195/19510.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/195/19520.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/195/19530.png"},"abil":"1111","keywords":"百里玄策,嚣狂之镰,bailixuance","emoji":"","gender":"男","year":2017,"alias":["玄策","钩子","小疯子"]},{"key":194,"id":"sulie","cn":"苏烈","title":"不屈铁壁","class":"辅助","lanes":["游走","对抗路"],"skins":6,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/194/194.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/194/194.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/194/19400.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/194/19410.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/194/19420.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/194/19430.png"},"abil":"1111","keywords":"苏烈,不屈铁壁,sulie","emoji":"","gender":"男","year":2017,"alias":["苏烈哥哥","苏烈"]},{"key":198,"id":"mengqi","cn":"梦奇","title":"入梦之灵","class":"坦克","lanes":["对抗路","打野"],"skins":5,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/198/198.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/198/198.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/198/19800.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/198/19810.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/198/19820.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/198/19830.png"},"abil":"1111","keywords":"梦奇,入梦之灵,mengqi","emoji":"","gender":"其他","year":2017,"alias":["猫","梦梦","奇奇"]},{"key":179,"id":"nvwa","cn":"女娲","title":"至高创世","class":"法师","lanes":["中路"],"skins":5,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/179/179.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/179/179.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/179/17900.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/179/17910.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/179/17920.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/179/17930.png"},"abil":"1111","keywords":"女娲,至高创世,nvwa","emoji":"","gender":"女","year":2017,"alias":["娲皇","女娲娘娘"]},{"key":501,"id":"mingshiyin","cn":"明世隐","title":"灵魂劫卜","class":"辅助","lanes":["游走"],"skins":7,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/501/501.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/501/501.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/501/50100.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/501/50110.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/501/50120.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/501/50130.png"},"abil":"1111","keywords":"明世隐,灵魂劫卜,mingshiyin","emoji":"","gender":"男","year":2017,"alias":["小明","隐","明世隐"]},{"key":199,"id":"gongsunli","cn":"公孙离","title":"幻舞玲珑","class":"射手","lanes":["发育路"],"skins":10,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/199/199.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/199/199.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/199/19900.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/199/19910.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/199/19920.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/199/19930.png"},"abil":"1111","keywords":"公孙离,幻舞玲珑,gongsunli","emoji":"","gender":"女","year":2018,"alias":["阿离","离"]},{"key":176,"id":"yangyuhuan","cn":"杨玉环","title":"霓裳风华","class":"法师","lanes":["中路","游走","打野"],"skins":5,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/176/176.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/176/176.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/176/17600.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/176/17610.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/176/17620.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/176/17630.png"},"abil":"1111","keywords":"杨玉环,霓裳风华,yangyuhuan","emoji":"","gender":"女","year":2018,"alias":["环环","玉环"]},{"key":502,"id":"peiqinhu","cn":"裴擒虎","title":"六合虎拳","class":"刺客","lanes":["打野"],"skins":8,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/502/502.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/502/502.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/502/50200.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/502/50210.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/502/50220.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/502/50230.png"},"abil":"1111","keywords":"裴擒虎,六合虎拳,peiqinhu","emoji":"","gender":"男","year":2018,"alias":["老虎","虎子","虎"]},{"key":197,"id":"yixing","cn":"弈星","title":"天元之弈","class":"法师","lanes":["中路"],"skins":7,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/197/197.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/197/197.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/197/19700.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/197/19710.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/197/19720.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/197/19730.png"},"abil":"1111","keywords":"弈星,天元之弈,yixing","emoji":"","gender":"男","year":2018,"alias":["星","弈星"]},{"key":503,"id":"kuangtie","cn":"狂铁","title":"战车意志","class":"战士","lanes":["对抗路"],"skins":6,"time":"2023.04.15","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/503/503.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/503/503.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/503/50300.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/503/50310.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/503/50320.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/503/50330.png"},"abil":"1111","keywords":"狂铁,战车意志,kuangtie","emoji":"","gender":"男","year":2018,"alias":["铁","铁子"]},{"key":504,"id":"milaidi","cn":"米莱狄","title":"筑城者","class":"法师","lanes":["中路"],"skins":7,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/504/504.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/504/504.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/504/50400.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/504/50410.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/504/50420.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/504/50430.png"},"abil":"1111","keywords":"米莱狄,筑城者,milaidi","emoji":"","gender":"女","year":2018,"alias":["米莱狄"]},{"key":125,"id":"yuange","cn":"元歌","title":"无间傀儡","class":"刺客","lanes":["对抗路"],"skins":5,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/125/125.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/125/125.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/125/12500.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/125/12510.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/125/12520.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/125/12530.png"},"abil":"1111","keywords":"元歌,无间傀儡,yuange","emoji":"","gender":"男","year":2018,"alias":["元哥","傀儡师"]},{"key":510,"id":"sunce","cn":"孙策","title":"光明之海","class":"坦克","lanes":["对抗路","打野"],"skins":8,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/510/510.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/510/510.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/510/51000.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/510/51010.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/510/51020.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/510/51030.png"},"abil":"1111","keywords":"孙策,光明之海,sunce","emoji":"","gender":"男","year":2018,"alias":["孙策"]},{"key":137,"id":"simayi","cn":"司马懿","title":"寂灭之心","class":"刺客","lanes":["打野","中路"],"skins":4,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/137/137.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/137/137.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/137/13700.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/137/13710.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/137/13720.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/137/13730.png"},"abil":"1111","keywords":"司马懿,寂灭之心,simayi","emoji":"","gender":"男","year":2018,"alias":["仲达","司马"]},{"key":509,"id":"dunshan","cn":"盾山","title":"无尽之盾","class":"辅助","lanes":["游走"],"skins":5,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/509/509.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/509/509.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/509/50900.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/509/50910.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/509/50920.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/509/50930.png"},"abil":"1111","keywords":"盾山,无尽之盾,dunshan","emoji":"","gender":"男","year":2018,"alias":["山山","肉盾"]},{"key":508,"id":"jialuo","cn":"伽罗","title":"破魔之箭","class":"射手","lanes":["发育路"],"skins":7,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/508/508.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/508/508.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/508/50800.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/508/50810.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/508/50820.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/508/50830.png"},"abil":"1111","keywords":"伽罗,破魔之箭,jialuo","emoji":"","gender":"女","year":2018,"alias":["伽罗姐姐","罗"]},{"key":312,"id":"shenmengxi","cn":"沈梦溪","title":"爆弹怪猫","class":"法师","lanes":["中路"],"skins":9,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/312/312.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/312/312.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/312/31200.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/312/31210.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/312/31220.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/312/31230.png"},"abil":"1111","keywords":"沈梦溪,爆弹怪猫,shenmengxi","emoji":"","gender":"男","year":2018,"alias":["猫咪","猫","梦溪"]},{"key":507,"id":"lixin","cn":"李信","title":"谋世之战","class":"战士","lanes":["对抗路"],"skins":4,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/507/507.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/507/507.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/507/50700.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/507/50710.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/507/50720.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/507/50730.png"},"abil":"1111","keywords":"李信,谋世之战,lixin","emoji":"","gender":"男","year":2018,"alias":["李信"]},{"key":513,"id":"shangguanwaner","cn":"上官婉儿","title":"惊鸿之笔","class":"法师","lanes":["中路"],"skins":7,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/513/513.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/513/513.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/513/51300.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/513/51310.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/513/51320.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/513/51330.png"},"abil":"1111","keywords":"上官婉儿,惊鸿之笔,shangguanwaner","emoji":"","gender":"女","year":2018,"alias":["婉儿"]},{"key":515,"id":"change","cn":"嫦娥","title":"寒月公主","class":"法师","lanes":["中路","对抗路","打野"],"skins":6,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/515/515.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/515/515.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/515/51500.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/515/51510.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/515/51520.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/515/51530.png"},"abil":"1111","keywords":"嫦娥,寒月公主,change","emoji":"","gender":"女","year":2019,"alias":["嫦娥"]},{"key":511,"id":"zhubajie","cn":"猪八戒","title":"无忧猛士","class":"坦克","lanes":["对抗路","打野"],"skins":5,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/511/511.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/511/511.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/511/51100.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/511/51110.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/511/51120.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/511/51130.png"},"abil":"1111","keywords":"猪八戒,无忧猛士,zhubajie","emoji":"","gender":"男","year":2019,"alias":["八戒","猪刚鬣","猪猪"]},{"key":529,"id":"pangu","cn":"盘古","title":"破晓之神","class":"战士","lanes":["打野","对抗路"],"skins":7,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/529/529.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/529/529.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/529/52900.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/529/52910.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/529/52920.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/529/52930.png"},"abil":"1111","keywords":"盘古,破晓之神,pangu","emoji":"","gender":"男","year":2019,"alias":["盘古"]},{"key":505,"id":"yao","cn":"瑶","title":"鹿灵守心","class":"辅助","lanes":["游走"],"skins":9,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/505/505.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/505/505.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/505/50500.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/505/50510.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/505/50520.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/505/50530.png"},"abil":"1111","keywords":"瑶,鹿灵守心,yao","emoji":"","gender":"女","year":2019,"alias":["小鹿","鹿","瑶瑶"]},{"key":506,"id":"yunzhongjun","cn":"云中君","title":"流云之翼","class":"刺客","lanes":["打野"],"skins":5,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/506/506.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/506/506.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/506/50600.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/506/50610.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/506/50620.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/506/50630.png"},"abil":"1111","keywords":"云中君,流云之翼,yunzhongjun","emoji":"","gender":"男","year":2019,"alias":["鸟人","云中"]},{"key":522,"id":"dongfangyao","cn":"曜","title":"星辰之子","class":"战士","lanes":["打野","对抗路"],"skins":5,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/522/522.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/522/522.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/522/52200.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/522/52210.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/522/52220.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/522/52230.png"},"abil":"1111","keywords":"曜,星辰之子,dongfangyao","emoji":"","gender":"男","year":2019,"alias":["中二","曜仔","中二少年"]},{"key":518,"id":"machao","cn":"马超","title":"冷晖之枪","class":"战士","lanes":["对抗路","打野"],"skins":6,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/518/518.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/518/518.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/518/51800.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/518/51810.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/518/51820.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/518/51830.png"},"abil":"1111","keywords":"马超,冷晖之枪,machao","emoji":"","gender":"男","year":2019,"alias":["神威","马儿"]},{"key":523,"id":"xishi","cn":"西施","title":"幻纱之灵","class":"法师","lanes":["中路"],"skins":9,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/523/523.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/523/523.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/523/52300.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/523/52310.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/523/52320.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/523/52330.png"},"abil":"1111","keywords":"西施,幻纱之灵,xishi","emoji":"","gender":"女","year":2019,"alias":["施施","西施姐姐"]},{"key":525,"id":"lubandashi","cn":"鲁班大师","title":"神匠","class":"辅助","lanes":["游走"],"skins":5,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/525/525.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/525/525.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/525/52500.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/525/52510.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/525/52520.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/525/52530.png"},"abil":"1111","keywords":"鲁班大师,神匠,lubandashi","emoji":"","gender":"男","year":2019,"alias":["鲁大","大师"]},{"key":524,"id":"mengya","cn":"蒙犽","title":"烈炮小子","class":"射手","lanes":["发育路"],"skins":7,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/524/524.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/524/524.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/524/52400.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/524/52410.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/524/52420.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/524/52430.png"},"abil":"1111","keywords":"蒙犽,烈炮小子,mengya","emoji":"","gender":"男","year":2020,"alias":["蒙犽"]},{"key":531,"id":"jing","cn":"镜","title":"破镜之刃","class":"刺客","lanes":["打野"],"skins":7,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/531/531.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/531/531.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/531/53100.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/531/53110.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/531/53120.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/531/53130.png"},"abil":"1111","keywords":"镜,破镜之刃,jing","emoji":"","gender":"女","year":2020,"alias":["镜姐","阿镜"]},{"key":527,"id":"mengtian","cn":"蒙恬","title":"秩序统将","class":"坦克","lanes":["对抗路"],"skins":5,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/527/527.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/527/527.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/527/52700.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/527/52710.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/527/52720.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/527/52730.png"},"abil":"1111","keywords":"蒙恬,秩序统将,mengtian","emoji":"","gender":"男","year":2020,"alias":["蒙恬将军","蒙恬"]},{"key":533,"id":"aguduo","cn":"阿古朵","title":"山林之子","class":"射手","lanes":["打野","发育路"],"skins":5,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/533/533.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/533/533.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/533/53300.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/533/53310.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/533/53320.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/533/53330.png"},"abil":"1111","keywords":"阿古朵,山林之子,aguduo","emoji":"","gender":"女","year":2020,"alias":["朵","阿古"]},{"key":536,"id":"xialuote","cn":"夏洛特","title":"玫瑰剑士","class":"战士","lanes":["对抗路"],"skins":3,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/536/536.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/536/536.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/536/53600.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/536/53610.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/536/53620.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/536/53630.png"},"abil":"1111","keywords":"夏洛特,玫瑰剑士,xialuote","emoji":"","gender":"女","year":2020,"alias":["夏洛","夏洛特"]},{"key":528,"id":"lan","cn":"澜","title":"鲨之猎刃","class":"刺客","lanes":["打野"],"skins":6,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/528/528.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/528/528.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/528/52800.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/528/52810.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/528/52820.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/528/52830.png"},"abil":"1111","keywords":"澜,鲨之猎刃,lan","emoji":"","gender":"男","year":2020,"alias":["鲨鱼","澜朋友"]},{"key":537,"id":"sikongzhen","cn":"司空震","title":"雷霆之王","class":"战士","lanes":["对抗路","打野"],"skins":4,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/537/537.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/537/537.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/537/53700.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/537/53710.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/537/53720.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/537/53730.png"},"abil":"1111","keywords":"司空震,雷霆之王,sikongzhen","emoji":"","gender":"男","year":2021,"alias":["雷震子","震","司空"]},{"key":155,"id":"ailin","cn":"艾琳","title":"精灵之舞","class":"射手","lanes":["发育路"],"skins":3,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/155/155.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/155/155.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/155/15500.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/155/15510.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/155/15520.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/155/15530.png"},"abil":"1111","keywords":"艾琳,精灵之舞,ailin","emoji":"","gender":"女","year":2021,"alias":["精灵"]},{"key":538,"id":"yunying","cn":"云缨","title":"燎原之心","class":"战士","lanes":["打野"],"skins":5,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/538/538.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/538/538.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/538/53800.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/538/53810.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/538/53820.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/538/53830.png"},"abil":"1111","keywords":"云缨,燎原之心,yunying","emoji":"","gender":"女","year":2021,"alias":["云缨"]},{"key":540,"id":"jinchan","cn":"金蝉","title":"渡世行者","class":"法师","lanes":["中路","游走"],"skins":3,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/540/540.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/540/540.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/540/54000.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/540/54010.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/540/54020.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/540/54030.png"},"abil":"1111","keywords":"金蝉,渡世行者,jinchan","emoji":"","gender":"男","year":2021,"alias":["金蝉子","唐僧"]},{"key":542,"id":"fei","cn":"暃","title":"玉城之子","class":"刺客","lanes":["打野"],"skins":5,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/542/542.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/542/542.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/542/54200.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/542/54210.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/542/54220.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/542/54230.png"},"abil":"1111","keywords":"暃,玉城之子,fei","emoji":"","gender":"男","year":2022,"alias":["阿暃","玉城"]},{"key":534,"id":"sangqi","cn":"桑启","title":"萤火之旅","class":"辅助","lanes":["游走"],"skins":6,"time":"","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/534/534.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/534/534.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/534/53400.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/534/53410.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/534/53420.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/534/53430.png"},"abil":"1111","keywords":"桑启,萤火之旅,sangqi","emoji":"","gender":"男","year":2022,"alias":["启"]},{"key":548,"id":"geya","cn":"戈娅","title":"沙海飞舟","class":"射手","lanes":["发育路"],"skins":4,"time":"2022.06.23","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/548/548.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/548/548.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/548/54800.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/548/54810.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/548/54820.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/548/54830.png"},"abil":"1111","keywords":"戈娅,沙海飞舟,geya","emoji":"","gender":"女","year":2022,"alias":["娅"]},{"key":521,"id":"haiyue","cn":"海月","title":"永夜之心","class":"法师","lanes":["中路"],"skins":5,"time":"2022.09.22","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/521/521.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/521/521.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/521/52100.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/521/52110.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/521/52120.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/521/52130.png"},"abil":"1111","keywords":"海月,永夜之心,haiyue","emoji":"","gender":"女","year":2022,"alias":["月"]},{"key":544,"id":"zhaohuaizhen","cn":"赵怀真","title":"自在之心","class":"战士","lanes":["打野","对抗路","游走"],"skins":3,"time":"2022.12.01","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/544/544.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/544/544.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/544/54400.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/544/54410.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/544/54420.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/544/54430.png"},"abil":"1111","keywords":"赵怀真,自在之心,zhaohuaizhen","emoji":"","gender":"男","year":2022,"alias":["怀真"]},{"key":545,"id":"laixiao","cn":"莱西奥","title":"火鹰船长","class":"射手","lanes":["发育路"],"skins":4,"time":"2023.01.03","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/545/545.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/545/545.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/545/54500.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/545/54510.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/545/54520.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/545/54530.png"},"abil":"1111","keywords":"莱西奥,火鹰船长,laixiao","emoji":"","gender":"男","year":2023,"alias":["莱西奥"]},{"key":564,"id":"jixiaoman","cn":"姬小满","title":"武道奇才","class":"战士","lanes":["对抗路"],"skins":6,"time":"2023.04.15","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/564/564.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/564/564.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/564/56400.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/564/56410.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/564/56420.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/564/56430.png"},"abil":"1111","keywords":"姬小满,武道奇才,jixiaoman","emoji":"","gender":"女","year":2023,"alias":["小满"]},{"key":514,"id":"yalian","cn":"亚连","title":"追忆之刃","class":"战士","lanes":["对抗路"],"skins":4,"time":"2023.06.27","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/514/514.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/514/514.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/514/51400.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/514/51410.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/514/51420.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/514/51430.png"},"abil":"1111","keywords":"亚连,追忆之刃,yalian","emoji":"","gender":"男","year":2023,"alias":["阿连"]},{"key":159,"id":"duoliya","cn":"朵莉亚","title":"人鱼之歌","class":"辅助","lanes":["游走"],"skins":4,"time":"2023.11.03","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/159/159.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/159/159.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/159/15900.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/159/15910.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/159/15920.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/159/15930.png"},"abil":"1111","keywords":"朵莉亚,人鱼之歌,duoliya","emoji":"","gender":"女","year":2023,"alias":["朵莉亚"]},{"key":563,"id":"hainuo","cn":"海诺","title":"命运之引","class":"战士","lanes":["中路","对抗路"],"skins":3,"time":"2023.11.30","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/563/563.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/563/563.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/563/56300.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/563/56310.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/563/56320.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/563/56330.png"},"abil":"1111","keywords":"海诺,命运之引,hainuo","emoji":"","gender":"男","year":2023,"alias":["海诺"]},{"key":519,"id":"aoyin","cn":"敖隐","title":"凌霄真龙","class":"射手","lanes":["发育路"],"skins":1,"time":"2024.02.06","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/519/519.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/519/519.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/519/51900.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/519/51910.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/519/51920.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/519/51930.png"},"abil":"1111","keywords":"敖隐,凌霄真龙,aoyin","emoji":"","gender":"男","year":2024,"alias":["龙太子","敖隐"]},{"key":517,"id":"dasiming","cn":"大司命","title":"肃归之戈","class":"战士","lanes":["打野","对抗路"],"skins":4,"time":"2024.03.28","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/517/517.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/517/517.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/517/51700.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/517/51710.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/517/51720.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/517/51730.png"},"abil":"1111","keywords":"大司命,肃归之戈,dasiming","emoji":"","gender":"男","year":2024,"alias":["司命"]},{"key":582,"id":"yuanliuzhizi_magic","cn":"元流之子(法师)","title":"万妙之心","class":"法师","lanes":["中路"],"skins":1,"time":"2024.06.27","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/582/582.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/582/582.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/582/58200.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/582/58210.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/582/58220.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/582/58230.png"},"abil":"1111","keywords":"元流之子(法师),万妙之心,yuanliuzhizi_magic","emoji":"","gender":"自定义","year":2024,"alias":["元流之子","元流"]},{"key":581,"id":"yuanliuzhizi_tank","cn":"元流之子(坦克)","title":"止戈之道","class":"坦克","lanes":["对抗路","打野"],"skins":1,"time":"2024.06.27","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/581/581.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/581/581.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/581/58100.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/581/58110.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/581/58120.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/581/58130.png"},"abil":"0000","keywords":"元流之子(坦克),止戈之道,yuanliuzhizi_tank","emoji":"","gender":"自定义","year":2024,"alias":["元流之子","元流"]},{"key":577,"id":"shaosiyuan","cn":"少司缘","title":"聆愿之祝","class":"辅助","lanes":["游走"],"skins":3,"time":"2024.08.08","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/577/577.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/577/577.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/577/57700.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/577/57710.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/577/57720.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/577/57730.png"},"abil":"1111","keywords":"少司缘,聆愿之祝,shaosiyuan","emoji":"","gender":"女","year":2024,"alias":["司缘"]},{"key":558,"id":"ying","cn":"影","title":"黯羽东君","class":"战士","lanes":["对抗路","打野"],"skins":2,"time":"2024.09.27","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/558/558.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/558/558.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/558/55800.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/558/55810.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/558/55820.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/558/55830.png"},"abil":"1111","keywords":"影,黯羽东君,ying","emoji":"","gender":"男","year":2025,"alias":["阿影"]},{"key":177,"id":"cang","cn":"苍","title":"苍狼末裔","class":"射手","lanes":["发育路","打野"],"skins":3,"time":"2024.12.25","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/177/177.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/177/177.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/177/17700.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/177/17710.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/177/17720.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/177/17730.png"},"abil":"1111","keywords":"苍,苍狼末裔,cang","emoji":"","gender":"男","year":2025,"alias":["苍狼","狼"]},{"key":550,"id":"kongkonger","cn":"空空儿","title":"笑面诡手","class":"辅助","lanes":["游走"],"skins":2,"time":"2025.03.27","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/550/550.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/550/550.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/550/55000.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/550/55010.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/550/55020.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/550/55030.png"},"abil":"1111","keywords":"空空儿,笑面诡手,kongkonger","emoji":"","gender":"男","year":2025,"alias":["空空"]},{"key":584,"id":"yuanliuzhizi_archer","cn":"元流之子(射手)","title":"沉舟之志","class":"射手","lanes":["发育路"],"skins":1,"time":"2025.04.23","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/584/584.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/584/584.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/584/58400.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/584/58410.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/584/58420.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/584/58430.png"},"abil":"1111","keywords":"元流之子(射手),沉舟之志,yuanliuzhizi_archer","emoji":"","gender":"自定义","year":2025,"alias":["元流之子","元流"]},{"key":151,"id":"sunquan","cn":"孙权","title":"定旌之谋","class":"射手","lanes":["发育路"],"skins":1,"time":"2025.07.03","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/151/151.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/151/151.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/151/15100.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/151/15110.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/151/15120.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/151/15130.png"},"abil":"1111","keywords":"孙权,定旌之谋,sunquan","emoji":"","gender":"男","year":2025,"alias":["仲谋"]},{"key":172,"id":"chicha","cn":"蚩奼","title":"五兵之主","class":"战士","lanes":["对抗路","打野"],"skins":2,"time":"2025.09.25","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/172/172.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/172/172.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/172/17200.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/172/17210.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/172/17220.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/172/17230.png"},"abil":"1111","keywords":"蚩奼,五兵之主,chicha","emoji":"","gender":"男","year":2025,"alias":["蚩奼"]},{"key":585,"id":"yuanliuzhizi_support","cn":"元流之子(辅助)","title":"守望之诺","class":"辅助","lanes":["游走"],"skins":1,"time":"2025.10.09","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/585/585.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/585/585.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/585/58500.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/585/58510.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/585/58520.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/585/58530.png"},"abil":"1111","keywords":"元流之子(辅助),守望之诺,yuanliuzhizi_support","emoji":"","gender":"自定义","year":2025,"alias":["元流之子","元流"]},{"key":188,"id":"dayu","cn":"大禹","title":"鼎镇山河","class":"辅助","lanes":["游走"],"skins":1,"time":"2026.01.08","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/188/188.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/188/188.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/188/18800.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/188/18810.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/188/18820.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/188/18830.png"},"abil":"0000","keywords":"大禹,鼎镇山河,dayu","emoji":"","gender":"男","year":2026,"alias":["禹"]},{"key":583,"id":"yuanliuzhizi_assassin","cn":"元流之子(刺客)","title":"守望之诺","class":"辅助","lanes":["打野"],"skins":1,"time":"2026.04.01","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/583/583.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/583/583.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/583/58300.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/583/58310.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/583/58320.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/583/58330.png"},"abil":"1111","keywords":"元流之子(刺客),守望之诺,yuanliuzhizi_assassin","emoji":"","gender":"自定义","year":2026,"alias":["元流之子","元流"]},{"key":547,"id":"luyana","cn":"卢雅那","title":"蛇焰使者","class":"射手","lanes":["游走"],"skins":1,"time":"2026.08.06","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/547/547.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/547/547.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/547/54700.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/547/54710.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/547/54720.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/547/54730.png"},"abil":"0000","keywords":"卢雅那,蛇焰使者,luyana","emoji":"","gender":"女","year":2026,"alias":["雅那"]},{"key":138,"id":"wangwei","cn":"王维","title":"空山遗客","class":"法师","lanes":["打野"],"skins":1,"time":"2026.09.23","head":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/138/138.jpg","splash":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/138/138.jpg","icons":{"p":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/138/13800.png","q":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/138/13810.png","w":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/138/13820.png","e":"https://game.gtimg.cn/images/yxzj/img201606/heroimg/138/13830.png"},"abil":"0000","keywords":"王维,空山遗客,wangwei","emoji":"","gender":"男","year":2026,"alias":["摩诘","诗佛"]}]};
+/* __FALLBACK_PLACEHOLDER__ */
+
+/* ===================== 工具函数 ===================== */
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function heroByCn(name){ return HEROES.find(h=>h.cn===name); }
+function guessCandidates(q){
+  if(!q) return [];
+  const low = q.toLowerCase().replace(/\s/g,"");
+  const alias = ALIAS[q.trim()] || ALIAS[low];
+  let out = (state.mode==="ask" ? (state.askCands||HEROES) : HEROES).filter(h=> h.cn.indexOf(q.trim())>=0 || (h.keywords||"").toLowerCase().indexOf(low)>=0);
+  if(alias){
+    const h = heroByCn(alias);
+    if(h && !out.includes(h)) out.unshift(h);
+  }
+  return out.slice(0,8);
+}
+function toast(msg){
+  const t = $("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toast._t);
+  toast._t = setTimeout(()=>t.classList.remove("show"), 2200);
+}
+function cmpEqual(a,b){ return a===b ? "ok" : "bad"; }
+function cmpLanes(g,a){
+  if(!a.length) return "bad";
+  if(g.length===a.length && g.every(x=>a.includes(x))) return "ok";
+  if(g.some(x=>a.includes(x))) return "part";
+  return "bad";
+}
+function cmpNum(g,a){ if(g===a) return "ok"; return g>a ? "low" : "high"; }
+function heroCell(h){
+  return `<td class="hero-cell"><img src="${h.head}" alt="" onerror="this.style.visibility='hidden'"><span>${h.cn}</span><span style="color:var(--muted);font-weight:400;font-size:12px;">${h.title}</span></td>`;
+}
+function cmpYear(g,a){ if(!g||!a) return "bad"; if(g===a) return "ok"; return g>a ? "low" : "high"; }
+function cmpRow(h){
+  const a = state.hero, g = h;
+  const cells = [
+    cmpEqual(g.class, a.class),
+    cmpLanes(g.lanes, a.lanes),
+    cmpEqual(g.gender, a.gender),
+    cmpNum(g.skins, a.skins),
+    cmpYear(g.year, a.year),
+  ];
+  const val = [g.class, g.lanes.join(" / "), g.gender, String(g.skins), g.year ? String(g.year) : "—"];
+  return {cells, val};
+}
+function slowScroll(el, target, ms){
+  const start = el.scrollLeft, diff = target - start, t0 = performance.now();
+  function step(now){
+    const p = Math.min(1, (now - t0) / ms);
+    const e = 1 - Math.pow(1 - p, 3);
+    el.scrollLeft = start + diff * e;
+    if(p < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+function addCmpRow(h){
+  const wrap = $("tblWrap");
+  wrap.style.display = "block";
+  const c = cmpRow(h);
+  const arrMark = {ok:"", low:"<span class='arr'>↓</span>", high:"<span class='arr'>↑</span>"};
+  let t = wrap.innerHTML;
+  const isNew = !t;
+  if(isNew){
+    t = `<table class="cmp"><thead><tr><th style="width:24%">英雄</th><th style="width:16%">职业</th><th style="width:20%">分路</th><th style="width:12%">性别</th><th style="width:14%">皮肤数</th><th style="width:14%">上线年份</th></tr></thead><tbody>`;
+    requestAnimationFrame(()=>{
+      if(wrap.scrollWidth > wrap.clientWidth + 4){
+        slowScroll(wrap, wrap.scrollWidth, 700);
+        setTimeout(()=>{ slowScroll(wrap, 0, 700); }, 1500);
+      }
+    });
+  } else {
+    t = t.replace("</tbody></table>", "");
+  }
+  const row = heroCell(h) + c.val.map((v,i)=>{
+    const cl = c.cells[i]==="ok" ? "cell-ok" : c.cells[i]==="part" ? "cell-part" : "cell-bad";
+    let mark = "";
+    if((i===3 || i===4) && arrMark[c.cells[i]]) mark = arrMark[c.cells[i]];
+    return `<td class="${cl}">${v}${mark}</td>`;
+  }).join("");
+  t = t.replace("<tbody>", "<tbody>" + row);
+  t += "</tbody></table>";
+  wrap.innerHTML = t;
+}
+function renderHintText(){
+  const h = $("hintLeft");
+  h.textContent = state.mode==="quiz" ? "" : (state.maxTries - state.guessed.length) + " 次机会 · 已用提示 " + state.usedHints;
+}
+/* ===================== 题面渲染 ===================== */
+let zoom = 1;
+function applyZoom(){
+  const img = document.querySelector(".splash-box img");
+  if(img) img.style.transform = "scale(" + zoom + ")";
+  const zt = $("zoomText");
+  if(zt) zt.textContent = "局部放大 " + zoom.toFixed(1) + "× · 猜错会缩小画面，直到看到全图";
+}
+function renderQuestion(){
+  const mode = state.mode, h = state.hero, q = $("qbody");
+  state.usedHints = 0; state.guessed = []; state.hintOrder = null; zoom = 1;
+  const gr = document.querySelector(".guess-row");
+  if(gr) gr.style.display = state.mode==="quiz" ? "none" : "";
+  $("feed").innerHTML = "";
+  $("legend").style.display = (mode==="classic") ? "flex" : "none";
+  $("modeTitle").textContent = MODE_NAMES[mode];
+  if(mode==="classic"){
+    q.innerHTML = `<div class="hint-text">输入英雄名，对比他的<b style="color:var(--gold)">职业 / 分路 / 性别 / 皮肤数 / 上线年份</b>（皮肤数、年份有 ↑↓ 箭头提示，猜过的一直保留可回看）</div>`;
+    $("tblWrap").style.display = "none";
+  } else if(mode==="title"){
+    q.innerHTML = `<div class="big-text">「<span class="qt">${h.title}</span>」</div><div class="hint-text">这是 TA 的称号，猜猜是哪位英雄</div>`;
+    $("tblWrap").style.display = "none";
+  } else if(mode==="skill"){
+    const keys = ["p","q","w","e"];
+    q.innerHTML = `<div class="icon-row">${keys.map((k,i)=>`<div class="ab${(h.abil||"1111")[i]==="1"?"":" off"}"><img src="${h.icons[k]}" alt="" onerror="this.parentNode.classList.add('off')"><span>${["被动","一技能","二技能","三技能"][i]}</span></div>`).join("")}</div><div class="hint-text">TA 的被动 + 三个技能图标，猜猜是哪位英雄</div>`;
+    $("tblWrap").style.display = "none";
+  } else if(mode==="splash"){
+    zoom = 1.6;
+    q.innerHTML = `<div class="splash-box"><img src="${h.splash}" alt="" onerror="this.parentNode.classList.add('imgfail')"></div><div class="hint-text" id="zoomText">局部放大 1.6× · 猜错会缩小画面，直到看到全图</div>`;
+    $("tblWrap").style.display = "none";
+    const si = q.querySelector(".splash-box img");
+    if(si) si.style.transformOrigin = (35 + Math.random()*30) + "% " + (24 + Math.random()*18) + "%";
+    applyZoom();
+  } else if(mode==="skin"){
+    const s = state.skin;
+    zoom = 1.6;
+    q.innerHTML = `<div class="splash-box"><img src="${s.img}" alt="" onerror="this.parentNode.classList.add('imgfail')"></div><div class="hint-text" id="zoomText">局部放大 1.6× · 猜错会缩小画面 · 这是 TA 的皮肤「<b style="color:var(--gold)">${s.skin}</b>」</div>`;
+    $("tblWrap").style.display = "none";
+    const si2 = q.querySelector(".splash-box img");
+    if(si2) si2.style.transformOrigin = (35 + Math.random()*30) + "% " + (24 + Math.random()*18) + "%";
+    applyZoom();
+  } else if(mode==="quote"){
+    q.innerHTML = `<div class="big-text">“<span class="qt">${state.quote.text}</span>”</div><div class="hint-text">这是 TA 的经典台词，猜猜是哪位英雄</div>`;
+    $("tblWrap").style.display = "none";
+  } else if(mode==="quiz"){
+    const z = state.quiz;
+    q.innerHTML = `<div class="qz-q">${z.q}</div>
+      <div class="opts">${z.opts.map((o,i)=>`<button class="opt-btn" data-i="${i}">${o}</button>`).join("")}</div>
+      <div class="qz-note" id="qzNote"></div>`;
+    $("tblWrap").style.display = "none";
+    document.querySelectorAll(".opt-btn").forEach(b=>{
+      b.onclick = ()=>{ answerQuiz(parseInt(b.dataset.i,10)); };
+    });
+  } else if(mode==="ask"){
+    state.askAsked = {}; state.askCount = 0; state.askCands = HEROES.slice();
+    q.innerHTML = `
+      <div class="ask-wrap">
+        <div class="ask-intro" style="color:var(--muted);font-size:13.5px;line-height:1.8;">目标英雄已锁定（头像为 ？）。用提问缩小范围，比如：「是法师吗」「主要走打野吗」。问完就猜！</div>
+        <div class="ask-input-row">
+          <input id="askInput" placeholder="输入问题，如：是女性吗 / 主要走对抗路吗" autocomplete="off">
+          <button class="btn btn-gold" id="askBtn" style="padding:0 18px;">提问</button>
+        </div>
+        <div class="ask-chips" id="askChips"></div>
+        <div class="ask-log" id="askLog"></div>
+        <div class="ask-remain" id="askRemain">候选英雄：${HEROES.length} 位</div>
+      </div>`;
+    renderAskChips();
+    $("askBtn").onclick = askByInput;
+    $("askInput").addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); askByInput(); } });
+  }
+  renderHintText();
+}
+function answerQuiz(i){
+  const z = state.quiz;
+  const btns = document.querySelectorAll(".opt-btn");
+  btns.forEach((b,idx)=>{
+    b.classList.add("dis");
+    if(idx===z.a) b.classList.add("ok");
+    else if(idx===i) b.classList.add("bad");
+  });
+  const note = $("qzNote");
+  const ok = i===z.a;
+  note.textContent = (ok?"✓ 回答正确！":"✗ 回答错误，正确答案是「"+z.opts[z.a]+"」") + " " + z.note;
+  note.style.color = ok ? "#a7f3bd" : "#fde68a";
+  if(ok){
+    stats.streak = (stats.streak||0) + 1;
+    stats.maxStreak = Math.max(stats.maxStreak||0, stats.streak);
+    saveStats(stats);
+    setStreak(stats.streak);
+  } else {
+    stats.streak = 0; saveStats(stats); setStreak(0);
+  }
+  setTimeout(()=>nextQuestion(), ok?1600:2600);
+}
+/* ===================== 提问猜英雄 ===================== */
+const ASK_Q = [
+  {l:"是坦克吗？", kw:["坦克"], t:h=>h.class==="坦克"},
+  {l:"是法师吗？", kw:["法师"], t:h=>h.class==="法师"},
+  {l:"是战士吗？", kw:["战士"], t:h=>h.class==="战士"},
+  {l:"是刺客吗？", kw:["刺客"], t:h=>h.class==="刺客"},
+  {l:"是射手吗？", kw:["射手"], t:h=>h.class==="射手"},
+  {l:"是辅助吗？", kw:["辅助"], t:h=>h.class==="辅助"},
+  {l:"主要打野吗？", kw:["打野","野区"], t:h=>(h.lanes||[]).includes("打野")},
+  {l:"主要走对抗路吗？", kw:["对抗路","边路"], t:h=>(h.lanes||[]).includes("对抗路")},
+  {l:"主要走中路吗？", kw:["中路","中单"], t:h=>(h.lanes||[]).includes("中路")},
+  {l:"主要走发育路吗？", kw:["发育路","下路","射手路"], t:h=>(h.lanes||[]).includes("发育路")},
+  {l:"主要走游走位吗？", kw:["游走"], t:h=>(h.lanes||[]).includes("游走")},
+  {l:"是女性英雄吗？", kw:["女性","女英雄","女"], t:h=>h.gender==="女"},
+  {l:"是男性英雄吗？", kw:["男性","男英雄","男"], t:h=>h.gender==="男"},
+  {l:"2016 年之前就上线了吗？", kw:["老英雄","2016 年之前","开服元老"], t:h=>h.year<=2016},
+  {l:"2019 年之后才上线吗？", kw:["新英雄","2019 年之后"], t:h=>h.year>=2019},
+  {l:"2022 年之后才上线吗？", kw:["新出的","2022 年之后"], t:h=>h.year>=2022},
+  {l:"皮肤很多（≥5 款）吗？", kw:["皮肤多","5 款皮肤","皮肤"], t:h=>h.skins>=5},
+  {l:"皮肤特别多（≥8 款）吗？", kw:["皮肤特别多","8 款皮肤"], t:h=>h.skins>=8},
+];
+/* ===== 语义解析：任意问题（不是固定题库，理解后作答） ===== */
+const FACTS = [
+  {prop:"class", type:"enum", values:[
+    {v:"坦克", kw:["坦克","肉盾","肉"], label:"是坦克"},
+    {v:"法师", kw:["法师","ap"], label:"是法师"},
+    {v:"战士", kw:["战士"], label:"是战士"},
+    {v:"刺客", kw:["刺客"], label:"是刺客"},
+    {v:"射手", kw:["射手","adc"], label:"是射手"},
+    {v:"辅助", kw:["辅助","奶妈"], label:"是辅助"},
+  ]},
+  {prop:"lanes", type:"list", values:[
+    {v:"对抗路", kw:["对抗路","边路"], label:"走对抗路"},
+    {v:"中路", kw:["中路","中单"], label:"走中路"},
+    {v:"打野", kw:["打野","野区"], label:"是打野"},
+    {v:"发育路", kw:["发育路","下路","射手路"], label:"走发育路"},
+    {v:"游走", kw:["游走"], label:"走游走"},
+  ]},
+  {prop:"gender", type:"enum", values:[
+    {v:"女", kw:["女性","女英雄","女的","是女","妹子","姑娘","雌"], label:"是女性"},
+    {v:"男", kw:["男性","男英雄","男的","是男","汉子","雄"], label:"是男性"},
+  ]},
+  {prop:"year", type:"year", label:"上线年份"},
+  {prop:"skins", type:"num", label:"皮肤数量"},
+];
+const OPENS = [
+  {re:/什么职业|什么类型|什么定位|是干嘛的/, label:"职业", get:h=>h.class, disp:v=>"是 " + v, list:false},
+  {re:/哪条路|什么路|哪里|打什么|走哪/, label:"分路", get:h=>h.lanes, disp:v=>"主要走 " + v, list:true},
+  {re:/哪年|什么时候|几几年|什么时候出/, label:"年份", get:h=>h.year, disp:v=>v + " 年上线", list:false},
+  {re:/几个皮肤|多少皮肤/, label:"皮肤", get:h=>h.skins, disp:v=>"有 " + v + " 款皮肤", list:false},
+  {re:/什么性别|男的女的/, label:"性别", get:h=>h.gender, disp:v=>v + "性英雄", list:false},
+];
+function askNorm(s){
+  return s.toLowerCase()
+    .replace(/[？?。，、！!；;：:～~·.…\s]+/g,"")
+    .replace(/是不是|是否|可否|可不可以/g,"是")
+    .replace(/吗|呢|吧|啊|呀|嘛|哦|的|地|得|一个|一位|个|名|这位|这个|那位|那个/g,"");
+}
+function factTest(f, vv){
+  if(f.type==="enum") return h=>h[f.prop]===vv;
+  return h=>{ const a = h[f.prop]||[]; return Array.isArray(a) ? a.includes(vv) : a===vv; };
+}
+function parseCond(sub){
+  let neg = false, t = sub;
+  t = t.replace(/^(不是|并非|不是个|不是位|没有|不可能|非)/, ()=>{ neg = true; return ""; });
+  if(/^不/.test(t)){ t = t.replace(/^不/,""); neg = !neg; }
+  for(const f of FACTS){
+    if(f.type==="year"){
+      const m = t.match(/(19|20)\d{2}/);
+      if(m){
+        const y = +m[0];
+        if(/之前|以前|前|早于/.test(t)) return {label:"在 " + y + " 年之前上线", test:h=>h.year<=y, neg};
+        if(/之后|以后|后|晚于/.test(t)) return {label:"在 " + y + " 年之后上线", test:h=>h.year>=y, neg};
+        return {label:"在 " + y + " 年上线", test:h=>h.year===y, neg};
+      }
+      if(/老|元老|早期|开服/.test(t)) return {label:"是老英雄（2016 年前）", test:h=>h.year<=2016, neg};
+      if(/新|近期|刚出|最新/.test(t)) return {label:"是新英雄（2019 年后）", test:h=>h.year>=2019, neg};
+      continue;
+    }
+    if(f.type==="num"){
+      if(/多|不少|很多/.test(t)) return {label:"皮肤不少（≥5 款）", test:h=>h.skins>=5, neg};
+      if(/少|没几个/.test(t)) return {label:"皮肤不多（≤2 款）", test:h=>h.skins<=2, neg};
+      const m = t.match(/\d+/);
+      if(m){ const n = +m[0]; return {label:"有 " + n + " 款皮肤", test:h=>h.skins===n, neg}; }
+      continue;
+    }
+    for(const v of f.values){
+      for(const k of v.kw){
+        if(t.includes(k)) return {label:v.label, test:factTest(f, v.v), neg};
+      }
+    }
+  }
+  return null;
+}
+function askOpen(s){
+  for(const o of OPENS){
+    if(o.re.test(s)) return o;
+  }
+  return null;
+}
+function parseAsk(raw){
+  const s = askNorm(raw);
+  if(/还是/.test(s) && !/不是/.test(s)){ return {hint:"有选择的问题先分开问吧，比如：是法师吗？"}; }
+  if(/^(你好|您好|在吗|hi|hello|嗨|嗨喽|哈喽|喂|哈罗)/.test(s) || s==="在") return {talk:"在的！问我关于英雄的问题吧，比如：是法师吗？"};
+  if(/是英雄吗|是不是英雄|谁是英雄/.test(s)) return {talk:"TA 当然是一位英雄啦，快用问题缩小范围猜出 TA"};
+  if(/不知道|随便|算了|跳过提问|直接猜/.test(s)) return {talk:"那就直接猜吧，输入英雄名字点「猜！」"};
+  const op = askOpen(s);
+  if(op) return {open:op, raw};
+  const subs = s.split(/并且|而且|还|又|也|同时|以及|跟|与|还有|外加/).filter(x=>x);
+  const conds = [];
+  for(const sub of subs){
+    const c = parseCond(sub);
+    if(!c) return {sug: sub};
+    conds.push(c);
+  }
+  if(!conds.length) return {sug: s};
+  return {conds, raw};
+}
+function doAsk(q){
+  const label = q.label;
+  if(state.askAsked[label]){ toast("这个问题问过啦"); return; }
+  state.askAsked[label] = true;
+  state.askCount++;
+  const base = q.test(state.hero);
+  const ans = q.neg ? !base : base;
+  state.askCands = state.askCands.filter(h=>{ const b = q.test(h); return (q.neg ? !b : b) === ans; });
+  pushAskLog(label, ans);
+  afterAsk();
+}
+function doAskOpen(o, raw){
+  const h = state.hero;
+  const v = o.get(h);
+  const first = Array.isArray(v) ? v[0] : v;
+  const label = raw || ("TA 的" + o.label);
+  if(state.askAsked[label]){ toast("这个问题问过啦"); return; }
+  state.askAsked[label] = true;
+  state.askCount++;
+  const note = o.disp(first);
+  state.askCands = state.askCands.filter(x=>{ const xv = o.get(x); return Array.isArray(xv) ? xv.includes(first) : xv === first; });
+  pushAskLog(label, true, note);
+  afterAsk();
+}
+function afterAsk(){
+  renderAskChips();
+  renderAskLog();
+  const ar = $("askRemain");
+  ar.textContent = `候选英雄：${state.askCands.length} 位` + (state.askCands.length<=5 ? " · 范围很小，快猜！" : "");
+  if(state.askCands.length<=3) toast("只剩 " + state.askCands.length + " 位候选了，直接猜吧！");
+}
+function askByInput(){
+  const raw = $("askInput").value.trim();
+  if(!raw){ toast("输入一个问题，比如：是法师吗"); return; }
+  const r = parseAsk(raw);
+  if(r.talk){ toast(r.talk); return; }
+  if(r.hint){ toast(r.hint); return; }
+  if(r.open){ doAskOpen(r.open, raw); $("askInput").value = ""; return; }
+  if(r.sug){ toast("没太听懂～试试问：是法师吗 / 主要打野吗 / 是女性吗，或点下面的预设问题"); return; }
+  doAsk({label:r.raw, test:h=>r.conds.every(c=>{ const b = c.test(h); return c.neg ? !b : b; }), neg:false});
+  $("askInput").value = "";
+}
+function pushAskLog(q, ans, note){ if(!state.askLog) state.askLog = []; state.askLog.push({q, ans, note}); }
+function renderAskChips(){
+  const box = $("askChips"); if(!box) return;
+  box.innerHTML = ASK_Q.map((q,i)=>`<button class="ask-chip ${state.askAsked[q.l]?"done":""}" data-i="${i}">${q.l}</button>`).join("");
+  box.querySelectorAll(".ask-chip").forEach(b=>{
+    b.onclick = ()=>{
+      if(b.classList.contains("done")){ toast("这个问题问过啦"); return; }
+      doAsk({label:ASK_Q[+b.dataset.i].l, test:ASK_Q[+b.dataset.i].t, neg:false});
+    };
+  });
+}
+function renderAskLog(){
+  const box = $("askLog"); if(!box) return;
+  box.innerHTML = (state.askLog||[]).map((r,i)=>`<div class="ask-row ${r.ans?"yes":"no"}"><span class="aq">Q${i+1}：${r.q}</span><span class="aa">${r.note ? r.note : (r.ans?"✅ 是":"❌ 不是")}</span></div>`).join("");
+}
+/* ===================== 提示 ===================== */
+function hintPool(h){
+  const p = [];
+  p.push(`TA 的职业是「${h.class}」`);
+  p.push(`TA 的分路是 ${h.lanes.join("、")}`);
+  p.push(`TA 是${h.gender==="自定义"?"性别可自定义的":(h.gender+"性")}英雄`);
+  p.push(`TA 有 ${h.skins} 款皮肤`);
+  p.push(`TA 于 ${h.year} 年上线`);
+  if(h._rank) p.push(`TA 是第 ${h._rank} 位登录峡谷的英雄`);
+  if(h._classCnt) p.push(`和 TA 同职业的英雄有 ${h._classCnt} 位`);
+  return p;
+}
+function hint(){
+  if(state.mode==="quiz"){ toast("问答模式没有提示，再想想吧"); return; }
+  const pool = hintPool(state.hero);
+  if(state.usedHints >= state.maxTries || state.usedHints >= pool.length){
+    toast("提示用完了，没有更多线索了"); return;
+  }
+  if(!state.hintOrder || state.hintOrder.length !== pool.length){
+    state.hintOrder = shuffle(pool.map((_,i)=>i));
+  }
+  const msg = pool[state.hintOrder[state.usedHints]];
+  state.usedHints++;
+  $("feed").insertAdjacentHTML("afterbegin", `<div class="row info">💡 提示：${msg}</div>`);
+  renderHintText();
+}
+
+/* ===================== 下拉匹配 ===================== */
+let sugSel = -1, sugItems = [];
+function showSuggest(){
+  const v = $("guessInput").value.trim();
+  const box = $("suggest");
+  if(!v || state.mode==="quiz"){ box.classList.remove("show"); return; }
+  sugItems = guessCandidates(v);
+  if(!sugItems.length){ box.classList.remove("show"); return; }
+  sugSel = -1;
+  box.innerHTML = sugItems.map((h,i)=>`<div class="sug-item${i===sugSel?" sel":""}" data-i="${i}"><img src="${h.head}" alt="" onerror="this.style.visibility='hidden'"><span class="nm">${h.cn}</span><span class="tt">${h.title}</span></div>`).join("");
+  box.classList.add("show");
+  box.querySelectorAll(".sug-item").forEach(it=>{
+    it.onclick = ()=>{
+      $("guessInput").value = sugItems[parseInt(it.dataset.i,10)].cn;
+      box.classList.remove("show");
+      doGuess();
+    };
+  });
+}
+/* ===================== 猜测 ===================== */
+function doGuess(){
+  const v = $("guessInput").value.trim();
+  if(!v){ toast("先输入一个英雄名吧"); return; }
+  const v2 = v.replace(/\s/g, "");
+  const h = heroByCn(v) || heroByCn(v2) || (ALIAS[v] && heroByCn(ALIAS[v])) || (ALIAS[v2] && heroByCn(ALIAS[v2]));
+  if(!h){ toast("没找到这位英雄，试试输入中文名或外号"); return; }
+  $("guessInput").value = "";
+  guess(h);
+}
+function guess(h){
+  if(state.mode==="quiz"){ return; }
+  if(state.guessed.includes(h.key)){ toast(h.cn + " 已经猜过了"); return; }
+  state.guessed.push(h.key);
+  const ok = h.key === state.hero.key;
+  const mode = state.mode;
+  if(mode==="ask"){
+    if(!ok){
+      state.askCands = state.askCands.filter(x=>x.key!==h.key);
+      $("feed").innerHTML = `<div class="row bad">✗ ${h.cn} 不对，已排除（还剩 ${state.askCands.length} 位候选）</div>`;
+      const ar = $("askRemain"); if(ar) ar.textContent = `候选英雄：${state.askCands.length} 位`;
+    } else {
+      $("feed").innerHTML = `<div class="row ok">✓ 猜对了！</div>`;
+      win();
+    }
+  } else if(mode==="classic"){
+    addCmpRow(h);
+    $("feed").innerHTML = `<div class="row ${ok?"ok":"bad"}">${ok?"✓ 猜对了！":"✗ " + h.cn + " 不对，继续猜（对比表已更新，答案属性都在表里）"}</div>`;
+    if(ok) win();
+  } else if(mode==="splash" || mode==="skin"){
+    zoom = Math.max(1.0, zoom - 0.35);
+    applyZoom();
+    $("feed").innerHTML = `<div class="row ${ok?"ok":"bad"}">${ok?"✓ 猜对了！":"✗ " + h.cn + " 不是正确答案，画面缩小中…"}</div>`;
+    if(ok) win();
+  } else if(mode==="title"){
+    $("feed").innerHTML = `<div class="row ${ok?"ok":"bad"}">${ok?"✓ 猜对了！":"✗ " + h.cn + "（称号「" + h.title + "」）不是正确答案"}</div>`;
+    if(ok) win();
+  } else if(mode==="skill" || mode==="quote"){
+    $("feed").innerHTML = `<div class="row ${ok?"ok":"bad"}">${ok?"✓ 猜对了！":"✗ " + h.cn + " 不是正确答案"}</div>`;
+    if(ok) win();
+  }
+  renderHintText();
+  if(ok && state.mode!=="quiz"){ stats.streak = (stats.streak||0)+1; stats.maxStreak = Math.max(stats.maxStreak||0, stats.streak); saveStats(stats); setStreak(stats.streak); }
+  else if(!ok && state.mode!=="quiz"){ stats.streak = 0; saveStats(stats); setStreak(0); }
+}
+/* ===================== 胜利 ===================== */
+function win(){
+  const h = state.hero, mode = state.mode;
+  stats.total = (stats.total||0) + 1;
+  stats.won = (stats.won||0) + 1;
+  stats.maxStreak = Math.max(stats.maxStreak||0, stats.streak||0);
+  stats.modeWins[mode] = (stats.modeWins[mode]||0) + 1;
+  stats.bestTries[mode] = Math.min(stats.bestTries[mode]||99, state.guessed.length);
+  stats.heroes[h.key] = (stats.heroes[h.key]||0) + 1;
+  saveStats(stats);
+  $("mHero").src = h.head;
+  $("mName").innerHTML = h.cn + " <span style='color:var(--muted);font-size:13px;'>" + h.title + "</span>";
+  $("mTries").textContent = mode==="ask"
+    ? "提问 " + (state.askCount||0) + " 次 · 猜测 " + state.guessed.length + " 次"
+    : "用了 " + state.guessed.length + " 次猜中" + (state.usedHints? "，提示 " + state.usedHints + " 次":"");
+  let statsHtml = "";
+  const total = stats.total || 0, won = stats.won || 0, streak = stats.streak || 0;
+  const best = stats.bestTries[mode];
+  statsHtml += `<div class="bar-row"><span>总对局</span><div class="bar"><i style="width:100%"></i></div><span class="n">${total}</span></div>`;
+  statsHtml += `<div class="bar-row"><span>最高连胜</span><div class="bar"><i style="width:${Math.min((stats.maxStreak||0)*10,100)}%"></i></div><span class="n">${stats.maxStreak||0}</span></div>`;
+  statsHtml += `<div class="bar-row"><span>本模式最佳</span><div class="bar"><i style="width:${best?Math.min(100/Math.max(best,1),100):0}%"></i></div><span class="n">${best?best+" 次": "-"}</span></div>`;
+  statsHtml += `<div class="bar-row"><span>胜率</span><div class="bar"><i style="width:${total?Math.round(won*100/total):100}%"></i></div><span class="n">${total?Math.round(won*100/total):100}%</span></div>`;
+  statsHtml += `<div class="bar-row"><span>连胜</span><div class="bar"><i style="width:${Math.min(streak*10,100)}%"></i></div><span class="n">${streak}</span></div>`;
+  $("mStats").innerHTML = statsHtml;
+  $("mShare").textContent = buildShare(mode, h);
+  $("modal").classList.add("show");
+}
+function buildShare(mode, h){
+  const tries = state.guessed.length;
+  let tag = "经典模式";
+  if(mode==="title") tag = "称号模式";
+  else if(mode==="skill") tag = "技能模式";
+  else if(mode==="splash") tag = "原画模式";
+  else if(mode==="skin") tag = "皮肤模式";
+  else if(mode==="quote") tag = "台词模式";
+  else if(mode==="quiz") tag = "知识问答";
+  else if(mode==="ask") return "王者荣耀猜英雄·提问猜英雄：「" + h.cn + "」问了 " + (state.askCount||0) + " 个问题就猜中了！来挑战 → " + location.origin + location.pathname;
+  return "王者荣耀猜英雄·" + tag + "：「" + h.cn + "」用了 " + tries + " 次猜中！来挑战 → " + location.origin + location.pathname;
+}
+/* ===================== 出题 ===================== */
+function nextQuestion(){
+  const mode = state.mode;
+  $("tblWrap").innerHTML = "";
+  $("tblWrap").style.display = "none";
+  $("feed").innerHTML = "";
+  $("qarea").style.minHeight = "230px";
+  $("suggest").classList.remove("show");
+  $("guessInput").value = "";
+  if(mode==="classic" || mode==="title" || mode==="skill" || mode==="splash"){
+    const pool = mode==="skill" ? HEROES.filter(h=>(h.abil||"1111").includes("1")) : HEROES;
+    state.hero = pool[Math.floor(Math.random()*pool.length)];
+  } else if(mode==="skin"){
+    state.skin = SKINS[Math.floor(Math.random()*SKINS.length)];
+    state.hero = heroByCn(state.skin.hero);
+  } else if(mode==="quote"){
+    state.quote = QUOTES[Math.floor(Math.random()*QUOTES.length)];
+    state.hero = heroByCn(state.quote.hero);
+  } else if(mode==="quiz"){
+    const z = QUIZ[Math.floor(Math.random()*QUIZ.length)];
+    state.quiz = z;
+    state.hero = null;
+  } else if(mode==="ask"){
+    state.hero = HEROES[Math.floor(Math.random()*HEROES.length)];
+  }
+  renderQuestion();
+}
+function skip(){
+  if(state.mode==="quiz"){
+    const z = state.quiz;
+    toast("答案是「" + z.opts[z.a] + "」" + (z.note ? "：" + z.note : ""));
+    setTimeout(nextQuestion, 1800);
+    return;
+  }
+  const h = state.hero;
+  $("feed").insertAdjacentHTML("afterbegin", `<div class="row info">答案是「${h.cn}」${h.title}（${h.class}，${h.lanes.join("/")}）</div>`);
+  setTimeout(nextQuestion, 1600);
+}
+/* ===================== 数据加载 ===================== */
+function loadData(){
+  fetch("assets/wzry_manifest.json").then(r=>{
+    if(!r.ok) throw 0;
+    return r.json();
+  }).then(d=>{
+    if(!d || !Array.isArray(d.heroes)) throw 0;
+    HEROES = d.heroes;
+    boot();
+  }).catch(()=>{
+    HEROES = FALLBACK.heroes;
+    boot();
+  });
+}
+function boot(){
+  /* 提示线索预计算：上线顺序 / 外号个数 / 同职业人数 */
+  try{
+    const cc = {};
+    HEROES.forEach(x=>{ cc[x.class] = (cc[x.class]||0)+1; });
+    HEROES.forEach(x=>{ x._classCnt = cc[x.class]; x._aliasCnt = (x.alias||[]).filter(a=>a!==x.cn).length; });
+    [...HEROES].sort((a,b)=>(a.year||0)-(b.year||0) || String(a.time||"").localeCompare(String(b.time||""))).forEach((x,i)=>{ x._rank = i+1; });
+  }catch(e){}
+  state = {mode:"classic", maxTries:8, usedHints:0, guessed:[]};
+  setStreak(stats.streak || 0);
+  document.querySelectorAll(".tab").forEach(t=>{
+    t.onclick = ()=>{
+      document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+      t.classList.add("active");
+      state.mode = t.dataset.mode;
+      state.maxTries = 8;
+      nextQuestion();
+    };
+  });
+  $("guessBtn").onclick = doGuess;
+  $("guessInput").addEventListener("keydown", e=>{
+    if(e.key==="ArrowDown" && sugItems.length){ e.preventDefault(); sugSel=Math.min(sugSel+1,sugItems.length-1); paintSug(); }
+    else if(e.key==="ArrowUp" && sugItems.length){ e.preventDefault(); sugSel=Math.max(sugSel-1,0); paintSug(); }
+    else if(e.key==="Enter"){ if(sugSel>=0 && sugItems[sugSel]){ $("guessInput").value=sugItems[sugSel].cn; $("suggest").classList.remove("show"); doGuess(); } else doGuess(); }
+    else showSuggest();
+  });
+  $("guessInput").addEventListener("input", showSuggest);
+  document.addEventListener("click", e=>{
+    if(!e.target.closest(".guess-input-wrap")) $("suggest").classList.remove("show");
+  });
+  $("hintBtn").onclick = hint;
+  $("skipBtn").onclick = skip;
+
+/* ===== 分享 ===== */
+function shareResult(){
+  const text = $("mShare").textContent || "";
+  const link = location.origin + location.pathname;
+  const full = text + " " + link;
+  if(navigator.share){
+    navigator.share({title:"柿子eeeee · 猜英雄", text, url: location.href})
+      .then(()=>{})
+      .catch(()=>copyText(full));
+    return;
+  }
+  copyText(full);
+}
+function copyText(t){
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(t).then(()=>toast("分享文案已复制，去微信粘贴吧")).catch(()=>copyFallback(t));
+  } else copyFallback(t);
+}
+function copyFallback(t){
+  const ta = document.createElement("textarea");
+  ta.value = t; ta.style.position = "fixed"; ta.style.opacity = "0";
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand("copy"); toast("分享文案已复制，去微信粘贴吧"); }
+  catch(e){ toast("复制失败，请长按文字手动复制"); }
+  document.body.removeChild(ta);
+}
+
+
+/* ===== 分享面板 ===== */
+function openShare(){
+  const mode = state.mode || "classic";
+  let text = "";
+  try{
+    if(state.hero) text = buildShare(mode, state.hero, state.used || state.guessed.length || 0);
+  }catch(e){}
+  if(!text) text = document.title + "：来挑战吧！";
+  $("shareModalText").textContent = text + "  " + location.origin + location.pathname;
+  const qr = $("shareQr");
+  qr.innerHTML = "";
+  try{
+    if(typeof QRCode !== "undefined"){
+      new QRCode(qr, {text: location.href, width: 176, height: 176, correctLevel: QRCode.CorrectLevel.M});
+    } else {
+      qr.innerHTML = `<div style="color:#333;font-size:12px;padding:6px;word-break:break-all;max-width:200px;">${location.href}</div>`;
+    }
+  }catch(e){
+    qr.innerHTML = `<div style="color:#333;font-size:12px;padding:6px;word-break:break-all;max-width:200px;">${location.href}</div>`;
+  }
+  $("shareModal").classList.add("show");
+}
+function shareFromPanel(sys){
+  const text = $("shareModalText").textContent || location.href;
+  if(sys && navigator.share){
+    navigator.share({title: document.title, text, url: location.href}).catch(()=>copyText(text));
+  } else {
+    copyText(text);
+  }
+}
+
+  $("mAgain").onclick = ()=>{ $("modal").classList.remove("show"); nextQuestion(); };
+  $("mShareBtn").onclick = shareResult;
+  $("topShareBtn").onclick = openShare;
+  $("shareCopyBtn").onclick = ()=>shareFromPanel(false);
+  $("shareSysBtn").onclick = ()=>shareFromPanel(true);
+  $("shareCloseBtn").onclick = ()=>{ $("shareModal").classList.remove("show"); };
+  $("shareModal").onclick = e=>{ if(e.target === $("shareModal")) $("shareModal").classList.remove("show"); };
+  $("mCopy").onclick = ()=>{
+    const t = $("mShare").textContent;
+    const ta = document.createElement("textarea");
+    ta.value = t; document.body.appendChild(ta); ta.select();
+    try{ document.execCommand("copy"); toast("已复制，去分享吧"); }catch(e){ toast("复制失败，请手动复制"); }
+    ta.remove();
+  };
+  nextQuestion();
+}
+function paintSug(){
+  document.querySelectorAll(".sug-item").forEach((it,i)=>it.classList.toggle("sel", i===sugSel));
+}
+loadData();
+</script>
+<script>
+/* 移除平台右下角水印角标（shadow DOM .watermark-root，直接移除节点，防重注入轮询） */
+(function(){
+  function killBadge(){
+    try{
+      var list = document.querySelectorAll('body > div');
+      for(var i=0;i<list.length;i++){
+        var d = list[i];
+        if(d.shadowRoot && d.shadowRoot.querySelector('.watermark-root')){
+          if(d.parentNode) d.parentNode.removeChild(d);
+        }
+      }
+    }catch(e){}
+  }
+  killBadge();
+  new MutationObserver(killBadge).observe(document.body,{childList:true});
+  setInterval(killBadge, 300);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LOL 猜英雄 - 柿子工具箱</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎧</text></svg>">
+<style>
+:root{
+  --bg:#0a0e1a; --bg2:#0f1526; --card:#141c30; --card2:#1a2440;
+  --gold:#c8aa6e; --gold2:#a9873f; --blue:#0ac8b9; --blue2:#097b72;
+  --text:#e8e6e3; --muted:#8a93a8; --ok:#4ade80; --warn:#fbbf24; --bad:#f87171;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+button{font-family:inherit;}
+body{background:radial-gradient(1200px 600px at 20% -10%, #15203c 0%, var(--bg) 55%);color:var(--text);font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;min-height:100vh;}
+a{color:var(--gold);text-decoration:none;}
+.wrap{max-width:860px;margin:0 auto;padding:16px;}
+/* header */
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 0;}
+.brand{display:flex;align-items:center;gap:10px;font-size:20px;font-weight:700;}
+.brand .dot{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#ff8a3d,#ff5e3a);display:flex;align-items:center;justify-content:center;font-size:18px;}
+.streak{background:var(--card);border:1px solid #223;border-radius:12px;padding:6px 14px;font-size:14px;color:var(--muted);}
+.streak b{color:var(--gold);font-size:18px;margin-left:4px;}
+/* tabs */
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 18px;}
+.tab{flex:1;min-width:96px;padding:10px 8px;border-radius:12px;background:var(--card);border:1px solid #22314d;color:var(--muted);cursor:pointer;text-align:center;font-size:13px;transition:.15s;user-select:none;}
+.tab:hover{border-color:var(--gold);color:var(--text);}
+.tab.active{background:linear-gradient(135deg,#1c2a4a,#14203a);border-color:var(--gold);color:var(--gold);font-weight:600;}
+.tab .ic{display:block;font-size:18px;margin-bottom:2px;}
+/* card */
+.card{background:var(--card);border:1px solid #22314d;border-radius:16px;padding:22px;margin-bottom:16px;position:relative;overflow:hidden;}
+.card::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:linear-gradient(90deg,var(--gold),transparent);opacity:.7;}
+.qnum{color:var(--muted);font-size:13px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;}
+.qnum .hint-left{color:var(--gold);}
+.title{font-size:18px;font-weight:700;margin-bottom:16px;}
+/* question area */
+.qarea{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:240px;background:var(--bg2);border:1px dashed #2a3a5e;border-radius:12px;padding:24px;text-align:center;}
+.play-btn{width:110px;height:110px;border-radius:50%;border:2px solid var(--gold);background:radial-gradient(circle at 35% 30%, #24406e, #14203a 70%);color:var(--gold);font-size:44px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s;box-shadow:0 0 30px rgba(200,170,110,.25);}
+.play-btn:hover{transform:scale(1.05);box-shadow:0 0 44px rgba(200,170,110,.4);}
+.play-btn:active{transform:scale(.97);}
+.play-btn.playing{animation:pulse 1s infinite;}
+@keyframes pulse{0%,100%{box-shadow:0 0 24px rgba(200,170,110,.3);}50%{box-shadow:0 0 44px rgba(200,170,110,.65);}}
+.splash-box{width:100%;height:240px;border-radius:10px;overflow:hidden;position:relative;background:#000;}
+.splash-box img{position:absolute;max-width:none;}
+.icon-row{display:flex;gap:14px;justify-content:center;}
+.icon-row .ab{width:76px;height:76px;border-radius:12px;background:#0d1626;border:1px solid #2a3a5e;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px;color:var(--muted);}
+.icon-row .ab img{width:52px;height:52px;border-radius:8px;object-fit:cover;}
+.icon-row .ab b{font-size:11px;color:var(--gold);margin-top:3px;}
+.emoji-big{font-size:64px;line-height:1.2;letter-spacing:6px;}
+.hint-text{margin-top:12px;color:var(--muted);font-size:13px;line-height:1.7;}
+/* attrs (classic) */
+.attrs{width:100%;margin-top:6px;display:flex;flex-direction:column;gap:6px;text-align:left;}
+.attr{display:grid;grid-template-columns:76px 1fr 1fr;gap:8px;align-items:center;padding:8px 10px;border-radius:10px;background:#0d1626;font-size:13px;}
+.attr .k{color:var(--muted);}
+.attr .v{font-weight:600;}
+.ok{color:var(--ok)!important;} .warn{color:var(--warn)!important;} .bad{color:var(--bad)!important;}
+.attr .v.ok,.attr .v.warn,.attr .v.bad{background:rgba(0,0,0,.25);padding:3px 8px;border-radius:8px;display:inline-block;justify-self:start;}
+/* input */
+.guess-row{display:flex;gap:10px;margin-top:18px;}
+.guess-row input{flex:1;padding:12px 16px;border-radius:12px;border:1px solid #2a3a5e;background:#0d1626;color:var(--text);font-size:15px;outline:none;}
+.guess-row input:focus{border-color:var(--gold);}
+.guess-row button{padding:12px 22px;border-radius:12px;border:none;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#0a0e1a;font-weight:700;cursor:pointer;font-size:15px;}
+.guess-row button:hover{filter:brightness(1.1);}
+.guess-row button:disabled{opacity:.5;cursor:not-allowed;}
+/* feedback */
+.feed{margin-top:14px;font-size:14px;line-height:1.8;min-height:28px;}
+.feed .row{padding:8px 12px;border-radius:10px;margin-bottom:6px;}
+.feed .right{background:rgba(74,222,128,.12);border:1px solid rgba(74,222,128,.35);}
+.feed .wrong{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.25);color:#fda4a4;}
+.feed .info{background:rgba(200,170,110,.08);border:1px solid rgba(200,170,110,.25);color:var(--gold);}
+.reveal{display:flex;gap:14px;align-items:center;margin-top:10px;padding:12px;border-radius:12px;background:linear-gradient(135deg,#1a2440,#121b30);border:1px solid var(--gold);}
+.reveal img{width:64px;height:64px;border-radius:10px;object-fit:cover;border:2px solid var(--gold);}
+.reveal .who{font-size:17px;font-weight:700;color:var(--gold);}
+.reveal .who small{display:block;color:var(--muted);font-size:12px;font-weight:400;margin-top:2px;}
+.small-btn{margin-top:12px;padding:8px 16px;border-radius:10px;border:1px solid #2a3a5e;background:#0d1626;color:var(--muted);cursor:pointer;font-size:13px;}
+.small-btn:hover{border-color:var(--gold);color:var(--text);}
+/* footer */
+.foot{text-align:center;padding:24px 0 30px;color:var(--muted);font-size:13px;}
+.back{display:inline-block;margin-top:8px;padding:8px 18px;border:1px solid #2a3a5e;border-radius:10px;}
+@media (max-width:600px){
+  .tab{min-width:calc(33.33% - 6px);}
+  .attr{grid-template-columns:64px 1fr 1fr;font-size:12px;}
+  .play-btn{width:96px;height:96px;font-size:38px;}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="index.html"><span class="dot">🍅</span> LOL 猜英雄</a>
+    <div class="streak">连胜 <b id="streakNum">0</b></div>
+  </header>
+
+  <nav class="tabs" id="tabs">
+    <div class="tab active" data-mode="classic"><span class="ic">🎯</span>经典</div>
+    <div class="tab" data-mode="quote"><span class="ic">🎤</span>台词</div>
+    <div class="tab" data-mode="sound"><span class="ic">⚡</span>音效</div>
+    <div class="tab" data-mode="ability"><span class="ic">🎨</span>技能</div>
+    <div class="tab" data-mode="emoji"><span class="ic">😀</span>表情</div>
+    <div class="tab" data-mode="splash"><span class="ic">🖼️</span>原画</div>
+  </nav>
+
+  <div class="card">
+    <div class="qnum">
+      <span id="modeName">经典模式</span>
+      <span class="hint-left" id="hintLeft"></span>
+    </div>
+    <div class="title" id="qTitle">听声音猜出是哪位英雄</div>
+    <div class="qarea" id="qarea"></div>
+
+    <div class="guess-row">
+      <input id="guessInput" placeholder="输入英雄名字（支持中文 / 英文 / 外号）" autocomplete="off" autofocus>
+      <button id="guessBtn">猜！</button>
+    </div>
+    <div class="feed" id="feed"></div>
+    <button class="small-btn" id="skipBtn" style="display:none">跳过此题（不算连胜）</button>
+  </div>
+
+  <footer class="foot">
+    数据来源：Riot Games Data Dragon / CommunityDragon · 粉丝自制，与拳头游戏无关
+    <br><a class="back" href="index.html">← 返回工具箱</a>
+  </footer>
+</div>
+
+<script>
+"use strict";
+/* ===================== 数据 ===================== */
+let HEROES = [];        // 全部英雄数据（从 manifest.json 加载）
+let MODES = {
+  classic:{name:"经典模式",title:"根据属性提示，猜出是哪位英雄"},
+  quote:{name:"台词模式",title:"听这句语音，猜出是哪位英雄"},
+  sound:{name:"音效模式",title:"听技能音效，猜出是哪位英雄"},
+  ability:{name:"技能模式",title:"看技能图标，猜出是哪位英雄"},
+  emoji:{name:"表情模式",title:"看表情包，猜出是哪位英雄"},
+  splash:{name:"原画模式",title:"看局部原画，猜出是哪位英雄"}
+};
+/* 别名表：猜对即算 */
+const ALIAS = {
+  "MonkeyKing":["悟空","猴子","孙悟空","齐天大圣"],"XinZhao":["赵信","信"],
+  "MissFortune":["好运姐","赏金","女枪"],"Leblanc":["妖姬","诡术妖姬"],
+  "MasterYi":["剑圣","易大师","无极剑圣"],"Tryndamere":["蛮王","蛮族之王"],
+  "Chogath":["大虫子","虚空恐惧"],"Amumu":["木乃伊","殇之木乃伊"],
+  "Blitzcrank":["机器人","布里茨"],"LeeSin":["盲僧","李青","李星"],
+  "Ashe":["寒冰","艾希","寒冰射手"],"Caitlyn":["女警","凯特琳","皮城女警"],
+  "Graves":["男枪","格雷福斯"],"Brand":["火男","布兰德"],"Orianna":["发条","奥莉安娜"],
+  "Teemo":["提莫","迅捷斥候"],"Karthus":["死歌","卡尔萨斯"],"Janna":["风女","迦娜"],
+  "Sona":["琴女","娑娜"],"Irelia":["刀妹","艾瑞莉娅"],"Jax":["武器","贾克斯"],
+  "Morgana":["莫甘娜","堕落天使"],"Kayle":["天使","凯尔"],"Alistar":["牛头","阿利斯塔"],
+  "Olaf":["奥拉夫","狂战士"],"Ryze":["瑞兹","符文法师"],"Twitch":["老鼠","图奇"],
+  "Shaco":["小丑","萨科"],"Anivia":["冰鸟","艾尼维亚"],"Annie":["安妮","黑暗之女"]
+};
+const canon = s => String(s||"").toLowerCase().replace(/[\s'"\-]/g,"");
+/* ===================== 状态 ===================== */
+let state = { mode:"classic", hero:null, streak:0, tries:0, maxTries:5, playing:false, audio:null, usedHints:0 };
+
+/* ===================== 工具 ===================== */
+const $ = id => document.getElementById(id);
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function pick(hero){
+  const q = canon(hero.cn), e = canon(hero.id);
+  const aliases = (ALIAS[hero.id]||[]).map(canon);
+  return [q, e, ...aliases].includes(canon(document.getElementById("guessInput").value));
+}
+function playAudio(url, cb){
+  if(state.audio){ try{ state.audio.pause(); }catch(e){} state.audio = null; }
+  const a = new Audio(url);
+  state.audio = a;
+  a.play().then(()=>{ state.playing = true; }).catch(()=>{ if(cb) cb(false); });
+  a.onended = ()=>{ state.playing = false; };
+  if(cb) a.onerror = ()=>{ state.playing = false; cb(false); };
+}
+
+/* ===================== 渲染 ===================== */
+function renderQuestion(){
+  const area = $("qarea"), hero = state.hero, mode = state.mode;
+  $("qTitle").textContent = MODES[mode].title;
+  $("modeName").textContent = MODES[mode].name;
+  $("hintLeft").textContent = "";
+  area.innerHTML = "";
+  state.playing = false;
+  if(mode === "classic"){
+    area.innerHTML = `<div class="attrs" id="attrs"></div>`;
+    renderClassicAttrs(hero, null);
+  } else if(mode === "quote" || mode === "sound"){
+    const file = mode === "quote" ? hero.vo : hero.sfx;
+    area.innerHTML = `<button class="play-btn" id="playBtn">▶</button>
+      <div class="hint-text">${mode==="quote"?"可以反复试听，听不出就用提示":"可以反复试听技能音效"}</div>`;
+    $("playBtn").onclick = ()=>{ playAudio(file); };
+  } else if(mode === "ability"){
+    const keys = ["q","w","e","r"];
+    const one = keys[Math.floor(Math.random()*4)];
+    const show = Math.random() < .5 ? [one] : shuffle(keys.slice()).slice(0,2);
+    area.innerHTML = `<div class="icon-row">` + show.map(k=>
+      `<div class="ab"><img src="${hero.icons[k]}" alt="${k.toUpperCase()}"><b>${k.toUpperCase()}</b></div>`).join("") + `</div>
+      <div class="hint-text">识别技能图标，猜英雄（Q/W/E/R 中的技能）</div>`;
+  } else if(mode === "emoji"){
+    area.innerHTML = `<div class="emoji-big">${hero.emoji}</div>
+      <div class="hint-text">看这组表情，猜是哪位英雄</div>`;
+  } else if(mode === "splash"){
+    area.innerHTML = `<div class="splash-box" id="splashBox"><img id="splashImg" alt=""></div>
+      <div class="hint-text">原画局部放大，猜是哪位英雄</div>`;
+    const img = $("splashImg");
+    img.src = hero.splash;
+    img.onload = ()=>{
+      const box = $("splashBox"), bw = box.clientWidth, bh = box.clientHeight;
+      const iw = img.naturalWidth, ih = img.naturalHeight;
+      const zoom = 2.6 + Math.random()*1.4;
+      const w = iw*zoom, h = ih*zoom;
+      img.style.width = w+"px"; img.style.height = h+"px";
+      img.style.left = -Math.random()*(w-bw)+"px";
+      img.style.top  = -Math.random()*(h-bh)+"px";
+    };
+  }
+  $("feed").innerHTML = "";
+  $("skipBtn").style.display = "none";
+  $("guessInput").value = "";
+  $("guessInput").focus();
+  state.tries = 0; state.usedHints = 0;
+  renderTries();
+}
+
+function renderClassicAttrs(hero, guessHero){
+  const rows = [
+    ["性别","gender"],["位置","lanes"],["种族","species"],["资源","partype"],
+    ["射程","rangeType"],["区域","region"],["发布年份","year"]
+  ];
+  let html = "";
+  if(guessHero){
+    rows.forEach(([k,key])=>{
+      const a = hero[key], b = guessHero[key];
+      const same = a === b;
+      const sameArr = Array.isArray(a) && Array.isArray(b) && a.some(x=>b.includes(x));
+      const cls = same ? "ok" : (sameArr ? "warn" : "bad");
+      const va = Array.isArray(a) ? a.join("/") : a;
+      const vb = Array.isArray(b) ? b.join("/") : b;
+      html += `<div class="attr"><span class="k">${k}</span><span class="v ${same?"ok":""}">${va}</span><span class="v ${cls}">${vb}</span></div>`;
+    });
+  } else {
+    rows.forEach(([k,key])=>{
+      const v = Array.isArray(hero[key]) ? hero[key].join("/") : hero[key];
+      html += `<div class="attr"><span class="k">${k}</span><span class="v">${v}</span><span class="v" style="color:var(--muted)">？？</span></div>`;
+    });
+  }
+  $("attrs").innerHTML = html;
+}
+
+function renderTries(){
+  $("hintLeft").textContent = state.mode==="classic" ? "" : `剩余提示 ${Math.max(0,state.maxTries-state.usedHints)} 次`;
+}
+
+function revealHero(correct){
+  const hero = state.hero, area = $("qarea");
+  const feed = $("feed");
+  feed.innerHTML = `<div class="reveal"><img src="${hero.splash}"><div class="who">${hero.cn} <small>${hero.id} · ${hero.title}</small></div></div>`;
+  $("skipBtn").style.display = "none";
+  const btn = document.createElement("button");
+  btn.className = "small-btn";
+  btn.textContent = correct ? "下一题 →" : "再来一题 →";
+  btn.onclick = nextQuestion;
+  feed.appendChild(btn);
+}
+
+/* ===================== 逻辑 ===================== */
+function nextQuestion(){
+  const pool = shuffle(HEROES.slice());
+  state.hero = pool[0];
+  renderQuestion();
+}
+
+function guess(){
+  const input = $("guessInput").value.trim();
+  if(!input) return;
+  const hero = state.hero;
+  const feed = $("feed");
+  if(pick(hero)){
+    state.streak++;
+    $("streakNum").textContent = state.streak;
+    feed.innerHTML = `<div class="row right">✔ 答对了！是 ${hero.cn}（${hero.id}）· 连胜 ${state.streak}</div>`;
+    revealHero(true);
+  } else {
+    state.streak = 0;
+    $("streakNum").textContent = 0;
+    if(state.mode === "classic"){
+      const guessHero = HEROES.find(h => canon(h.cn)===canon(input) || canon(h.id)===canon(input) || (ALIAS[h.id]||[]).map(canon).includes(canon(input)));
+      if(guessHero){
+        feed.innerHTML = `<div class="row wrong">✘ 不是 ${input}，对比一下：</div>`;
+        renderClassicAttrs(hero, guessHero);
+      } else {
+        feed.innerHTML = `<div class="row wrong">✘ 没这个英雄，再试试（支持中文名 / 英文名 / 外号）</div>`;
+      }
+    } else {
+      state.tries++;
+      const left = state.maxTries - state.usedHints;
+      feed.innerHTML = `<div class="row wrong">✘ 不对，再试试（剩余 ${left} 次提示）</div>`;
+    }
+    $("skipBtn").style.display = "inline-block";
+  }
+}
+
+function hint(){
+  const hero = state.hero;
+  if(state.mode === "classic") return;
+  if(state.usedHints >= state.maxTries){
+    $("feed").innerHTML = `<div class="row info">提示用完了，跳过或继续猜</div>`;
+    return;
+  }
+  state.usedHints++;
+  renderTries();
+  let msg = "";
+  if(state.mode === "quote" || state.mode === "sound"){
+    const n = hero.cn.length;
+    msg = `提示：名字 ${n} 个字，首字「${hero.cn[0]}」`;
+  } else if(state.mode === "ability"){
+    msg = `提示：TA 是${hero.lanes.map(l=>"「"+l+"」").join("")}英雄，${hero.rangeType==="远程"?"远程":"近战"}`;
+  } else if(state.mode === "emoji"){
+    msg = `提示：性别 ${hero.gender} · ${hero.species} · ${hero.region}`;
+  } else if(state.mode === "splash"){
+    msg = `提示：这个英雄 ${hero.year} 年上线 · ${hero.lanes.join("/")}`;
+  }
+  $("feed").innerHTML = `<div class="row info">💡 ${msg}</div>`;
+}
+
+function skip(){
+  state.streak = 0;
+  $("streakNum").textContent = 0;
+  $("feed").innerHTML = `<div class="row info">跳过，正确答案是 ${state.hero.cn}</div>`;
+  revealHero(false);
+}
+
+/* ===================== 事件 ===================== */
+document.querySelectorAll(".tab").forEach(t=>{
+  t.onclick = ()=>{
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+    t.classList.add("active");
+    state.mode = t.dataset.mode;
+    nextQuestion();
+  };
+});
+$("guessBtn").onclick = guess;
+$("guessInput").addEventListener("keydown", e=>{ if(e.key==="Enter") guess(); });
+$("skipBtn").onclick = skip;
+
+/* ===================== 启动 ===================== */
+/* 内联兜底数据：本地 file:// 直接打开时 fetch 会被浏览器 CORS 拦截，用这份数据保证可玩；
+   发布环境下仍优先 fetch（assets/manifest.json 会被发布链路自动打包） */
+const FALLBACK = {"heroes":[{"key":1,"id":"Annie","cn":"黑暗之女","title":"安妮","tags":["Mage","Support"],"partype":"法力","gender":"女","lanes":["中单","辅助"],"species":"人类","region":"诺克萨斯","year":2009,"rangeType":"远程","emoji":"🧸🔥😈","sfx":"assets/sfx/1.ogg","vo":"assets/vo/1.ogg","icons":{"q":"assets/icons/Annie_q.png","w":"assets/icons/Annie_w.png","e":"assets/icons/Annie_e.png","r":"assets/icons/Annie_r.png"},"splash":"assets/splash/Annie.jpg"},{"key":2,"id":"Olaf","cn":"狂战士","title":"奥拉夫","tags":["Fighter","Tank"],"partype":"法力","gender":"男","lanes":["上单","打野"],"species":"人类","region":"弗雷尔卓德","year":2010,"rangeType":"近战","emoji":"🪓⚔️❄️","sfx":"assets/sfx/2.ogg","vo":"assets/vo/2.ogg","icons":{"q":"assets/icons/Olaf_q.png","w":"assets/icons/Olaf_w.png","e":"assets/icons/Olaf_e.png","r":"assets/icons/Olaf_r.png"},"splash":"assets/splash/Olaf.jpg"},{"key":5,"id":"XinZhao","cn":"德邦总管","title":"赵信","tags":["Fighter","Tank"],"partype":"法力","gender":"男","lanes":["打野","上单"],"species":"人类","region":"德玛西亚","year":2010,"rangeType":"近战","emoji":"🔱⚔️🛡️","sfx":"assets/sfx/5.ogg","vo":"assets/vo/5.ogg","icons":{"q":"assets/icons/XinZhao_q.png","w":"assets/icons/XinZhao_w.png","e":"assets/icons/XinZhao_e.png","r":"assets/icons/XinZhao_r.png"},"splash":"assets/splash/XinZhao.jpg"},{"key":7,"id":"Leblanc","cn":"诡术妖姬","title":"乐芙兰","tags":["Assassin","Mage"],"partype":"法力","gender":"女","lanes":["中单"],"species":"人类","region":"诺克萨斯","year":2010,"rangeType":"远程","emoji":"🎭🪄💜","sfx":"assets/sfx/7.ogg","vo":"assets/vo/7.ogg","icons":{"q":"assets/icons/Leblanc_q.png","w":"assets/icons/Leblanc_w.png","e":"assets/icons/Leblanc_e.png","r":"assets/icons/Leblanc_r.png"},"splash":"assets/splash/Leblanc.jpg"},{"key":10,"id":"Kayle","cn":"正义天使","title":"凯尔","tags":["Mage","Marksman"],"partype":"法力","gender":"女","lanes":["上单","中单"],"species":"天使","region":"巨神峰","year":2009,"rangeType":"远程","emoji":"🪽✨⚖️","sfx":"assets/sfx/10.ogg","vo":"assets/vo/10.ogg","icons":{"q":"assets/icons/Kayle_q.png","w":"assets/icons/Kayle_w.png","e":"assets/icons/Kayle_e.png","r":"assets/icons/Kayle_r.png"},"splash":"assets/splash/Kayle.jpg"},{"key":11,"id":"MasterYi","cn":"无极剑圣","title":"易","tags":["Assassin","Fighter"],"partype":"法力","gender":"男","lanes":["打野"],"species":"人类","region":"艾欧尼亚","year":2009,"rangeType":"近战","emoji":"🥷⚔️🌿","sfx":"assets/sfx/11.ogg","vo":"assets/vo/11.ogg","icons":{"q":"assets/icons/MasterYi_q.png","w":"assets/icons/MasterYi_w.png","e":"assets/icons/MasterYi_e.png","r":"assets/icons/MasterYi_r.png"},"splash":"assets/splash/MasterYi.jpg"},{"key":12,"id":"Alistar","cn":"牛头酋长","title":"阿利斯塔","tags":["Tank","Support"],"partype":"法力","gender":"男","lanes":["辅助"],"species":"牛头人","region":"诺克萨斯","year":2009,"rangeType":"近战","emoji":"🐮🔨💪","sfx":"assets/sfx/12.ogg","vo":"assets/vo/12.ogg","icons":{"q":"assets/icons/Alistar_q.png","w":"assets/icons/Alistar_w.png","e":"assets/icons/Alistar_e.png","r":"assets/icons/Alistar_r.png"},"splash":"assets/splash/Alistar.jpg"},{"key":13,"id":"Ryze","cn":"符文法师","title":"瑞兹","tags":["Mage"],"partype":"法力","gender":"男","lanes":["中单"],"species":"人类","region":"符文之地","year":2009,"rangeType":"远程","emoji":"📚🔮⚡","sfx":"assets/sfx/13.ogg","vo":"assets/vo/13.ogg","icons":{"q":"assets/icons/Ryze_q.png","w":"assets/icons/Ryze_w.png","e":"assets/icons/Ryze_e.png","r":"assets/icons/Ryze_r.png"},"splash":"assets/splash/Ryze.jpg"},{"key":17,"id":"Teemo","cn":"迅捷斥候","title":"提莫","tags":["Marksman","Mage"],"partype":"法力","gender":"男","lanes":["上单","打野"],"species":"约德尔人","region":"班德尔城","year":2009,"rangeType":"远程","emoji":"🍄🎯🐿️","sfx":"assets/sfx/17.ogg","vo":"assets/vo/17.ogg","icons":{"q":"assets/icons/Teemo_q.png","w":"assets/icons/Teemo_w.png","e":"assets/icons/Teemo_e.png","r":"assets/icons/Teemo_r.png"},"splash":"assets/splash/Teemo.jpg"},{"key":21,"id":"MissFortune","cn":"赏金猎人","title":"厄运小姐","tags":["Marksman","Mage"],"partype":"法力","gender":"女","lanes":["下路"],"species":"人类","region":"比尔吉沃特","year":2010,"rangeType":"远程","emoji":"🏴☠️🔫🎩","sfx":"assets/sfx/21.ogg","vo":"assets/vo/21.ogg","icons":{"q":"assets/icons/MissFortune_q.png","w":"assets/icons/MissFortune_w.png","e":"assets/icons/MissFortune_e.png","r":"assets/icons/MissFortune_r.png"},"splash":"assets/splash/MissFortune.jpg"},{"key":22,"id":"Ashe","cn":"寒冰射手","title":"艾希","tags":["Marksman","Support"],"partype":"法力","gender":"女","lanes":["下路"],"species":"人类","region":"弗雷尔卓德","year":2009,"rangeType":"远程","emoji":"🏹❄️👑","sfx":"assets/sfx/22.ogg","vo":"assets/vo/22.ogg","icons":{"q":"assets/icons/Ashe_q.png","w":"assets/icons/Ashe_w.png","e":"assets/icons/Ashe_e.png","r":"assets/icons/Ashe_r.png"},"splash":"assets/splash/Ashe.jpg"},{"key":23,"id":"Tryndamere","cn":"蛮族之王","title":"泰达米尔","tags":["Fighter","Assassin"],"partype":"怒气","gender":"男","lanes":["上单"],"species":"人类","region":"弗雷尔卓德","year":2009,"rangeType":"近战","emoji":"🪓😡🔥","sfx":"assets/sfx/23.ogg","vo":"assets/vo/23.ogg","icons":{"q":"assets/icons/Tryndamere_q.png","w":"assets/icons/Tryndamere_w.png","e":"assets/icons/Tryndamere_e.png","r":"assets/icons/Tryndamere_r.png"},"splash":"assets/splash/Tryndamere.jpg"},{"key":24,"id":"Jax","cn":"武器大师","title":"贾克斯","tags":["Fighter"],"partype":"法力","gender":"男","lanes":["上单","打野"],"species":"沙瓦玛族","region":"艾卡西亚","year":2009,"rangeType":"近战","emoji":"🏏🥋💪","sfx":"assets/sfx/24.ogg","vo":"assets/vo/24.ogg","icons":{"q":"assets/icons/Jax_q.png","w":"assets/icons/Jax_w.png","e":"assets/icons/Jax_e.png","r":"assets/icons/Jax_r.png"},"splash":"assets/splash/Jax.jpg"},{"key":25,"id":"Morgana","cn":"堕落天使","title":"莫甘娜","tags":["Mage","Support"],"partype":"法力","gender":"女","lanes":["辅助","中单"],"species":"堕落天使","region":"巨神峰","year":2009,"rangeType":"远程","emoji":"🪽🖤⚖️","sfx":"assets/sfx/25.ogg","vo":"assets/vo/25.ogg","icons":{"q":"assets/icons/Morgana_q.png","w":"assets/icons/Morgana_w.png","e":"assets/icons/Morgana_e.png","r":"assets/icons/Morgana_r.png"},"splash":"assets/splash/Morgana.jpg"},{"key":29,"id":"Twitch","cn":"瘟疫之源","title":"图奇","tags":["Marksman","Assassin"],"partype":"法力","gender":"男","lanes":["下路"],"species":"变异老鼠","region":"祖安","year":2009,"rangeType":"远程","emoji":"🐀🧪🔫","sfx":"assets/sfx/29.ogg","vo":"assets/vo/29.ogg","icons":{"q":"assets/icons/Twitch_q.png","w":"assets/icons/Twitch_w.png","e":"assets/icons/Twitch_e.png","r":"assets/icons/Twitch_r.png"},"splash":"assets/splash/Twitch.jpg"},{"key":30,"id":"Karthus","cn":"死亡颂唱者","title":"卡尔萨斯","tags":["Mage"],"partype":"法力","gender":"男","lanes":["中单"],"species":"亡灵","region":"暗影岛","year":2009,"rangeType":"远程","emoji":"💀🎵☠️","sfx":"assets/sfx/30.ogg","vo":"assets/vo/30.ogg","icons":{"q":"assets/icons/Karthus_q.png","w":"assets/icons/Karthus_w.png","e":"assets/icons/Karthus_e.png","r":"assets/icons/Karthus_r.png"},"splash":"assets/splash/Karthus.jpg"},{"key":31,"id":"Chogath","cn":"虚空恐惧","title":"科加斯","tags":["Tank","Mage"],"partype":"法力","gender":"无性别","lanes":["中单","上单"],"species":"虚空生物","region":"虚空","year":2009,"rangeType":"近战","emoji":"👾🦖🌀","sfx":"assets/sfx/31.ogg","vo":"assets/vo/31.ogg","icons":{"q":"assets/icons/Chogath_q.png","w":"assets/icons/Chogath_w.png","e":"assets/icons/Chogath_e.png","r":"assets/icons/Chogath_r.png"},"splash":"assets/splash/Chogath.jpg"},{"key":32,"id":"Amumu","cn":"殇之木乃伊","title":"阿木木","tags":["Tank","Support"],"partype":"法力","gender":"男","lanes":["打野","辅助"],"species":"约德尔木乃伊","region":"暗影岛","year":2009,"rangeType":"近战","emoji":"🧟🧻😢","sfx":"assets/sfx/32.ogg","vo":"assets/vo/32.ogg","icons":{"q":"assets/icons/Amumu_q.png","w":"assets/icons/Amumu_w.png","e":"assets/icons/Amumu_e.png","r":"assets/icons/Amumu_r.png"},"splash":"assets/splash/Amumu.jpg"},{"key":34,"id":"Anivia","cn":"冰晶凤凰","title":"艾尼维亚","tags":["Mage"],"partype":"法力","gender":"女","lanes":["中单"],"species":"半神","region":"弗雷尔卓德","year":2009,"rangeType":"远程","emoji":"🐦❄️🕊️","sfx":"assets/sfx/34.ogg","vo":"assets/vo/34.ogg","icons":{"q":"assets/icons/Anivia_q.png","w":"assets/icons/Anivia_w.png","e":"assets/icons/Anivia_e.png","r":"assets/icons/Anivia_r.png"},"splash":"assets/splash/Anivia.jpg"},{"key":35,"id":"Shaco","cn":"恶魔小丑","title":"萨科","tags":["Assassin"],"partype":"法力","gender":"男","lanes":["打野"],"species":"恶魔","region":"未知","year":2009,"rangeType":"近战","emoji":"🤡🔪🃏","sfx":"assets/sfx/35.ogg","vo":"assets/vo/35.ogg","icons":{"q":"assets/icons/Shaco_q.png","w":"assets/icons/Shaco_w.png","e":"assets/icons/Shaco_e.png","r":"assets/icons/Shaco_r.png"},"splash":"assets/splash/Shaco.jpg"},{"key":37,"id":"Sona","cn":"琴瑟仙女","title":"娑娜","tags":["Support","Mage"],"partype":"法力","gender":"女","lanes":["辅助"],"species":"人类","region":"德玛西亚","year":2010,"rangeType":"远程","emoji":"🎼🎹🎵","sfx":"assets/sfx/37.ogg","vo":"assets/vo/37.ogg","icons":{"q":"assets/icons/Sona_q.png","w":"assets/icons/Sona_w.png","e":"assets/icons/Sona_e.png","r":"assets/icons/Sona_r.png"},"splash":"assets/splash/Sona.jpg"},{"key":39,"id":"Irelia","cn":"刀锋舞者","title":"艾瑞莉娅","tags":["Fighter","Assassin"],"partype":"法力","gender":"女","lanes":["上单","中单"],"species":"人类","region":"艾欧尼亚","year":2010,"rangeType":"近战","emoji":"🗡️🪶🌸","sfx":"assets/sfx/39.ogg","vo":"assets/vo/39.ogg","icons":{"q":"assets/icons/Irelia_q.png","w":"assets/icons/Irelia_w.png","e":"assets/icons/Irelia_e.png","r":"assets/icons/Irelia_r.png"},"splash":"assets/splash/Irelia.jpg"},{"key":40,"id":"Janna","cn":"风暴之怒","title":"迦娜","tags":["Support","Mage"],"partype":"法力","gender":"女","lanes":["辅助"],"species":"风之精灵","region":"祖安","year":2009,"rangeType":"远程","emoji":"🍃💨🕊️","sfx":"assets/sfx/40.ogg","vo":"assets/vo/40.ogg","icons":{"q":"assets/icons/Janna_q.png","w":"assets/icons/Janna_w.png","e":"assets/icons/Janna_e.png","r":"assets/icons/Janna_r.png"},"splash":"assets/splash/Janna.jpg"},{"key":51,"id":"Caitlyn","cn":"皮城女警","title":"凯特琳","tags":["Marksman"],"partype":"法力","gender":"女","lanes":["下路"],"species":"人类","region":"皮尔特沃夫","year":2011,"rangeType":"远程","emoji":"🎯🔫🕵️","sfx":"assets/sfx/51.ogg","vo":"assets/vo/51.ogg","icons":{"q":"assets/icons/Caitlyn_q.png","w":"assets/icons/Caitlyn_w.png","e":"assets/icons/Caitlyn_e.png","r":"assets/icons/Caitlyn_r.png"},"splash":"assets/splash/Caitlyn.jpg"},{"key":53,"id":"Blitzcrank","cn":"蒸汽机器人","title":"布里茨","tags":["Tank","Support"],"partype":"法力","gender":"无性别","lanes":["辅助"],"species":"机械造物","region":"祖安","year":2009,"rangeType":"近战","emoji":"🤖⚡🦾","sfx":"assets/sfx/53.ogg","vo":"assets/vo/53.ogg","icons":{"q":"assets/icons/Blitzcrank_q.png","w":"assets/icons/Blitzcrank_w.png","e":"assets/icons/Blitzcrank_e.png","r":"assets/icons/Blitzcrank_r.png"},"splash":"assets/splash/Blitzcrank.jpg"},{"key":61,"id":"Orianna","cn":"发条魔灵","title":"奥莉安娜","tags":["Mage","Support"],"partype":"法力","gender":"女","lanes":["中单"],"species":"发条人偶","region":"皮尔特沃夫","year":2011,"rangeType":"远程","emoji":"⚙️🎠🔩","sfx":"assets/sfx/61.ogg","vo":"assets/vo/61.ogg","icons":{"q":"assets/icons/Orianna_q.png","w":"assets/icons/Orianna_w.png","e":"assets/icons/Orianna_e.png","r":"assets/icons/Orianna_r.png"},"splash":"assets/splash/Orianna.jpg"},{"key":62,"id":"MonkeyKing","cn":"齐天大圣","title":"孙悟空","tags":["Fighter","Tank"],"partype":"法力","gender":"男","lanes":["上单","打野"],"species":"瓦斯塔亚","region":"艾欧尼亚","year":2011,"rangeType":"近战","emoji":"🐒🐉🪄","sfx":"assets/sfx/62.ogg","vo":"assets/vo/62.ogg","icons":{"q":"assets/icons/MonkeyKing_q.png","w":"assets/icons/MonkeyKing_w.png","e":"assets/icons/MonkeyKing_e.png","r":"assets/icons/MonkeyKing_r.png"},"splash":"assets/splash/MonkeyKing.jpg"},{"key":63,"id":"Brand","cn":"复仇焰魂","title":"布兰德","tags":["Mage","Support"],"partype":"法力","gender":"男","lanes":["中单","辅助"],"species":"火焰化身","region":"弗雷尔卓德","year":2011,"rangeType":"远程","emoji":"🔥😈🌋","sfx":"assets/sfx/63.ogg","vo":"assets/vo/63.ogg","icons":{"q":"assets/icons/Brand_q.png","w":"assets/icons/Brand_w.png","e":"assets/icons/Brand_e.png","r":"assets/icons/Brand_r.png"},"splash":"assets/splash/Brand.jpg"},{"key":64,"id":"LeeSin","cn":"盲僧","title":"李青","tags":["Fighter","Assassin"],"partype":"能量","gender":"男","lanes":["打野"],"species":"人类","region":"艾欧尼亚","year":2011,"rangeType":"近战","emoji":"🥋👁️🌀","sfx":"assets/sfx/64.ogg","vo":"assets/vo/64.ogg","icons":{"q":"assets/icons/LeeSin_q.png","w":"assets/icons/LeeSin_w.png","e":"assets/icons/LeeSin_e.png","r":"assets/icons/LeeSin_r.png"},"splash":"assets/splash/LeeSin.jpg"},{"key":104,"id":"Graves","cn":"法外狂徒","title":"格雷福斯","tags":["Marksman"],"partype":"法力","gender":"男","lanes":["打野","下路"],"species":"人类","region":"比尔吉沃特","year":2011,"rangeType":"远程","emoji":"🔫💥🚬","sfx":"assets/sfx/104.ogg","vo":"assets/vo/104.ogg","icons":{"q":"assets/icons/Graves_q.png","w":"assets/icons/Graves_w.png","e":"assets/icons/Graves_e.png","r":"assets/icons/Graves_r.png"},"splash":"assets/splash/Graves.jpg"}]};
+fetch("assets/manifest.json").then(r=>r.json()).then(data=>{
+  HEROES = data.heroes;
+  nextQuestion();
+}).catch(()=>{
+  HEROES = FALLBACK.heroes;
+  nextQuestion();
+});
+</script>
+</body>
+</html>

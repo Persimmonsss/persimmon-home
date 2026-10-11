@@ -1,0 +1,6 @@
+PNG→WebP 完成 855 张，节省 6.90MB
+JPEG 重压完成（覆盖原文件）
+manifest.json 引用已更新为 .webp
+lol-guess.html FALLBACK 已重注入
+已删除旧 PNG 855 个
+总耗时 8.3s

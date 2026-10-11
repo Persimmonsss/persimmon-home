@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>炉石传说 猜卡牌 - 柿子eeeee</title>
+<style>
+:root{
+  --gold:#c8aa6e; --gold2:#a8863f; --bg:#0b1220; --panel:#101a30; --line:#22304f;
+  --text:#e8eefc; --dim:#8fa3c8; --dim2:#6b7ea3; --ok:#4caf50; --bad:#e5533c;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html{scroll-behavior:smooth;}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:60px;}
+a{color:inherit;text-decoration:none;}
+.wrap{max-width:960px;margin:0 auto;padding:16px 16px 40px;}
+/* 顶栏 */
+.topbar{display:flex;align-items:center;gap:12px;padding:10px 0 14px;border-bottom:1px solid var(--line);margin-bottom:14px;flex-wrap:wrap;}
+.back-btn{display:inline-flex;align-items:center;gap:4px;color:var(--dim);font-size:13px;padding:6px 10px;border:1px solid var(--line);border-radius:9px;transition:all .2s;}
+.back-btn:hover{border-color:var(--gold);color:var(--gold);}
+.logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;color:#0d1428;font-weight:800;font-size:18px;flex-shrink:0;}
+.hd{flex:1;min-width:120px;}
+.hd h1{font-size:20px;color:#f3e2c7;font-weight:800;}
+.hd p{font-size:12px;color:var(--dim);margin-top:2px;}
+.streak-pill{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:8px 14px;font-size:13px;color:var(--dim);display:flex;align-items:center;gap:6px;}
+.streak-pill b{color:var(--gold);font-size:16px;}
+.top-share{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 12px;color:var(--dim);font-size:13px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px;}
+.top-share:hover{border-color:var(--gold);color:#f3e2c7;}
+/* tab */
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
+.tab{background:var(--panel);border:1px solid var(--line);color:var(--dim);border-radius:10px;padding:9px 14px;font-size:13px;cursor:pointer;transition:all .2s;}
+.tab:hover{border-color:var(--gold);color:#f3e2c7;}
+.tab.on{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#0d1428;font-weight:700;border-color:transparent;}
+/* 游戏区 */
+.game{padding:20px;background:var(--panel);border:1px solid var(--line);border-radius:16px;}
+.qbar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
+.qnum{font-size:13px;color:var(--dim2);}
+.qhint{margin-left:auto;}
+.qhint button{background:var(--panel);border:1px solid var(--gold);color:var(--gold);border-radius:9px;padding:8px 14px;font-size:13px;cursor:pointer;transition:all .2s;}
+.qhint button:hover{background:rgba(200,170,110,.12);}
+.qhint button:active{transform:scale(.95);}
+.hint-box{display:none;margin-top:12px;background:#0b1220;border:1px dashed var(--gold);border-radius:10px;padding:12px 14px;font-size:14px;color:#f3e2c7;line-height:1.7;}
+.hint-box.show{display:block;animation:feedIn .3s ease;}
+/* 信息卡/题目 */
+.quest{margin-bottom:16px;}
+.quest-title{font-size:15px;color:var(--dim);margin-bottom:8px;letter-spacing:.5px;}
+.info-card{display:flex;align-items:center;gap:14px;background:#0b1220;border:1px solid var(--line);border-radius:12px;padding:14px 16px;}
+.info-card .big{font-size:26px;font-weight:800;color:#f3e2c7;line-height:1.3;}
+.info-card .sub{font-size:13px;color:var(--dim);margin-top:4px;line-height:1.6;}
+/* 原画区 */
+.splash-zone{background:#0b1220;border:1px solid var(--line);border-radius:12px;padding:14px;overflow:hidden;min-height:340px;display:flex;align-items:center;justify-content:center;position:relative;}
+.splash-box{width:220px;height:300px;overflow:hidden;border-radius:12px;position:relative;transition:transform .4s ease;}
+.splash-box img{width:100%;height:100%;object-fit:cover;transform:scale(2.4);transform-origin:center center;transition:transform .4s ease;}
+.splash-box .ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1c2a4a,#0d1428);color:var(--dim2);font-size:12px;text-align:center;padding:10px;}
+@media(max-width:560px){.splash-box{width:180px;height:246px;}}
+/* 文本题（台词/效果） */
+.txt-quest{background:#0b1220;border:1px solid var(--line);border-radius:12px;padding:18px;font-size:16px;color:#f3e2c7;line-height:1.9;min-height:90px;}
+.txt-quest .more{color:var(--dim2);font-size:12px;margin-top:8px;}
+/* 四选一 */
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+@media(max-width:560px){.opts{grid-template-columns:1fr;}}
+.opt{background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:11px;padding:13px 16px;font-size:14px;cursor:pointer;transition:all .2s;text-align:left;}
+.opt:hover{border-color:var(--gold);color:#f3e2c7;transform:translateY(-1px);}
+.opt:active{transform:scale(.97);}
+.opt.correct{background:rgba(76,175,80,.16);border-color:var(--ok);color:#a5e0a7;}
+.opt.wrong{background:rgba(229,83,60,.12);border-color:var(--bad);color:#f0a294;}
+.opt.dim{opacity:.45;pointer-events:none;}
+/* 输入 */
+.guess-row{display:flex;gap:10px;margin-top:16px;position:relative;}
+.guess-row input{flex:1;background:#0b1220;border:1px solid var(--line);border-radius:10px;padding:12px 14px;color:var(--text);font-size:15px;outline:none;transition:border .2s;}
+.guess-row input:focus{border-color:var(--gold);}
+.guess-row .go{background:linear-gradient(135deg,var(--gold),var(--gold2));border:none;border-radius:10px;padding:0 20px;color:#0d1428;font-weight:700;font-size:15px;cursor:pointer;transition:all .2s;}
+.guess-row .go:active{transform:scale(.95);}
+/* 下拉 */
+.dd{position:absolute;left:0;right:0;top:calc(100% + 6px);background:#101a30;border:1px solid var(--gold);border-radius:10px;max-height:260px;overflow-y:auto;z-index:9999;display:none;box-shadow:0 12px 32px rgba(0,0,0,.5);}
+.dd.show{display:block;}
+.dd-item{display:flex;align-items:center;gap:8px;padding:10px 14px;font-size:14px;cursor:pointer;transition:background .15s;}
+.dd-item:hover,.dd-item.sel{background:rgba(200,170,110,.14);}
+.dd-item .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.dd-item .nm{flex:1;}
+.dd-item .meta{font-size:11px;color:var(--dim2);}
+.dd-empty{padding:12px 14px;color:var(--dim2);font-size:13px;}
+/* 对比表 */
+.cmp-wrap{margin-top:16px;overflow:hidden;border:1px solid var(--line);border-radius:12px;background:#0b1220;}
+.cmp-scroll{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;}
+table.cmp{width:100%;border-collapse:collapse;table-layout:fixed;font-size:13px;white-space:nowrap;}
+table.cmp th,table.cmp td{padding:9px 10px;text-align:center;border-bottom:1px solid #1b2740;}
+table.cmp thead th{color:var(--dim);font-weight:600;font-size:12px;background:#0e1628;}
+table.cmp td.cur{color:var(--gold);font-weight:700;background:rgba(200,170,110,.08);}
+table.cmp td.up{color:#6fdc7c;font-weight:700;}
+table.cmp td.down{color:#e5533c;font-weight:700;}
+table.cmp td.same{color:var(--dim2);}
+table.cmp tr.newrow td{background:rgba(76,175,80,.10);}
+/* 反馈 */
+.fb{margin-top:16px;border-radius:11px;padding:13px 16px;font-size:14px;line-height:1.7;display:none;}
+.fb.show{display:block;animation:feedIn .3s ease;}
+.fb.ok{background:rgba(76,175,80,.14);border:1px solid var(--ok);color:#a5e0a7;}
+.fb.bad{background:rgba(229,83,60,.12);border:1px solid var(--bad);color:#f0a294;}
+.fb .nxt{margin-top:10px;background:var(--panel);border:1px solid var(--gold);color:var(--gold);border-radius:9px;padding:8px 16px;font-size:13px;cursor:pointer;transition:all .2s;}
+.fb .nxt:hover{background:rgba(200,170,110,.12);}
+.fb .mini{display:inline-flex;align-items:center;gap:8px;margin-top:8px;}
+.fb .mini img{width:56px;height:78px;object-fit:cover;border-radius:6px;border:1px solid var(--line);}
+/* 统计条 */
+.stats{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;}
+.stat{background:#0b1220;border:1px solid var(--line);border-radius:9px;padding:7px 12px;font-size:12px;color:var(--dim);}
+.stat b{color:#f3e2c7;}
+/* 弹窗 */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:9998;display:none;align-items:center;justify-content:center;padding:20px;}
+.overlay.show{display:flex;animation:fadeIn .25s ease;}
+.modal{background:#101a30;border:1px solid var(--gold);border-radius:16px;padding:26px;max-width:400px;width:100%;max-height:86vh;overflow-y:auto;animation:modalPop .3s ease;}
+.modal h2{color:var(--gold);font-size:20px;margin-bottom:6px;text-align:center;}
+.modal .win-txt{color:var(--dim);font-size:13px;text-align:center;margin-bottom:14px;}
+.modal .bars{margin:14px 0;}
+.modal .bar-row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--dim);margin-bottom:6px;}
+.modal .bar-track{flex:1;background:#0b1220;height:16px;border-radius:8px;overflow:hidden;}
+.modal .bar-fill{height:100%;background:linear-gradient(90deg,var(--gold),#f3e2c7);border-radius:8px;transition:width .6s ease;}
+.modal .m-actions{display:flex;gap:10px;margin-top:14px;}
+.modal .m-btn{flex:1;border-radius:10px;padding:11px;font-size:14px;cursor:pointer;border:none;transition:all .2s;}
+.modal .m-btn:active{transform:scale(.96);}
+.m-btn.gold{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#0d1428;font-weight:700;}
+.m-btn.ghost{background:var(--panel);border:1px solid var(--line);color:var(--dim);}
+.m-btn.ghost:hover{border-color:var(--gold);color:#f3e2c7;}
+.modal .m-close{margin-top:10px;width:100%;background:none;border:none;color:var(--dim2);font-size:13px;cursor:pointer;padding:6px;}
+/* 分享面板 */
+.share-row{display:flex;gap:12px;align-items:center;margin-top:12px;}
+.share-qr{width:120px;height:120px;background:#fff;border-radius:12px;padding:6px;flex-shrink:0;overflow:hidden;}
+.share-qr img,.share-qr canvas{width:100%;height:100%;}
+.share-txt{flex:1;font-size:12px;color:var(--dim);line-height:1.7;word-break:break-all;}
+.share-acts{display:flex;gap:8px;margin-top:12px;}
+/* toast */
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);background:#1c2a4a;border:1px solid var(--gold);color:var(--text);padding:10px 18px;border-radius:12px;font-size:14px;z-index:99999;opacity:0;pointer-events:none;transition:all .3s;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+/* 动画 */
+@keyframes feedIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+@keyframes modalPop{from{opacity:0;transform:scale(.92);}to{opacity:1;transform:scale(1);}}
+@keyframes rowFlash{0%{background:rgba(76,175,80,.35);}100%{background:transparent;}}
+@keyframes streakPop{0%{transform:scale(1.35);}100%{transform:scale(1);}}
+.streak-bump{animation:streakPop .35s ease;}
+/* 顶栏反馈行（问答/四选一即时反馈） */
+.q-err{display:none;margin-top:10px;font-size:13px;color:#f0a294;}
+.q-err.show{display:block;}
+.q-ok{display:none;margin-top:10px;font-size:13px;color:#a5e0a7;}
+.q-ok.show{display:block;}
+.quiz-diff{display:inline-block;margin-left:8px;padding:3px 10px;border-radius:999px;font-size:12px;color:#0d1428;font-weight:700;vertical-align:middle;transition:all .25s;}
+.quiz-score{background:#0b1220;border:1px solid var(--line);border-radius:9px;padding:8px 12px;font-size:13px;color:var(--dim);margin-bottom:12px;}
+.quiz-score b{color:var(--gold);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a class="back-btn" href="index.html">← 返回</a>
+    <div class="logo">炉</div>
+    <div class="hd">
+      <h1>炉石传说 猜卡牌</h1>
+      <p>175 张经典卡 · 6 种玩法 · 你有多了解酒馆</p>
+    </div>
+    <div class="streak-pill">🔥 连胜 <b id="streak">0</b></div>
+    <button class="top-share" id="topShareBtn">📤 分享</button>
+  </div>
+
+  <div class="tabs" id="tabs">
+    <button class="tab on" data-mode="classic">经典属性</button>
+    <button class="tab" data-mode="splash">原画</button>
+    <button class="tab" data-mode="quote">台词</button>
+    <button class="tab" data-mode="ability">效果</button>
+    <button class="tab" data-mode="cost">猜费用</button>
+    <button class="tab" data-mode="quiz">问答</button>
+  </div>
+
+  <div class="game">
+    <div class="qbar">
+      <span class="qnum" id="qnum"></span>
+      <div class="qhint">
+        <button id="hintBtn">💡 提示</button>
+      </div>
+    </div>
+    <div class="hint-box" id="hintBox"></div>
+
+    <!-- 经典模式 -->
+    <div class="quest" id="vClassic">
+      <div class="quest-title">根据线索猜出这张卡（职业 / 费用 / 身材 / 稀有度…）</div>
+      <div class="info-card">
+        <div style="width:64px;height:88px;border-radius:8px;background:linear-gradient(135deg,#1c2a4a,#0d1428);border:1px solid var(--gold);display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:26px;font-weight:800;flex-shrink:0;">?</div>
+        <div>
+          <div class="big" id="cBig">这张卡是？</div>
+          <div class="sub" id="cSub">输入卡名或从下拉列表选择</div>
+        </div>
+      </div>
+      <div class="cmp-wrap" id="cmpWrap">
+        <div class="cmp-scroll" id="cmpScroll">
+          <table class="cmp">
+            <thead><tr><th style="width:18%">卡牌</th><th>职业</th><th>费用</th><th>攻击</th><th>生命</th><th>类型</th><th>稀有度</th><th>种族</th></tr></thead>
+            <tbody id="cmpBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="guess-row" id="guessRowC">
+        <input id="cInput" placeholder="输入卡名，如：炎爆术" autocomplete="off">
+        <button class="go" onclick="guessC()">猜</button>
+        <div class="dd" id="cDD"></div>
+      </div>
+    </div>
+
+    <!-- 原画模式 -->
+    <div class="quest" id="vSplash" style="display:none">
+      <div class="quest-title">认得出这是哪张卡的原画吗？猜错会逐渐放大</div>
+      <div class="splash-zone">
+        <div class="splash-box" id="splashBox">
+          <img id="splashImg" alt="" onerror="splashFail()">
+          <div class="ph" id="splashPh">正在加载原画…</div>
+        </div>
+      </div>
+      <div class="guess-row">
+        <input id="sInput" placeholder="输入卡名，如：尤格-萨隆" autocomplete="off">
+        <button class="go" onclick="guessS()">猜</button>
+        <div class="dd" id="sDD"></div>
+      </div>
+    </div>
+
+    <!-- 台词模式 -->
+    <div class="quest" id="vQuote" style="display:none">
+      <div class="quest-title">根据风味文字猜卡（猜错显示更多）</div>
+      <div class="txt-quest">
+        <div id="qText"></div>
+        <div class="more" id="qMore"></div>
+      </div>
+      <div class="guess-row">
+        <input id="qInput" placeholder="输入卡名" autocomplete="off">
+        <button class="go" onclick="guessQ()">猜</button>
+        <div class="dd" id="qDD"></div>
+      </div>
+    </div>
+
+    <!-- 效果模式 -->
+    <div class="quest" id="vAbility" style="display:none">
+      <div class="quest-title">看卡牌效果文本猜卡（猜错显示更多）</div>
+      <div class="txt-quest">
+        <div id="aText"></div>
+        <div class="more" id="aMore"></div>
+      </div>
+      <div class="guess-row">
+        <input id="aInput" placeholder="输入卡名" autocomplete="off">
+        <button class="go" onclick="guessA()">猜</button>
+        <div class="dd" id="aDD"></div>
+      </div>
+    </div>
+
+    <!-- 猜费用模式 -->
+    <div class="quest" id="vCost" style="display:none">
+      <div class="quest-title">这张卡几费？点选正确的费用</div>
+      <div class="info-card">
+        <div>
+          <div class="big" id="coName">——</div>
+          <div class="sub" id="coMeta"></div>
+        </div>
+      </div>
+      <div class="opts" id="costOpts" style="margin-top:14px"></div>
+      <div class="q-err" id="costErr"></div>
+      <div class="q-ok" id="costOk"></div>
+    </div>
+
+    <!-- 问答模式（知识闯关） -->
+    <div class="quest" id="vQuiz" style="display:none">
+      <div class="quest-title">炉石冷知识闯关 · 答对得分，答错本局结束<span class="quiz-diff" id="quizDiff">难度：—</span></div>
+      <div class="quiz-score" id="quizScoreBar">本局得分 0 · 连胜 0 · 最高 —</div>
+      <div class="info-card">
+        <div>
+          <div class="sub" id="quizQ" style="font-size:15px;color:#f3e2c7;line-height:1.7;">——</div>
+        </div>
+      </div>
+      <div class="opts" id="quizOpts" style="margin-top:14px"></div>
+      <div class="q-err" id="quizErr"></div>
+      <div class="q-ok" id="quizOk"></div>
+    </div>
+
+    <div class="fb" id="fb"></div>
+    <div class="stats" id="stats"></div>
+  </div>
+</div>
+
+<!-- 胜利弹窗 -->
+<div class="overlay" id="winOverlay">
+  <div class="modal">
+    <h2 id="winTitle">猜中啦！</h2>
+    <div class="win-txt" id="winTxt"></div>
+    <div class="bars" id="winBars"></div>
+    <div class="m-actions">
+      <button class="m-btn gold" onclick="nextAll()">下一题</button>
+      <button class="m-btn ghost" id="winShareBtn">分享成绩</button>
+    </div>
+    <button class="m-close" onclick="closeWin()">继续游戏</button>
+  </div>
+</div>
+
+<!-- 分享面板 -->
+<div class="overlay" id="shareModal">
+  <div class="modal">
+    <h2>分享炉石猜卡牌</h2>
+    <div class="share-row">
+      <div class="share-qr" id="shareQr"></div>
+      <div class="share-txt" id="shareModalText"></div>
+    </div>
+    <div class="share-acts">
+      <button class="m-btn ghost" id="shareCopyBtn">复制文案</button>
+      <button class="m-btn ghost" id="shareSysBtn">系统分享</button>
+    </div>
+    <button class="m-close" id="shareCloseBtn">关闭</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+// ===== 常量与映射 =====
+const CLS_ZH = {MAGE:"法师",WARRIOR:"战士",HUNTER:"猎人",ROGUE:"盗贼",PRIEST:"牧师",WARLOCK:"术士",DRUID:"德鲁伊",SHAMAN:"萨满",PALADIN:"圣骑士",DEMONHUNTER:"恶魔猎手",NEUTRAL:"中立"};
+const CLS_COLOR = {MAGE:"#67c7ff",WARRIOR:"#c79a6b",HUNTER:"#aad372",ROGUE:"#f4e06a",PRIEST:"#e8e8e8",WARLOCK:"#a184c4",DRUID:"#ff7c0a",SHAMAN:"#0070de",PALADIN:"#f0c930",DEMONHUNTER:"#5cd9c1",NEUTRAL:"#7f7f7f"};
+const RAR_ZH = {FREE:"基础",COMMON:"普通",RARE:"稀有",EPIC:"史诗",LEGENDARY:"传说"};
+const TYPE_ZH = {MINION:"随从",SPELL:"法术",WEAPON:"武器"};
+const RACE_ZH = {MURLOC:"鱼人",BEAST:"野兽",DRAGON:"龙",PIRATE:"海盗",MECH:"机械",DEMON:"恶魔",TOTEM:"图腾",ELEMENTAL:"元素",UNDEAD:"亡灵",NAGA:"娜迦",QUILBOAR:"野猪人"};
+const SET_ZH = {CORE:"核心",CLASSIC:"经典",EXPERT1:"经典",LEGACY:"怀旧",VANILLA:"怀旧",BASIC:"基础",NAXX:"纳克萨玛斯",GVG:"地精大战侏儒",TGT:"冠军的试炼",LOE:"探险者协会",OG:"上古之神的低语",MSG:"龙争虎斗加基森",ICECROWN:"冰封王座",LOOTAPALOOZA:"狗头人与地下世界",GILNEAS:"女巫森林",BOOMSDAY:"砰砰计划",RASTAKHAN:"拉斯塔哈的大乱斗",DALARAN:"暗影崛起",ULDUM:"奥丹姆奇兵",DRAGONS:"巨龙降临",DARKMOON_FAIRE:"暗月马戏团",TITANS:"泰坦诸神",WHIZBANGS_WORKSHOP:"威兹班工坊",THE_SUNKEN_CITY:"沉没之城",ALTERAC_VALLEY:"奥特兰克的决裂",RETURN_OF_THE_LICH_KING:"巫妖王的进军",CATACLYSM:"泰坦诸神",WONDERS:"奇境"};
+const IMG = id => "https://art.hearthstonejson.com/v1/render/latest/zhCN/512x/" + id + ".png";
+const STAT_KEY = "hs_guess_stats_v1";
+const MODE_LABEL = {classic:"经典属性",splash:"原画",quote:"台词",ability:"效果",cost:"猜费用",quiz:"问答"};
+const SITE_URL = "https://u919sgcqrw.doubaoapps.com/app/app_17f6zc6cnj6/hs-guess.html";
+
+// ===== 状态 =====
+let CARDS = [], cur = null, mode = "classic", qn = 0, streak = 0, hintIdx = 0, hintOrder = [], wrongCount = 0;
+let guessLog = [];
+let stats = loadStats();
+
+function loadStats(){
+  try{
+    const s = JSON.parse(localStorage.getItem(STAT_KEY) || "{}");
+    return Object.assign({played:0,wins:0,maxStreak:0,bestTries:99,totalGuesses:0,modeWins:{},cards:{},quizBest:0}, s);
+  }catch(e){ return {played:0,wins:0,maxStreak:0,bestTries:99,totalGuesses:0,modeWins:{},cards:{}}; }
+}
+function saveStats(){ try{ localStorage.setItem(STAT_KEY, JSON.stringify(stats)); }catch(e){} }
+const $ = id => document.getElementById(id);
+function clsName(c){ return CLS_ZH[c.cardClass] || "中立"; }
+function clsColor(c){ return CLS_COLOR[c.cardClass] || "#7f7f7f"; }
+function rarName(c){ return RAR_ZH[c.rarity] || "普通"; }
+function typeName(c){ return TYPE_ZH[c.type] || "随从"; }
+function raceName(c){ return (c.race && RACE_ZH[c.race]) || ""; }
+function setZH(c){ return SET_ZH[c.set] || "扩展包"; }
+function atkOf(c){ return (c.type === "SPELL") ? "—" : (c.attack != null ? c.attack : "—"); }
+function hpOf(c){ return (c.type === "SPELL") ? "—" : (c.health != null ? c.health : "—"); }
+function costBand(c){ return c.cost <= 2 ? "低费（0-2）" : c.cost <= 5 ? "中费（3-5）" : c.cost <= 9 ? "高费（6-9）" : "顶费（10+）"; }
+function toast(msg){
+  const t = $("toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(t._tm); t._tm = setTimeout(()=>t.classList.remove("show"), 2200);
+}
+function shuffle(a){
+  const r = a.slice();
+  for(let i = r.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [r[i], r[j]] = [r[j], r[i]]; }
+  return r;
+}
+function slowScroll(el, target, ms){
+  const start = el.scrollLeft, dist = target - start, t0 = performance.now();
+  function step(t){
+    const p = Math.min((t - t0) / ms, 1);
+    const e = 1 - Math.pow(1 - p, 3);
+    el.scrollLeft = start + dist * e;
+    if(p < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+function bumpStreak(){
+  const b = $("streak");
+  b.textContent = streak;
+  b.parentElement.classList.remove("streak-bump");
+  void b.parentElement.offsetWidth;
+  b.parentElement.classList.add("streak-bump");
+}
+function renderStats(){
+  $("stats").innerHTML =
+    '<div class="stat">场次 <b>' + stats.played + '</b></div>' +
+    '<div class="stat">胜场 <b>' + stats.wins + '</b></div>' +
+    '<div class="stat">最长连胜 <b>' + stats.maxStreak + '</b></div>' +
+    '<div class="stat">最快猜中 <b>' + (stats.bestTries >= 99 ? "—" : stats.bestTries + " 次") + '</b></div>' +
+    '<div class="stat">问答最高 <b>' + (stats.quizBest || 0) + '</b></div>';
+}
+
+// ===== 出题 =====
+function poolFor(m){
+  if(m === "quote") return CARDS.filter(c => c.flavor && c.flavor.length > 6);
+  if(m === "ability") return CARDS.filter(c => c.text && c.text.length > 6);
+  return CARDS;
+}
+function newQuestion(m){
+  mode = m;
+  qn++; wrongCount = 0; hintIdx = 0;
+  const pool = poolFor(m);
+  let c = pool[Math.floor(Math.random() * pool.length)];
+  if(pool.length > 1){ let guard = 0; while(c.id === (cur && cur.id) && guard++ < 20){ c = pool[Math.floor(Math.random() * pool.length)]; } }
+  cur = c;
+  hintOrder = shuffle(buildHints());
+  guessLog = [];
+  $("qnum").textContent = "第 " + qn + " 题 · " + MODE_LABEL[m];
+  $("hintBox").className = "hint-box"; $("hintBox").innerHTML = "";
+  $("fb").className = "fb";
+  $("fb").innerHTML = "";
+  if(m === "classic"){
+    $("cBig").textContent = "这张卡是？"; $("cSub").textContent = "输入卡名或从下拉列表选择";
+    $("cInput").value = ""; $("cDD").className = "dd";
+    renderCmp();
+  } else if(m === "splash"){
+    const img = $("splashImg");
+    img.style.transform = "scale(2.4)";
+    $("splashPh").style.display = "flex"; $("splashPh").textContent = "正在加载原画…";
+    img.style.display = "block";
+    img.src = IMG(c.id);
+    $("sInput").value = ""; $("sDD").className = "dd";
+  } else if(m === "quote"){
+    $("qInput").value = ""; $("qDD").className = "dd";
+    renderTxt("qText", "qMore", c.flavor);
+  } else if(m === "ability"){
+    $("aInput").value = ""; $("aDD").className = "dd";
+    renderTxt("aText", "aMore", c.text);
+  } else if(m === "cost"){
+    renderCost();
+  } else if(m === "quiz"){
+    quizScore = 0;
+    clearTimeout(quizTimer);
+    renderQuiz();
+  }
+}
+function buildHints(){
+  if(mode === "quiz") return [];
+  const c = cur;
+  const h = [];
+  if(c.cardClass) h.push("职业：" + clsName(c));
+  h.push("费用：" + costBand(c));
+  h.push("类型：" + typeName(c));
+  h.push("稀有度：" + rarName(c));
+  const r = raceName(c); if(r) h.push("种族：" + r);
+  if(c.text && c.text.length > 2) h.push("效果（前段）：" + c.text.slice(0, 14) + "…");
+  if(c.flavor && c.flavor.length > 2) h.push("风味（前段）：" + c.flavor.slice(0, 14) + "…");
+  h.push("出自：" + setZH(c));
+  return h;
+}
+
+// ===== 经典模式 =====
+function renderCmp(){
+  const tb = $("cmpBody");
+  let html = '<tr><td class="cur">？？？</td><td class="cur">?</td><td class="cur">?</td><td class="cur">?</td><td class="cur">?</td><td class="cur">?</td><td class="cur">?</td><td class="cur">?</td></tr>';
+  guessLog.forEach(g => {
+    html += '<tr class="newrow"><td>' + esc(g.name) + '</td><td>' + clsName(g) + '</td><td>' + cmpCell(g.cost, cur.cost) + '</td><td>' + cmpCellNum(g.atk, cur.attack, cur.type) + '</td><td>' + cmpCellNum(g.hp, cur.health, cur.type) + '</td><td>' + typeName(g) + '</td><td>' + rarName(g) + '</td><td>' + (raceName(g) || "—") + '</td></tr>';
+  });
+  tb.innerHTML = html;
+  const sc = $("cmpScroll");
+  if(window.innerWidth < 900 && guessLog.length >= 2){
+    setTimeout(()=>{ slowScroll(sc, sc.scrollWidth, 700); setTimeout(()=>slowScroll(sc, 0, 700), 1500); }, 120);
+  }
+}
+function cmpCell(a, b){ return a === b ? '<span class="same">' + a + '</span>' : a < b ? '<span class="down">' + a + ' ↓</span>' : '<span class="up">' + a + ' ↑</span>'; }
+function cmpCellNum(a, b, type){ if(type === "SPELL") return "—"; return cmpCell(a, b); }
+function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+// ===== 下拉（可滚动 + 键盘 + 防重复触发） =====
+function attachDD(inputId, ddId, guessFn){
+  const inp = $(inputId), dd = $(ddId);
+  let sel = -1, items = [];
+  inp.addEventListener("focus", ()=>inp.dispatchEvent(new Event("input")));
+  inp.addEventListener("input", ()=>{
+    const v = inp.value.trim();
+    dd.innerHTML = "";
+    sel = -1;
+    if(!v){ dd.className = "dd"; return; }
+    items = CARDS.filter(c => c.name.includes(v)).slice(0, 30);
+    if(items.length === 0){
+      dd.innerHTML = '<div class="dd-empty">没有匹配的卡名，检查一下拼写</div>';
+      dd.className = "dd show";
+      return;
+    }
+    dd.innerHTML = items.map((c, i) =>
+      '<div class="dd-item' + (i === sel ? " sel" : "") + '" data-i="' + i + '"><span class="dot" style="background:' + clsColor(c) + '"></span><span class="nm">' + esc(c.name) + '</span><span class="meta">' + costBand(c) + ' · ' + clsName(c) + '</span></div>'
+    ).join("");
+    dd.className = "dd show";
+    dd.querySelectorAll(".dd-item").forEach(el => {
+      el.addEventListener("mousedown", e => { e.preventDefault(); if(el.dataset.fired) return; el.dataset.fired = 1; pick(el); });
+      el.addEventListener("click", e => { if(el.dataset.fired) return; el.dataset.fired = 1; pick(el); });
+    });
+  });
+  function pick(el){
+    inp.value = items[+el.dataset.i].name;
+    dd.className = "dd";
+    guessFn();
+  }
+  inp.addEventListener("keydown", e => {
+    if(e.key === "ArrowDown"){ e.preventDefault(); if(items.length){ sel = (sel + 1) % items.length; paintDD(); } }
+    else if(e.key === "ArrowUp"){ e.preventDefault(); if(items.length){ sel = (sel - 1 + items.length) % items.length; paintDD(); } }
+    else if(e.key === "Enter"){ e.preventDefault(); dd.className = "dd"; guessFn(); }
+  });
+  function paintDD(){
+    const els = dd.querySelectorAll(".dd-item");
+    els.forEach((el, i) => el.classList.toggle("sel", i === sel));
+    if(sel >= 0 && els[sel]) els[sel].scrollIntoView({block:"nearest"});
+  }
+  document.addEventListener("click", e => { if(!dd.contains(e.target) && e.target !== inp) dd.className = "dd"; });
+}
+function resolveName(inp){
+  const v = inp.value.trim();
+  if(!v) return null;
+  return CARDS.find(c => c.name === v) || null;
+}
+
+// ===== 猜与判定 =====
+function guessC(){ guessBy($("cInput")); }
+function guessS(){ guessBy($("sInput")); }
+function guessQ(){ guessBy($("qInput")); }
+function guessA(){ guessBy($("aInput")); }
+function guessBy(inp){
+  const hit = resolveName(inp);
+  if(!hit){ toast("没找到这张卡，从下拉列表里选一个吧"); return; }
+  if(hit.id === cur.id){ win(); }
+  else { loseGuess(hit); }
+}
+
+function loseGuess(g){
+  streak = 0; bumpStreak();
+  wrongCount++;
+  if(mode === "classic"){
+    guessLog.push({name:g.name, cardClass:g.cardClass, cost:g.cost, atk:g.attack, hp:g.health, type:g.type, rarity:g.rarity, race:g.race});
+    renderCmp();
+    $("cBig").textContent = "还是不对，继续猜（已排除 " + guessLog.length + " 张）";
+  } else if(mode === "splash"){
+    const img = $("splashImg");
+    const scales = [2.4, 1.8, 1.3, 1.0];
+    img.style.transform = "scale(" + (scales[Math.min(wrongCount, scales.length - 1)] || 1.0) + ")";
+  } else if(mode === "quote"){
+    renderTxt("qText", "qMore", cur.flavor);
+  } else if(mode === "ability"){
+    renderTxt("aText", "aMore", cur.text);
+  }
+  showFb(false, "不是 " + esc(g.name) + "，再试试" + (mode === "splash" ? "（原画已放大一点）" : ""));
+}
+function win(){
+  streak++; bumpStreak();
+  const tries = guessLog.length + 1;
+  stats.played++; stats.wins++; stats.totalGuesses += tries;
+  stats.maxStreak = Math.max(stats.maxStreak, streak);
+  stats.bestTries = Math.min(stats.bestTries, tries);
+  stats.modeWins[mode] = (stats.modeWins[mode] || 0) + 1;
+  if(mode !== "quiz") stats.cards[cur.name] = (stats.cards[cur.name] || 0) + 1;
+  saveStats(); renderStats();
+  if(mode === "quiz"){
+    showFb(true, "答对啦！下一题走起");
+  } else {
+    showFb(true, "猜中啦！是 <b>" + esc(cur.name) + "</b> · " + tries + " 次猜中 · 连胜 " + streak);
+  }
+  showWin(tries);
+}
+function showFb(ok, html){
+  const fb = $("fb");
+  fb.className = "fb show " + (ok ? "ok" : "bad");
+  const mini = (mode !== "quiz") ? '<div class="mini"><img src="' + IMG(cur.id) + '" onerror="this.style.display=\'none\'" alt=""><span style="font-size:12px;color:var(--dim2)">' + esc(cur.name) + ' · ' + clsName(cur) + ' · ' + costBand(cur) + '</span></div>' : "";
+  fb.innerHTML = html + mini + '<div><button class="nxt" onclick="nextAll()">下一题 →</button></div>';
+  fb.scrollIntoView({behavior:"smooth", block:"nearest"});
+}
+function nextAll(){ closeWin(); newQuestion(mode); }
+function closeWin(){ $("winOverlay").className = "overlay"; }
+function showWin(tries){
+  const ov = $("winOverlay");
+  $("winTitle").textContent = mode === "quiz" ? "答对啦！" : "猜中啦！";
+  $("winTxt").textContent = "第 " + qn + " 题 · " + tries + " 次猜中 · 当前连胜 " + streak;
+  let bars = "";
+  const max = Math.max(tries, 1);
+  for(let t = 1; t <= max; t++){
+    const w = t === tries ? 100 : 0;
+    bars += '<div class="bar-row"><span style="width:52px">' + t + ' 次</span><div class="bar-track"><div class="bar-fill" style="width:' + w + '%"></div></div></div>';
+  }
+  $("winBars").innerHTML = bars;
+  ov.className = "overlay show";
+}
+const TXT_STEPS = [14, 34, 70, 99999];
+function renderTxt(txtId, moreId, full){
+  const idx = Math.min(wrongCount, TXT_STEPS.length - 1);
+  const showLen = TXT_STEPS[idx];
+  const slice = full.length > showLen ? full.slice(0, showLen) + "…" : full;
+  $(txtId).textContent = "“" + slice + "”";
+  $(moreId).textContent = full.length > showLen ? ("猜错后显示更多（已显示 " + showLen + "/" + full.length + " 字）") : "线索已全部显示，该猜出来了";
+}
+
+// ===== 四选一：猜费用 =====
+function renderCost(){
+  const c = cur;
+  $("coName").textContent = c.name;
+  let meta = clsName(c) + " · " + typeName(c) + " · " + rarName(c);
+  if(c.type !== "SPELL") meta += " · " + atkOf(c) + "/" + hpOf(c);
+  if(raceName(c)) meta += " · " + raceName(c);
+  $("coMeta").textContent = meta;
+  $("costErr").className = "q-err"; $("costErr").textContent = "";
+  $("costOk").className = "q-ok"; $("costOk").textContent = "";
+  const opts = [c.cost];
+  const cands = [];
+  for(let i = 0; i <= 20; i++) if(i !== c.cost) cands.push(i);
+  while(opts.length < 4){ const x = cands.splice(Math.floor(Math.random() * cands.length), 1)[0]; if(x !== undefined) opts.push(x); }
+  opts.sort((a, b) => a - b);
+  $("costOpts").innerHTML = opts.map((v, i) => '<button class="opt" data-v="' + v + '" onclick="answerCost(this,' + v + ')">' + v + ' 费</button>').join("");
+}
+function answerCost(el, v){
+  const btns = $("costOpts").querySelectorAll(".opt");
+  btns.forEach(b => { b.disabled = true; b.classList.add("dim"); });
+  if(v === cur.cost){
+    el.classList.add("correct");
+    $("costOk").className = "q-ok show";
+    $("costOk").textContent = "答对了！" + cur.name + " 就是 " + cur.cost + " 费";
+    win();
+  } else {
+    el.classList.add("wrong");
+    btns.forEach(b => { if(+b.dataset.v === cur.cost) b.classList.add("correct"); });
+    $("costErr").className = "q-err show";
+    $("costErr").textContent = "答错了，" + cur.name + " 是 " + cur.cost + " 费";
+    streak = 0; bumpStreak(); wrongCount++;
+    stats.totalGuesses++; saveStats();
+    showFb(false, "正确答案是 <b>" + esc(cur.name) + "</b>（" + cur.cost + " 费）");
+  }
+}
+
+// ===== 四选一：问答 =====
+const QUIZ = [
+  // —— 简单 +1 分 ——
+  {q:"炎爆术的消耗费用是？", o:["8 费","9 费","10 费","12 费"], a:2, d:1},
+  {q:"炉石传说国服是哪一年正式公测的？", o:["2013 年","2014 年","2015 年","2016 年"], a:1, d:1},
+  {q:"单张卡牌的费用上限是？", o:["10","12","15","20"], a:0, d:1},
+  {q:"卡牌稀有度从低到高的正确顺序是？", o:["普通-稀有-史诗-传说","稀有-普通-传说-史诗","史诗-稀有-传说-普通","普通-史诗-稀有-传说"], a:0, d:1},
+  {q:"火车王里诺艾的消耗费用是？", o:["3 费","4 费","5 费","7 费"], a:2, d:1},
+  {q:"经典模式下现在一共有多少个职业？", o:["9 个","10 个","11 个","12 个"], a:2, d:1},
+  {q:"恶魔猎手是哪一年加入炉石的？", o:["2018 年","2020 年","2022 年","2024 年"], a:1, d:1},
+  {q:"死亡骑士职业是哪一年加入的？", o:["2019 年","2020 年","2022 年","2023 年"], a:2, d:1},
+  {q:"炉石对战中英雄的生命值上限通常是多少？", o:["20","30","40","50"], a:1, d:1},
+  {q:"国服停服后是哪一年回归的？", o:["2023 年","2024 年","2025 年","2026 年"], a:1, d:1},
+  {q:"“我是火车王！”是哪张卡的出场台词？", o:["火车王里诺艾","格罗玛什·地狱咆哮","死亡之翼","巫妖王"], a:0, d:1},
+  {q:"以下哪个是经典的 0 费法术？", o:["背刺","火球术","寒冰箭","奉献"], a:0, d:1},
+  // —— 中等 +2 分 ——
+  {q:"尤格-萨隆的战吼效果是？", o:["随机施放法术","抽三张牌","召唤随从","全场打 5"], a:0, d:2},
+  {q:"砰砰博士的亡语效果是？", o:["召唤两个 1-1 砰砰机器人","全场打 2","抽两张牌","召唤两个 2-2"], a:0, d:2},
+  {q:"希尔瓦娜斯·风行者的亡语是？", o:["控制一个随机敌方随从","全场打 3","抽三张牌","复活随从"], a:0, d:2},
+  {q:"雷诺·杰克逊的战吼是？", o:["牌库没有重复牌时恢复满血","抽满手牌","获得圣盾","全场打 4"], a:0, d:2},
+  {q:"布莱恩·铜须的效果是？", o:["战吼触发两次","亡语触发两次","抽两张牌","全场打 3"], a:0, d:2},
+  {q:"鱼人领军的光环效果是？", o:["使其他鱼人 +2/+1","使其他鱼人 +1/+1","所有鱼人获得冲锋","每回合回复生命"], a:0, d:2},
+  {q:"老瞎眼（鱼人）什么时候获得冲锋？", o:["场上还有其他鱼人时","手牌有鱼人时","攻击时","受伤时"], a:0, d:2},
+  {q:"死亡之翼的战吼是？", o:["消灭所有其他随从并弃掉手牌","抽满手牌","召唤巨龙","全场打 12"], a:0, d:2},
+  {q:"加基森拍卖师的效果是？", o:["你每施放一个法术抽一张牌","每回合开始抽牌","战吼抽三张","亡语抽两张"], a:0, d:2},
+  {q:"王牌猎人的效果是？", o:["战吼消灭一个攻击力大于等于 7 的随从","消灭传说随从","消灭龙","随机消灭一个随从"], a:0, d:2},
+  {q:"蓝龙玛里苟斯的效果是？", o:["法术伤害 +5","法术伤害 +2","抽五张牌","回合结束回复生命"], a:0, d:2},
+  {q:"牧师经典法术“精神控制”的费用是？", o:["8 费","9 费","10 费","12 费"], a:2, d:2},
+  // —— 困难 +3 分 ——
+  {q:"格罗玛什·地狱咆哮的激怒效果是？", o:["+3 攻击","+2 攻击","获得冲锋","获得风怒"], a:0, d:3},
+  {q:"无面操纵者的效果是？", o:["战吼选择一个随从成为其复制","变成 1/1","获得圣盾","消灭一个随从"], a:0, d:3},
+  {q:"末日预言者的效果是？", o:["回合开始时消灭所有随从","回合结束时全场打 2","亡语抽牌","战吼冻结所有随从"], a:0, d:3},
+  {q:"索瑞森大帝的效果是？", o:["回合结束时手牌费用减 1","战吼抽牌","回合开始回血","亡语全场打 2"], a:0, d:3},
+  {q:"炉石传说的世界观出自暴雪的哪个游戏？", o:["魔兽世界","星际争霸","暗黑破坏神","守望先锋"], a:0, d:3},
+  {q:"“我是火车王”这个梗最初来自？", o:["魔兽世界玩家视频","官方动画","冠军皮肤","卡牌小说"], a:0, d:3},
+  {q:"炎爆术在内测时期（最初版本）是几费？", o:["8 费","9 费","10 费","12 费"], a:0, d:3},
+  {q:"精神控制技师的效果是？", o:["对手有 4 个及以上随从时随机控制一个","对手随从减攻","全场打 1","抽一张牌"], a:0, d:3},
+  {q:"尤格-萨隆“傻龙”外号的由来是？", o:["随机施放法术经常坑到自己","长得像傻子","攻击力太低","台词搞笑"], a:0, d:3},
+  {q:"百变泽鲁斯的效果是？", o:["每个回合随机变形为任意卡牌","抽三张牌","复制对手手牌","发现传说牌"], a:0, d:3},
+  {q:"巫妖王（冰封王座）的效果是？", o:["回合结束时随机获得一张死亡骑士牌","全场打 5","抽牌","复活随从"], a:0, d:3},
+  {q:"伊莉斯·逐星（探险者协会）的战吼是？", o:["发现一张黄金猿藏宝图","抽两张牌","发现龙牌","全场随从加攻"], a:0, d:3}
+];
+let quizOrder = [], QUIZ_CUR_A = 0, QUIZ_CUR_O = "", QUIZ_CUR_D = 1, quizScore = 0, quizTimer = null;
+const QUIZ_DIFF = {1:["简单","#7ecb6f"],2:["中等","#e8b54c"],3:["困难","#e5533c"]};
+function renderQuiz(){
+  if(quizOrder.length === 0) quizOrder = shuffle(QUIZ.map((_, i) => i));
+  const qi = quizOrder.pop();
+  const item = QUIZ[qi];
+  QUIZ_CUR_A = item.a; QUIZ_CUR_O = item.o[item.a]; QUIZ_CUR_D = item.d || 1;
+  $("quizQ").textContent = "Q." + item.q;
+  const dt = QUIZ_DIFF[QUIZ_CUR_D];
+  const dlab = $("quizDiff");
+  dlab.textContent = "难度：" + dt[0] + " · +" + QUIZ_CUR_D + " 分";
+  dlab.style.background = dt[1];
+  $("quizScoreBar").innerHTML = "本局得分 <b>" + quizScore + "</b> · 连胜 <b>" + streak + "</b> · 最高 <b>" + (stats.quizBest || 0) + "</b>";
+  $("quizErr").className = "q-err"; $("quizErr").textContent = "";
+  $("quizOk").className = "q-ok"; $("quizOk").textContent = "";
+  $("quizOpts").innerHTML = item.o.map((t, i) => '<button class="opt" data-i="' + i + '" onclick="answerQuiz(this,' + i + ')">' + esc(t) + '</button>').join("");
+}
+function answerQuiz(el, i){
+  const btns = $("quizOpts").querySelectorAll(".opt");
+  btns.forEach(b => { b.disabled = true; b.classList.add("dim"); });
+  if(i === QUIZ_CUR_A){
+    el.classList.add("correct");
+    const bonus = streak >= 10 ? 3 : streak >= 6 ? 2 : streak >= 3 ? 1 : 0;
+    const gain = QUIZ_CUR_D + bonus;
+    quizScore += gain;
+    streak++; bumpStreak();
+    stats.maxStreak = Math.max(stats.maxStreak, streak);
+    stats.totalGuesses++; saveStats();
+    $("quizOk").className = "q-ok show";
+    $("quizOk").textContent = "+" + gain + " 分（难度 " + QUIZ_CUR_D + " 分 + 连胜加成 " + bonus + " 分）";
+    $("quizScoreBar").innerHTML = "本局得分 <b>" + quizScore + "</b> · 连胜 <b>" + streak + "</b> · 最高 <b>" + (stats.quizBest || 0) + "</b>";
+    clearTimeout(quizTimer);
+    quizTimer = setTimeout(()=>{ renderQuiz(); }, 1200);
+  } else {
+    el.classList.add("wrong");
+    btns[QUIZ_CUR_A].classList.add("correct");
+    $("quizErr").className = "q-err show";
+    $("quizErr").textContent = "答错了，正确答案是：" + QUIZ_CUR_O;
+    stats.quizBest = Math.max(stats.quizBest || 0, quizScore);
+    saveStats(); renderStats();
+    streak = 0; bumpStreak(); wrongCount++;
+    stats.totalGuesses++; saveStats();
+    showFb(false, "本局结束，得分 <b>" + quizScore + "</b> 分（历史最高 " + (stats.quizBest || 0) + " 分）");
+    const nxt = $("fb").querySelector(".nxt");
+    nxt.textContent = "再来一局 →";
+    nxt.onclick = ()=>{ quizScore = 0; renderStats(); nextAll(); };
+  }
+}
+
+// ===== 提示 =====
+$("hintBtn").addEventListener("click", ()=>{
+  if(mode === "quiz"){ toast("问答模式没有提示，靠实力"); return; }
+  if(!hintOrder || hintOrder.length === 0) hintOrder = shuffle(buildHints());
+  if(hintIdx >= hintOrder.length){ toast("提示用完啦，直接猜吧"); return; }
+  const box = $("hintBox");
+  box.classList.add("show");
+  const h = hintOrder[hintIdx++];
+  box.innerHTML += '<div style="margin-top:' + (hintIdx > 1 ? "6px" : "0") + '">💡 ' + esc(h) + '</div>';
+});
+
+// ===== 模式切换 =====
+const VIEWS = {classic:"vClassic",splash:"vSplash",quote:"vQuote",ability:"vAbility",cost:"vCost",quiz:"vQuiz"};
+$("tabs").addEventListener("click", e => {
+  const b = e.target.closest(".tab");
+  if(!b) return;
+  $("tabs").querySelectorAll(".tab").forEach(t => t.classList.remove("on"));
+  b.classList.add("on");
+  const m = b.dataset.mode;
+  Object.keys(VIEWS).forEach(k => $(VIEWS[k]).style.display = "none");
+  $(VIEWS[m]).style.display = "block";
+  newQuestion(m);
+});
+
+// ===== 分享 =====
+function openShare(){
+  const ov = $("shareModal");
+  $("shareQr").innerHTML = "";
+  try{
+    if(typeof QRCode !== "undefined") new QRCode($("shareQr"), {text: SITE_URL, width: 120, height: 120, correctLevel: QRCode.CorrectLevel.M});
+    else $("shareQr").innerHTML = '<span style="color:#333;font-size:10px;word-break:break-all;padding:2px;">' + SITE_URL + '</span>';
+  }catch(e){ $("shareQr").innerHTML = '<span style="color:#333;font-size:10px;word-break:break-all;padding:2px;">' + SITE_URL + '</span>'; }
+  $("shareModalText").textContent = "炉石传说 猜卡牌｜" + MODE_LABEL[mode] + " · 第 " + qn + " 题 · 连胜 " + streak + "\n175 张经典卡 · 6 种玩法\n" + SITE_URL;
+  ov.className = "overlay show";
+}
+$("topShareBtn").addEventListener("click", openShare);
+$("shareCloseBtn").addEventListener("click", ()=>{ $("shareModal").className = "overlay"; });
+$("shareCopyBtn").addEventListener("click", ()=>{
+  const t = $("shareModalText").textContent;
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(t).then(()=>toast("文案已复制，去微信粘贴吧")).catch(()=>copyFallback(t));
+  } else copyFallback(t);
+});
+$("shareSysBtn").addEventListener("click", ()=>{
+  if(navigator.share){
+    navigator.share({title:"炉石传说 猜卡牌", text: $("shareModalText").textContent, url: SITE_URL}).catch(()=>{});
+  } else {
+    $("shareCopyBtn").click();
+  }
+});
+$("winShareBtn").addEventListener("click", openShare);
+function copyFallback(t){
+  const ta = document.createElement("textarea");
+  ta.value = t; ta.style.position = "fixed"; ta.style.opacity = "0";
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand("copy"); toast("文案已复制"); }catch(e){ toast("复制失败，请长按手动复制"); }
+  document.body.removeChild(ta);
+}
+
+// ===== 数据加载与初始化 =====
+fetch("assets/hs_manifest.json")
+  .then(r => { if(!r.ok) throw new Error("manifest " + r.status); return r.json(); })
+  .then(m => {
+    CARDS = m.cards || [];
+    if(CARDS.length === 0) throw new Error("empty");
+    renderStats();
+    newQuestion("classic");
+  })
+  .catch(err => {
+    $("cBig").textContent = "数据加载失败";
+    $("cSub").textContent = "请刷新页面重试（" + String(err).slice(0, 60) + "）";
+  });
+
+attachDD("cInput", "cDD", guessC);
+attachDD("sInput", "sDD", guessS);
+attachDD("qInput", "qDD", guessQ);
+attachDD("aInput", "aDD", guessA);
+
+// 原画加载失败
+function splashFail(){
+  const img = $("splashImg");
+  img.style.display = "none";
+  $("splashPh").style.display = "flex";
+  $("splashPh").textContent = "这张卡的原画加载失败了，直接输入卡名也能猜";
+}
+$("splashImg").addEventListener("load", ()=>{ $("splashPh").style.display = "none"; });
+
+// ===== 水印移除（与 LOL/王者同款，removeChild + 防重注入轮询） =====
+(function(){
+  function killBadge(){
+    try{
+      var list = document.querySelectorAll('body > div');
+      for(var i=0;i<list.length;i++){
+        var d = list[i];
+        if(d.shadowRoot && d.shadowRoot.querySelector('.watermark-root')){
+          if(d.parentNode) d.parentNode.removeChild(d);
+        }
+      }
+    }catch(e){}
+  }
+  killBadge();
+  new MutationObserver(killBadge).observe(document.body,{childList:true});
+  setInterval(killBadge, 300);
+})();
+
+</script>
+</body>
+</html>

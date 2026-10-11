@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 队友语录生成器 · 柿子eeeee</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🗣️</text></svg>">
+<style>
+:root{--bg:#0d1117;--card:#161b22;--panel:#1c2330;--line:#2a3242;--text:#e6edf3;--dim:#9aa7b8;--muted:#6b7686;--gold:#c8aa6e;--ok:#7ed18c;--bad:#e58a7a;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:"Microsoft YaHei","PingFang SC",system-ui,sans-serif;min-height:100vh;}
+.wrap{max-width:680px;margin:0 auto;padding:22px 16px 40px;}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+.top h1{font-size:22px;color:var(--gold);}
+.back{color:var(--dim);text-decoration:none;font-size:13px;}
+.back:hover{color:var(--gold);}
+.sub{color:var(--muted);font-size:13px;line-height:1.7;margin-bottom:18px;}
+.scene{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
+.sbtn{background:var(--panel);border:1px solid var(--line);color:var(--dim);border-radius:999px;padding:7px 15px;font-size:13px;cursor:pointer;transition:all .2s;}
+.sbtn.active{border-color:var(--gold);color:var(--gold);}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+.btn{background:var(--gold);color:#161003;border:none;border-radius:10px;padding:11px 18px;font-size:14px;font-weight:700;cursor:pointer;transition:filter .2s;}
+.btn:hover{filter:brightness(1.12);}
+.btn.ghost{background:var(--panel);color:var(--text);border:1px solid var(--line);}
+.stage{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;min-height:170px;display:flex;flex-direction:column;justify-content:center;gap:12px;}
+.q-text{font-size:17px;line-height:2;font-weight:700;}
+.q-tag{color:var(--gold);font-size:12.5px;}
+.q-actions{display:flex;gap:8px;flex-wrap:wrap;}
+.rec{margin-top:18px;}
+.rec h3{font-size:15px;color:var(--dim);margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.rec-list{display:flex;flex-direction:column;gap:8px;}
+.rec-item{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 13px;font-size:13px;line-height:1.8;display:flex;justify-content:space-between;gap:10px;align-items:flex-start;}
+.rec-item .rm{color:var(--muted);cursor:pointer;flex-shrink:0;font-size:12px;}
+.rec-item .rm:hover{color:var(--bad);}
+.empty{color:var(--muted);font-size:13px;text-align:center;padding:16px;}
+.hint{color:var(--muted);font-size:12px;line-height:1.7;margin-top:14px;}
+.toast{position:fixed;left:50%;bottom:34px;transform:translateX(-50%);background:#232b3a;color:var(--text);border:1px solid var(--line);padding:10px 18px;border-radius:10px;font-size:13px;z-index:99;opacity:0;pointer-events:none;transition:opacity .25s;max-width:86vw;text-align:center;}
+.toast.show{opacity:1;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <h1>🗣️ AI 队友语录生成器</h1>
+    <a class="back" href="index.html">← 返回工具箱</a>
+  </div>
+  <p class="sub">一键生成"队友式发言"：开局、逆风、团战、甩锅、邀功、阴阳怪气全覆盖。生成后直接复制，发群里快乐加倍。</p>
+  <div class="scene" id="scenes"></div>
+  <div class="actions">
+    <button class="btn" id="genBtn">🎲 生成语录</button>
+    <button class="btn ghost" id="copyBtn">📋 复制</button>
+    <button class="btn ghost" id="burstBtn">⚡ 连发 5 条</button>
+    <button class="btn ghost" id="saveBtn">⭐ 收藏</button>
+  </div>
+  <div class="stage">
+    <div class="q-tag" id="qTag"></div>
+    <div class="q-text" id="qText">点击「生成语录」看看你的队友会说啥…</div>
+    <div class="q-actions" style="display:none;" id="qActs"></div>
+  </div>
+  <div class="rec">
+    <h3>⭐ 我的收藏 <span style="color:var(--muted);font-size:12px;">(保存在本机浏览器)</span></h3>
+    <div class="rec-list" id="recList"></div>
+  </div>
+  <div class="hint">语录由本地模板引擎随机生成，纯属娱乐，请勿用于真实对局引战。祝你开黑快乐～</div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const SCENES = ["开局","对线","团战","逆风","顺风","甩锅","邀功","阴阳怪气","心态","结算"];
+const OPENS = {
+  "开局":["开局先定个小目标：不死就是赢。","先说好，这局谁都不许压力队友。","兄弟们，输了不亏，赢了血赚。","我先说：这局我不背锅。","开局 30 秒，我已有不详的预感。","这把稳了，因为我心态好。","大家别慌，我 200 斤，稳如泰山。","赢不赢无所谓，快乐最重要，所以选快乐英雄。"],
+  "对线":["对面上单刚才卡了一下，我看到他补刀全漏了。","这波我失误了，但主要是对面太会了。","我差一点就单杀了，就一点点。","对面打野是不是住我们野区？","我这是战略示弱，别急。","补刀少没事，气势不能输。","他敢越塔？我就敢送。","对面中单是脚本吧，反应这么快。"],
+  "团战":["兄弟们集合，这波团我能打十个。","我先上了！……怎么没人跟？","这波开团是我的，锅也是我的，行了吧。","对面技能全交了，就是现在！","等等，我还在泉水读秒。","团可以输，C 必须死！","我闪现上去切 C，你们跟上输出。","别追残血！……算了，追吧。"],
+  "逆风":["逆风翻盘局，才叫电竞精神。","经济落后没事，我们后期阵容。","稳住，我们能赢（心虚）。","这波我们虽败，但气势赢了。","对面只是领先人头，没领先心态。","再撑 10 分钟，后期是我们的天下。","我已经在规划翻盘路线了。","我们输在阵容，没输在技术。"],
+  "顺风":["兄弟们，这节奏我已经看不懂输字怎么写了。","领先 10 个人头，对面已经不想玩了。","我现在膨胀了，谁来劝劝我。","这局随便打打，给大家展示一下大局观。","优势局的快乐，你想象不到。","对面开始摆烂了，胜利在望。","我这波操作，建议录下来投稿。","已经想好赛后怎么吹了。"],
+  "甩锅":["这波不怪我，怪对面太阴。","我死是因为辅助没给视野。","打野怎么不来帮？我单杀不了啊。","这波是网络波动，真的。","我鼠标刚才失灵了。","是队友先送的，我才跟的。","我已经尽力了，剩下看命。","这不是我的问题，是版本的问题。"],
+  "邀功":["刚才那波是我指挥的，都别抢。","看见没，我那个预判值一个 MVP。","要不是我稳住，这把早没了。","我虽然人头少，但节奏是我带的。","那个关键大招是我放的，记得点赞。","我这波 1 换 3，血赚。","MVP 非我莫属，别跟我争。","我的存在，就是这支队伍的灵魂。"],
+  "阴阳怪气":["哇，好厉害，学到了。","你操作这么好，应该去打职业。","厉害厉害，这波我人看傻了。","原来还能这么玩，开眼界了。","这波操作，建议入选集锦（反向）。","你是对面派来的吗？","没关系，你开心就好。","高手，真是高手（鼓掌）。"],
+  "心态":["输赢不重要，重要的是别掉分太多。","我已经卸载三次了，每次都是被队友气回来。","这游戏，玩的就是心态。","我现在内心毫无波澜，甚至想笑。","高血压玩家请勿观看本局。","打完这把就去吃饭，结果又开了。","再赢一把就睡觉——然后输到天亮。","游戏可以输，心态不能崩。"],
+  "结算":["结算面板一看，我伤害最高，不解释。","输了怪阵容，赢了夸自己。","这把我尽力了，队友尽力演了。","MVP 是谁我不说，懂的都懂。","结算已到，赛后采访时间到。","下次一定赢，先把这把的锅分了。","我已经在研究下一把的阵容了。","再见，我去单排了，别挽留我。"],
+};
+const TAILS = ["，就这？","，懂的都懂。","，兄弟们把泪目打在公屏上。","，不接受反驳。","，我说的。","，怕不怕？","，建议直接投降。","，这波怎么说？","，拿去吹吧。","，剧终。","，勿 6。","，谢谢大家。"];
+const FILLS = ["（队友已阵亡）","（队友正在赶来）","（信号已屏蔽）","（经济-1000）","（心态+100）","（闪现已交）","（本局MVP预定了）","（弹幕护体）","（真实）","（狗头保命）","（手动狗头）","（坐标：泉水）"];
+const $ = id => document.getElementById(id);
+let S = "开局", CUR = "";
+function toast(m){ const t=$("toast"); t.textContent=m; t.classList.add("show"); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove("show"),2000); }
+function rnd(a){ return a[Math.floor(Math.random()*a.length)]; }
+function gen(){
+  const body = rnd(OPENS[S]);
+  const fill = Math.random()<.55 ? " " + rnd(FILLS) : "";
+  const tail = Math.random()<.6 ? " " + rnd(TAILS) : "";
+  CUR = body + fill + tail;
+  $("qTag").textContent = "场景：[" + S + "] · AI 队友语录";
+  $("qText").textContent = CUR;
+  $("qActs").style.display = "";
+}
+function copyText(t){
+  if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(t).then(()=>toast("语录已复制，去发群里吧")).catch(()=>copyFb(t)); } else copyFb(t);
+}
+function copyFb(t){ const ta=document.createElement("textarea"); ta.value=t; ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta); ta.select(); try{ document.execCommand("copy"); toast("语录已复制"); }catch(e){ toast("复制失败，长按手动复制"); } document.body.removeChild(ta); }
+function burst(){
+  const lines = [];
+  for(let i=0;i<5;i++){ S = SCENES[Math.floor(Math.random()*SCENES.length)]; lines.push("【"+S+"】"+rnd(OPENS[S]) + (Math.random()<.5?" "+rnd(FILLS):"")); }
+  const t = lines.join("\n") + "\n—— 由 AI 队友语录生成器产出";
+  copyText(t);
+}
+function save(){
+  if(!CUR){ toast("先生成一条再收藏吧"); return; }
+  let arr = JSON.parse(localStorage.getItem("quotes_fav")||"[]");
+  if(arr.includes(CUR)){ toast("这条已经收藏过啦"); return; }
+  arr.unshift(CUR); arr = arr.slice(0,20);
+  localStorage.setItem("quotes_fav", JSON.stringify(arr));
+  renderRec(); toast("已收藏 ⭐");
+}
+function renderRec(){
+  const arr = JSON.parse(localStorage.getItem("quotes_fav")||"[]");
+  $("recList").innerHTML = arr.length ? arr.map((q,i)=>`
+    <div class="rec-item"><span>${q}</span><span class="rm" data-i="${i}">删除</span></div>`).join("")
+    : `<div class="empty">还没有收藏，看到好笑的点「收藏」</div>`;
+  $("recList").querySelectorAll(".rm").forEach(el=>{
+    el.onclick = ()=>{
+      let a = JSON.parse(localStorage.getItem("quotes_fav")||"[]");
+      a.splice(+el.dataset.i,1); localStorage.setItem("quotes_fav", JSON.stringify(a));
+      renderRec(); toast("已删除");
+    };
+  });
+}
+SCENES.forEach(s=>{
+  const b = document.createElement("button");
+  b.className = "sbtn" + (s===S?" active":"");
+  b.textContent = s;
+  b.onclick = ()=>{ S = s; document.querySelectorAll(".sbtn").forEach(x=>x.classList.remove("active")); b.classList.add("active"); };
+  $("scenes").appendChild(b);
+});
+$("genBtn").onclick = gen;
+$("copyBtn").onclick = ()=>{ if(CUR) copyText(CUR + "\n—— 由 AI 队友语录生成器产出"); else toast("先生成一条吧"); };
+$("burstBtn").onclick = burst;
+$("saveBtn").onclick = save;
+renderRec();
+</script>
+<script>
+(function(){var r=function(){var d=document.querySelector('body>div');if(d&&d.shadowRoot){var w=d.shadowRoot.querySelector('.watermark-root');if(w){d.remove();}}};r();new MutationObserver(r).observe(document.body,{childList:true,subtree:true});setInterval(r,300);})();
+</script>
+</body>
+</html>

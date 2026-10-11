@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON转Excel关卡表转换器</title>
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 30px 20px;
+            color: #333;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            animation: fadeIn 0.6s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            background: linear-gradient(90deg, #6a11cb, #2575fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .subtitle {
+            font-size: 1.1rem;
+            color: #7f8c8d;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        
+        .drop-area {
+            border: 3px dashed #3498db;
+            border-radius: 12px;
+            padding: 40px 20px;
+            text-align: center;
+            background: #f8f9fa;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            margin-bottom: 25px;
+        }
+        
+        .drop-area:hover, .drop-area.dragover {
+            background: #e3f2fd;
+            border-color: #2575fc;
+            transform: translateY(-3px);
+        }
+        
+        .drop-area i {
+            font-size: 5rem;
+            color: #3498db;
+            margin-bottom: 20px;
+            display: block;
+        }
+        
+        .drop-area h3 {
+            font-size: 1.8rem;
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+        
+        .drop-area p {
+            color: #7f8c8d;
+            margin-bottom: 20px;
+        }
+        
+        .btn {
+            display: inline-block;
+            background: linear-gradient(90deg, #6a11cb, #2575fc);
+            color: white;
+            padding: 14px 28px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(37, 117, 252, 0.3);
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(37, 117, 252, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(1px);
+        }
+        
+        .btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .progress-container {
+            margin-top: 30px;
+            display: none;
+        }
+        
+        .progress-bar {
+            height: 12px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+        
+        .progress {
+            height: 100%;
+            background: linear-gradient(90deg, #6a11cb, #2575fc);
+            width: 0%;
+            transition: width 0.4s ease;
+            border-radius: 10px;
+        }
+        
+        .status {
+            text-align: center;
+            font-size: 1.1rem;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            min-height: 28px;
+        }
+        
+        .result {
+            display: none;
+            text-align: center;
+            padding: 25px;
+            background: #e8f4fe;
+            border-radius: 12px;
+            margin-top: 25px;
+            animation: slideIn 0.5s ease;
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .result h3 {
+            font-size: 1.5rem;
+            color: #27ae60;
+            margin-bottom: 15px;
+        }
+        
+        .result p {
+            margin-bottom: 20px;
+            color: #34495e;
+        }
+        
+        .error {
+            display: none;
+            background: #ffebee;
+            border-left: 4px solid #e53935;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+            color: #c62828;
+        }
+        
+        .instructions {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 30px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .instructions h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+        
+        .instructions ul {
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        
+        .logo-icon {
+            font-size: 2.5rem;
+            margin-right: 15px;
+            color: #2575fc;
+        }
+        
+        .logo-text {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, #6a11cb, #2575fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        footer {
+            margin-top: 30px;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="logo">
+        <div class="logo-icon">🧩</div>
+        <div class="logo-text">关卡转换器</div>
+    </div>
+    
+    <div class="container">
+        <header>
+            <h1>JSON转Excel关卡表转换器</h1>
+            <p class="subtitle">上传JSON文件，一键转换为标准Excel关卡表格式，支持拖放操作，转换完成后自动下载</p>
+        </header>
+        
+        <main>
+            <div class="drop-area" id="dropArea">
+                <i>📁</i>
+                <h3>拖放JSON文件到此处</h3>
+                <p>或点击按钮选择文件</p>
+                <button class="btn" id="browseBtn">选择文件</button>
+                <input type="file" id="fileInput" class="file-input" accept=".json">
+            </div>
+            
+            <div class="progress-container" id="progressContainer">
+                <div class="progress-bar">
+                    <div class="progress" id="progressBar"></div>
+                </div>
+                <div class="status" id="statusText">准备开始转换...</div>
+            </div>
+            
+            <div class="result" id="resultContainer">
+                <h3>转换成功！</h3>
+                <p>Excel文件已生成并下载</p>
+                <button class="btn" id="resetBtn">转换新文件</button>
+            </div>
+            
+            <div class="error" id="errorContainer"></div>
+            
+            <div class="instructions">
+                <h3>使用说明</h3>
+                <ul>
+                    <li>请上传符合规范的JSON关卡数据文件</li>
+                    <li>文件将被转换为Excel格式并自动下载</li>
+                    <li>输出文件名包含时间戳，避免重复覆盖</li>
+                    <li>支持JSON数组格式的关卡数据结构</li>
+                    <li>每个章节最多支持6层关卡数据</li>
+                </ul>
+            </div>
+        </main>
+    </div>
+    
+    <footer>
+        <p>© 2023 关卡转换器 | 让游戏开发更简单</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const dropArea = document.getElementById('dropArea');
+            const fileInput = document.getElementById('fileInput');
+            const browseBtn = document.getElementById('browseBtn');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressBar = document.getElementById('progressBar');
+            const statusText = document.getElementById('statusText');
+            const resultContainer = document.getElementById('resultContainer');
+            const errorContainer = document.getElementById('errorContainer');
+            const resetBtn = document.getElementById('resetBtn');
+            
+            // 点击选择文件按钮
+            browseBtn.addEventListener('click', () => {
+                fileInput.click();
+            });
+            
+            // 选择文件事件
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length) {
+                    handleFile(e.target.files[0]);
+                }
+            });
+            
+            // 拖放事件
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropArea.addEventListener(eventName, highlight, false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, unhighlight, false);
+            });
+            
+            function highlight() {
+                dropArea.classList.add('dragover');
+            }
+            
+            function unhighlight() {
+                dropArea.classList.remove('dragover');
+            }
+            
+            // 处理拖放文件
+            dropArea.addEventListener('drop', (e) => {
+                const dt = e.dataTransfer;
+                const file = dt.files[0];
+                handleFile(file);
+            });
+            
+            // 重置按钮
+            resetBtn.addEventListener('click', () => {
+                resetUI();
+            });
+            
+            // 处理文件
+            function handleFile(file) {
+                errorContainer.style.display = 'none';
+                progressContainer.style.display = 'block';
+                statusText.textContent = '正在读取文件...';
+                
+                if (file.type !== 'application/json') {
+                    showError('请上传JSON文件');
+                    return;
+                }
+                
+                const reader = new FileReader();
+                
+                reader.onprogress = (e) => {
+                    if (e.lengthComputable) {
+                        const percent = (e.loaded / e.total) * 100;
+                        progressBar.style.width = `${percent}%`;
+                    }
+                };
+                
+                reader.onload = (e) => {
+                    progressBar.style.width = '30%';
+                    statusText.textContent = '文件读取成功，开始转换...';
+                    
+                    try {
+                        const jsonData = JSON.parse(e.target.result);
+                        progressBar.style.width = '50%';
+                        statusText.textContent = '处理关卡数据中...';
+                        
+                        // 模拟处理延迟
+                        setTimeout(() => {
+                            convertToExcel(jsonData);
+                        }, 800);
+                    } catch (err) {
+                        showError('JSON解析错误: ' + err.message);
+                    }
+                };
+                
+                reader.onerror = () => {
+                    showError('文件读取失败');
+                };
+                
+                reader.readAsText(file);
+            }
+            
+            // 转换到Excel
+            function convertToExcel(jsonData) {
+                try {
+                    progressBar.style.width = '70%';
+                    statusText.textContent = '生成Excel数据...';
+                    
+                    // 原始转换逻辑（稍作调整以适应浏览器环境）
+                    const excelData = [];
+                    let levelId = 1;
+                    let logCount = 1;
+                    
+                    // 遍历所有章节
+                    jsonData.forEach((chapter, chapterIndex) => {
+                        const row = {
+                            '关卡ID': levelId++,
+                            '所属章节': Math.floor(chapterIndex / 5) + 1
+                        };
+                        
+                        // 反向遍历章节，从最后一个关卡开始
+                        for (let levelIndex = chapter.length - 1; levelIndex >= 0; levelIndex--) {
+                            const level = chapter[levelIndex];
+                            // 遍历章节中的每个关卡
+                            const wordKey = `第${chapter.length - levelIndex}层题目`;
+                            const posKey = `第${chapter.length - levelIndex}层空位`;
+                            const rewardKey = `第${chapter.length - levelIndex}层奖励开关`;
+                            
+                            // 先初始化为空值
+                            row[wordKey] = '';
+                            row[posKey] = '';
+                            row[rewardKey] = '';
+                            
+                            // 处理每层数据（最多6层）
+                            let words = "";
+                            let positions = "";
+                            let rewards = "";
+                            
+                            for (let layerIndex = 0; layerIndex < 6; layerIndex++) {
+                                // 检查当前层是否存在数据
+                                if (layerIndex < level.length) {
+                                    const layerData = level[layerIndex];
+                                    
+                                    // 处理单层数据（可能是数组或对象）
+                                    if (Array.isArray(layerData)) {
+                                        // 数组结构：多个词语
+                                        layerData.forEach(item => {
+                                            words += (words ? "#" : "") + item.word;
+                                            positions += (positions ? ";" : "") + item.pos.join('#');
+                                            rewards += (rewards ? "#" : "") + (item.coin ? '1' : '0');
+                                        });
+                                    } else if (typeof layerData === 'object' && layerData !== null) {
+                                        // 对象结构：单个词语
+                                        words += (words ? "#" : "") + layerData.word;
+                                        positions += (positions ? ";" : "") + layerData.pos.join('#');
+                                        rewards += (rewards ? "#" : "") + (layerData.coin ? '1' : '0');
+                                    }
+                                }
+                            }
+                            
+                            // 添加数据到行
+                            row[wordKey] = words;
+                            row[posKey] = positions;
+                            row[rewardKey] = rewards;
+                        }
+                        
+                        excelData.push(row);
+                    });
+                    
+                    progressBar.style.width = '90%';
+                    statusText.textContent = '生成Excel文件...';
+                    
+                    // 创建工作簿和工作表
+                    const worksheet = XLSX.utils.json_to_sheet(excelData);
+                    const workbook = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(workbook, worksheet, '主线关卡表');
+                    
+                    // 生成带时间戳的文件名
+                    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+                    const fileName = `关卡表输出_${timestamp}.xlsx`;
+                    
+                    // 生成Excel文件并下载
+                    XLSX.writeFile(workbook, fileName);
+                    
+                    progressBar.style.width = '100%';
+                    statusText.textContent = '转换完成！';
+                    
+                    // 显示结果
+                    setTimeout(() => {
+                        progressContainer.style.display = 'none';
+                        resultContainer.style.display = 'block';
+                    }, 800);
+                    
+                } catch (err) {
+                    showError('转换错误: ' + err.message);
+                }
+            }
+            
+            // 显示错误
+            function showError(message) {
+                errorContainer.textContent = message;
+                errorContainer.style.display = 'block';
+                progressBar.style.width = '0%';
+                statusText.textContent = '转换失败';
+                
+                setTimeout(() => {
+                    progressContainer.style.display = 'none';
+                }, 2000);
+            }
+            
+            // 重置UI
+            function resetUI() {
+                resultContainer.style.display = 'none';
+                errorContainer.style.display = 'none';
+                progressContainer.style.display = 'none';
+                progressBar.style.width = '0%';
+                fileInput.value = '';
+            }
+        });
+    </script>
+<script>
+/* 移除平台右下角水印角标（shadow DOM .watermark-root，直接移除节点，防重注入轮询） */
+(function(){
+  function killBadge(){
+    try{
+      var list = document.querySelectorAll('body > div');
+      for(var i=0;i<list.length;i++){
+        var d = list[i];
+        if(d.shadowRoot && d.shadowRoot.querySelector('.watermark-root')){
+          if(d.parentNode) d.parentNode.removeChild(d);
+        }
+      }
+    }catch(e){}
+  }
+  killBadge();
+  new MutationObserver(killBadge).observe(document.body,{childList:true});
+  setInterval(killBadge, 300);
+})();
+</script>
+</body>
+</html>

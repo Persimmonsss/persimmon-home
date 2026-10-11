@@ -1,0 +1,1399 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>柿子eeeee</title>
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --persimmon: #ff6b35;
+      --persimmon-light: #ff9a56;
+      --persimmon-dark: #e55a2b;
+      --cream: #fff5ed;
+      --dark: #2d1b0f;
+      --gray: #8c8079;
+      --white: #ffffff;
+      --shadow: 0 8px 30px rgba(255, 107, 53, 0.15);
+      /* 主题变量（深色模式会覆盖） */
+      --bg: #fff5ed;
+      --card-bg: #ffffff;
+      --text: #2d1b0f;
+      --text-soft: #5a4a40;
+      --muted: #8c8079;
+      --border: #f0f0f0;
+      --nav-bg: rgba(255, 245, 237, 0.85);
+    }
+
+    body.dark {
+      --bg: #181009;
+      --card-bg: #231710;
+      --text: #f6e9dd;
+      --text-soft: #cbb9a7;
+      --muted: #a08e7e;
+      --border: #36281d;
+      --shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+      --nav-bg: rgba(24, 16, 9, 0.88);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    /* ===== 滚动进度条 ===== */
+    .scroll-progress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      width: 0;
+      background: linear-gradient(90deg, var(--persimmon), #ffd166);
+      z-index: 2001;
+      transition: width 0.1s linear;
+    }
+
+    /* ===== 导航栏 ===== */
+    nav {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      background: var(--nav-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      z-index: 1000;
+      padding: 14px 0;
+      box-shadow: 0 1px 0 rgba(255, 107, 53, 0.1);
+    }
+    nav .nav-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+    }
+    nav .brand {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--persimmon);
+      text-decoration: none;
+    }
+    nav .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    nav .nav-links {
+      display: flex;
+      gap: 28px;
+      list-style: none;
+    }
+    nav .nav-links a {
+      color: var(--text);
+      text-decoration: none;
+      font-size: 0.95rem;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    nav .nav-links a:hover { color: var(--persimmon); }
+
+    /* 主题切换按钮 */
+    .theme-toggle {
+      background: none;
+      border: 2px solid rgba(255, 107, 53, 0.35);
+      border-radius: 50%;
+      width: 38px;
+      height: 38px;
+      cursor: pointer;
+      font-size: 1.05rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      color: var(--text);
+    }
+    .theme-toggle:hover { border-color: var(--persimmon); transform: rotate(20deg); }
+
+    /* 汉堡菜单 */
+    .hamburger {
+      display: none;
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      color: var(--text);
+      cursor: pointer;
+      padding: 4px 8px;
+    }
+
+    /* ===== Hero ===== */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      position: relative;
+      background: linear-gradient(135deg, var(--persimmon) 0%, var(--persimmon-light) 50%, #ff8e53 100%);
+      overflow: hidden;
+    }
+    .hero::before {
+      content: "";
+      position: absolute;
+      width: 500px;
+      height: 500px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.08);
+      top: -150px;
+      right: -100px;
+      animation: float 8s ease-in-out infinite;
+    }
+    .hero::after {
+      content: "";
+      position: absolute;
+      width: 300px;
+      height: 300px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.06);
+      bottom: -80px;
+      left: -60px;
+      animation: float 10s ease-in-out infinite reverse;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-30px); }
+    }
+    .hero-content {
+      position: relative;
+      z-index: 1;
+      color: #fff;
+      padding: 0 20px;
+      animation: fadeInUp 1s ease;
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(40px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .hero .avatar {
+      width: 130px;
+      height: 130px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.15);
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 56px;
+      margin: 0 auto 28px;
+      animation: bounce 3s ease-in-out infinite;
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    .hero h1 {
+      font-size: 3.2rem;
+      margin-bottom: 16px;
+      letter-spacing: 2px;
+    }
+    .hero .tagline {
+      font-size: 1.15rem;
+      opacity: 0.95;
+      margin-bottom: 36px;
+      max-width: 560px;
+      line-height: 1.6;
+      min-height: 1.8em;
+    }
+    .hero .cursor {
+      display: inline-block;
+      margin-left: 2px;
+      color: rgba(255, 255, 255, 0.9);
+      animation: blink 1s step-end infinite;
+      font-weight: 400;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+    .hero .cta {
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .hero .cta a {
+      padding: 12px 32px;
+      border-radius: 30px;
+      text-decoration: none;
+      font-size: 0.95rem;
+      font-weight: 600;
+      transition: all 0.25s;
+    }
+    .btn-primary {
+      background: #fff;
+      color: var(--persimmon);
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    }
+    .btn-outline {
+      border: 2px solid rgba(255, 255, 255, 0.5);
+      color: #fff;
+    }
+    .btn-outline:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: #fff;
+    }
+    .scroll-hint {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 0.8rem;
+      animation: bounce 2s ease-in-out infinite;
+    }
+
+    /* ===== 通用 section ===== */
+    section {
+      padding: 100px 24px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .section-title {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--persimmon);
+      text-align: center;
+      margin-bottom: 12px;
+    }
+    .section-subtitle {
+      text-align: center;
+      color: var(--muted);
+      font-size: 1rem;
+      margin-bottom: 48px;
+    }
+
+    /* ===== 滚动渐入动画 ===== */
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ===== About ===== */
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      align-items: center;
+    }
+    .about-text p {
+      color: var(--text-soft);
+      line-height: 1.8;
+      font-size: 1.05rem;
+      margin-bottom: 16px;
+    }
+    .about-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .stat-card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 28px 20px;
+      text-align: center;
+      box-shadow: var(--shadow);
+      transition: transform 0.25s, background 0.3s;
+    }
+    .stat-card:hover { transform: translateY(-4px); }
+    .stat-card .num {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--persimmon);
+    }
+    .stat-card .label {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    /* ===== Skills ===== */
+    .skills-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 20px;
+    }
+    .skill-card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 32px 24px;
+      text-align: center;
+      box-shadow: var(--shadow);
+      transition: transform 0.25s, box-shadow 0.25s, background 0.3s;
+    }
+    .skill-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 12px 40px rgba(255, 107, 53, 0.2);
+    }
+    .skill-card .icon {
+      font-size: 2.5rem;
+      margin-bottom: 14px;
+    }
+    .skill-card h3 {
+      font-size: 1.05rem;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+    .skill-card p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    /* ===== Projects ===== */
+    .projects-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 24px;
+    }
+    .project-card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      transition: transform 0.25s, box-shadow 0.25s, background 0.3s;
+    }
+    .project-card:hover { transform: translateY(-6px); box-shadow: 0 14px 44px rgba(255, 107, 53, 0.22); }
+    .project-card .banner {
+      height: 140px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      transition: transform 0.4s;
+    }
+    .project-card:hover .banner { transform: scale(1.06); }
+    .project-card .banner-1 { background: linear-gradient(135deg, #ff6b6b, #ff8e53); }
+    .project-card .banner-2 { background: linear-gradient(135deg, #667eea, #764ba2); }
+    .project-card .banner-3 { background: linear-gradient(135deg, #f093fb, #f5576c); }
+    .project-card .banner-4 { background: linear-gradient(135deg, #4facfe, #00f2fe); }
+    .project-card .body { padding: 20px; }
+    .project-card h3 { font-size: 1.05rem; margin-bottom: 8px; }
+    .project-card p { font-size: 0.85rem; color: var(--muted); line-height: 1.6; }
+    .project-card .tags {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+    .project-card .tag {
+      font-size: 0.7rem;
+      padding: 3px 10px;
+      border-radius: 12px;
+      background: var(--bg);
+      color: var(--persimmon);
+      font-weight: 600;
+    }
+
+    /* ===== Timeline ===== */
+    .timeline {
+      position: relative;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .timeline::before {
+      content: "";
+      position: absolute;
+      left: 20px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: linear-gradient(to bottom, var(--persimmon), var(--persimmon-light));
+    }
+    .timeline-item {
+      position: relative;
+      padding-left: 55px;
+      margin-bottom: 36px;
+    }
+    .timeline-item::before {
+      content: "";
+      position: absolute;
+      left: 14px;
+      top: 4px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--card-bg);
+      border: 3px solid var(--persimmon);
+    }
+    .timeline-item .time {
+      font-size: 0.8rem;
+      color: var(--persimmon);
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .timeline-item h3 {
+      font-size: 1rem;
+      margin-bottom: 4px;
+    }
+    .timeline-item p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    /* ===== Contact ===== */
+    .contact-wrapper {
+      text-align: center;
+    }
+    .contact-cards {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .contact-card {
+      width: 200px;
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 32px 20px;
+      box-shadow: var(--shadow);
+      transition: transform 0.25s, background 0.3s;
+      text-decoration: none;
+      color: var(--text);
+      display: block;
+      cursor: pointer;
+      border: none;
+      font-family: inherit;
+    }
+    .contact-card:hover { transform: translateY(-4px); }
+    .contact-card .icon {
+      font-size: 2rem;
+      margin-bottom: 12px;
+    }
+    .contact-card .label {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .contact-card .value {
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    /* ===== Footer ===== */
+    footer {
+      background: var(--dark);
+      color: rgba(255, 255, 255, 0.6);
+      text-align: center;
+      padding: 40px 24px;
+      font-size: 0.85rem;
+      transition: background 0.3s;
+    }
+    body.dark footer { background: #0f0905; }
+    footer .heart { color: var(--persimmon); }
+
+    /* ===== 工具箱 ===== */
+    .tool-search {
+      width: 100%;
+      max-width: 380px;
+      margin: 0 auto 20px;
+      display: block;
+      padding: 11px 20px;
+      border-radius: 26px;
+      border: 2px solid rgba(255, 107, 53, 0.2);
+      background: var(--card-bg);
+      color: var(--text);
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s, background 0.3s;
+      font-family: inherit;
+    }
+    .tool-search:focus { border-color: var(--persimmon); }
+    .tool-search::placeholder { color: var(--muted); }
+    .toolbox-count {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+    .toolbox-count b { color: var(--persimmon); }
+    .toolbox-filters {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 28px;
+    }
+    .filter-btn {
+      padding: 8px 20px;
+      border: 2px solid rgba(255, 107, 53, 0.2);
+      border-radius: 20px;
+      background: transparent;
+      color: var(--text);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    .filter-btn:hover { border-color: var(--persimmon); color: var(--persimmon); }
+    .filter-btn.active {
+      background: var(--persimmon);
+      border-color: var(--persimmon);
+      color: #fff;
+    }
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 20px;
+    }
+    .tool-card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 24px 20px;
+      box-shadow: var(--shadow);
+      transition: transform 0.25s, box-shadow 0.25s, opacity 0.3s, background 0.3s;
+    }
+    .tool-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 12px 40px rgba(255, 107, 53, 0.2);
+    }
+    .tool-card .tool-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .tool-card .tool-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      flex-shrink: 0;
+    }
+    .tool-card h3 { font-size: 0.95rem; }
+    .tool-card .tool-desc {
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.6;
+      margin-bottom: 10px;
+    }
+    .tool-card .tags { display: flex; gap: 6px; flex-wrap: wrap; }
+    .tool-card .tag {
+      font-size: 0.65rem;
+      padding: 2px 8px;
+      border-radius: 10px;
+      background: var(--bg);
+      color: var(--persimmon);
+      font-weight: 600;
+    }
+    .tool-card .tag-pending {
+      background: #e8e8e8;
+      color: #999;
+    }
+    body.dark .tool-card .tag-pending {
+      background: #3a2c21;
+      color: #9a8a7a;
+    }
+    .tool-card .tag-online {
+      background: var(--persimmon);
+      color: #fff;
+    }
+    .tool-card.pending {
+      opacity: 0.55;
+    }
+    .tools-group-label {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--muted);
+      margin: 28px 0 12px 0;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* ===== 回到顶部 ===== */
+    .back-top {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--persimmon);
+      color: #fff;
+      border: none;
+      font-size: 1.2rem;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(255, 107, 53, 0.35);
+      opacity: 0;
+      transform: translateY(10px);
+      pointer-events: none;
+      transition: all 0.3s;
+      z-index: 1500;
+    }
+    .back-top.show {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+    .back-top:hover { transform: translateY(-3px); }
+
+    /* ===== Toast ===== */
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 40px;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--dark);
+      color: #fff;
+      padding: 10px 22px;
+      border-radius: 24px;
+      font-size: 0.85rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s;
+      z-index: 3000;
+      white-space: nowrap;
+      max-width: 90vw;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    body.dark .toast { background: #fff; color: var(--dark); }
+
+    /* ===== 响应式 ===== */
+    @media (max-width: 768px) {
+      .about-grid { grid-template-columns: 1fr; }
+      .hamburger { display: block; }
+      nav .nav-links {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: var(--card-bg);
+        flex-direction: column;
+        padding: 16px 24px;
+        gap: 14px;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+      }
+      nav .nav-links.open { display: flex; }
+      .hero h1 { font-size: 2.2rem; }
+      section { padding: 70px 20px; }
+      .contact-cards { flex-direction: column; align-items: center; }
+      .contact-card { width: 100%; max-width: 280px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 滚动进度条 -->
+  <div class="scroll-progress" id="scrollProgress"></div>
+
+  <!-- 导航 -->
+  <nav>
+    <div class="nav-inner">
+      <a href="#home" class="brand">🍅 柿子eeeee</a>
+      <div class="nav-right">
+        <ul class="nav-links" id="navLinks">
+          <li><a href="#about">关于</a></li>
+          <li><a href="#skills">技能</a></li>
+          <li><a href="#projects">作品</a></li>
+          <li><a href="#toolbox">工具箱</a></li>
+          <li><a href="#timeline">历程</a></li>
+          <li><a href="#contact">联系</a></li>
+          <li><a href="lol-guess.html?v=21" style="color:#c8aa6e;">LOL 猜英雄</a></li>
+          <li><a href="wzry-guess.html?v=10" style="color:#c8aa6e;">王者猜英雄</a></li>
+        </ul>
+        <button class="theme-toggle" id="themeToggle" title="切换深色模式">🌙</button>
+        <button class="hamburger" id="hamburger" aria-label="菜单">☰</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero" id="home" style="padding:0;">
+    <div class="hero-content">
+      <div class="avatar">🍅</div>
+      <h1>柿子eeeee</h1>
+      <p class="tagline"><span id="typed"></span><span class="cursor">|</span></p>
+      <div class="cta">
+        <a href="#projects" class="btn-primary">查看作品</a>
+        <a href="#contact" class="btn-outline">联系我</a>
+      </div>
+    </div>
+    <div class="scroll-hint">向下滚动 ↓</div>
+  </section>
+
+  <!-- 关于我 -->
+  <section id="about">
+    <h2 class="section-title reveal">关于我</h2>
+    <p class="section-subtitle reveal">你好呀，我是柿子eeeee 👋</p>
+    <div class="about-grid">
+      <div class="about-text reveal">
+        <p>我是一个热爱探索的人，喜欢折腾新技术，也喜欢把想法变成实际的东西。</p>
+        <p>平时会写写代码、做做设计、拍拍照。相信好的产品来自于对细节的执着和对用户的同理心。</p>
+        <p>这个网站是我的个人空间，分享我的项目、经历和想法，欢迎来逛逛～</p>
+      </div>
+      <div class="about-stats reveal">
+        <div class="stat-card">
+          <div class="num" data-target="3" data-suffix="+">0</div>
+          <div class="label">年经验</div>
+        </div>
+        <div class="stat-card">
+          <div class="num" data-target="20" data-suffix="+">0</div>
+          <div class="label">个项目</div>
+        </div>
+        <div class="stat-card">
+          <div class="num">∞</div>
+          <div class="label">好奇心</div>
+        </div>
+        <div class="stat-card">
+          <div class="num" data-target="100" data-suffix="%">0</div>
+          <div class="label">热情</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 技能 -->
+  <section id="skills" style="background:var(--card-bg); max-width:100%;">
+    <h2 class="section-title reveal">技能与兴趣</h2>
+    <p class="section-subtitle reveal">这些是我平时喜欢折腾的领域</p>
+    <div class="skills-grid" style="max-width:900px; margin:0 auto;">
+      <div class="skill-card reveal">
+        <div class="icon">💻</div>
+        <h3>前端开发</h3>
+        <p>HTML / CSS / JavaScript，喜欢做好看的交互界面</p>
+      </div>
+      <div class="skill-card reveal">
+        <div class="icon">🎨</div>
+        <h3>UI 设计</h3>
+        <p>注重用户体验，追求简洁与美感并存</p>
+      </div>
+      <div class="skill-card reveal">
+        <div class="icon">📷</div>
+        <h3>摄影</h3>
+        <p>记录生活中的光影与色彩，捕捉瞬间</p>
+      </div>
+      <div class="skill-card reveal">
+        <div class="icon">🎵</div>
+        <h3>音乐</h3>
+        <p>什么类型都听，好歌不分语种和年代</p>
+      </div>
+      <div class="skill-card reveal">
+        <div class="icon">📚</div>
+        <h3>阅读</h3>
+        <p>科幻、心理学、产品设计，什么都看一点</p>
+      </div>
+      <div class="skill-card reveal">
+        <div class="icon">🚀</div>
+        <h3>折腾</h3>
+        <p>新工具、新框架、新玩法，都想试试</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 作品 -->
+  <section id="projects">
+    <h2 class="section-title reveal">作品集</h2>
+    <p class="section-subtitle reveal">一些我做过的项目和尝试</p>
+    <div class="projects-grid">
+      <div class="project-card reveal">
+        <div class="banner banner-1">🌈</div>
+        <div class="body">
+          <h3>个人网站</h3>
+          <p>用纯 HTML/CSS 搭建的个人主页，托管在 Netlify 上，持续迭代中。</p>
+          <div class="tags"><span class="tag">HTML</span><span class="tag">CSS</span><span class="tag">Netlify</span></div>
+        </div>
+      </div>
+      <div class="project-card reveal">
+        <div class="banner banner-2">📊</div>
+        <div class="body">
+          <h3>数据可视化</h3>
+          <p>将复杂数据用图表呈现，让信息一目了然。</p>
+          <div class="tags"><span class="tag">JS</span><span class="tag">Chart</span></div>
+        </div>
+      </div>
+      <div class="project-card reveal">
+        <div class="banner banner-3">🧩</div>
+        <div class="body">
+          <h3>小游戏</h3>
+          <p>用 Canvas 写的休闲小游戏，简单但好玩。</p>
+          <div class="tags"><span class="tag">Canvas</span><span class="tag">Game</span></div>
+        </div>
+      </div>
+      <div class="project-card reveal">
+        <div class="banner banner-4">⚙️</div>
+        <div class="body">
+          <h3>效率工具</h3>
+          <p>写了一些自动化脚本和小工具，提升日常效率。</p>
+          <div class="tags"><span class="tag">Python</span><span class="tag">Automation</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 工具箱 -->
+  <section id="toolbox" style="background:var(--card-bg); max-width:100%;">
+    <h2 class="section-title reveal">工具箱</h2>
+    <p class="section-subtitle reveal">我自己做的一些小工具，涵盖游戏开发、图像处理、效率工具等</p>
+    <div style="max-width:900px; margin:0 auto;">
+      <input type="text" class="tool-search" id="toolSearch" placeholder="🔍 搜索工具名称 / 描述 / 标签…">
+      <div class="toolbox-count">已上线 <b id="onlineCount">0</b> 个 · 待上传 <b id="pendingCount">0</b> 个</div>
+      <div class="toolbox-filters">
+        <button class="filter-btn active" onclick="filterTools('all', this)">全部</button>
+        <button class="filter-btn" onclick="filterTools('game', this)">游戏开发</button>
+        <button class="filter-btn" onclick="filterTools('image', this)">图像处理</button>
+        <button class="filter-btn" onclick="filterTools('util', this)">实用工具</button>
+        <button class="filter-btn" onclick="filterTools('creative', this)">创意网页</button>
+        <button class="filter-btn" onclick="filterTools('ai', this)">AI 创意</button>
+      </div>
+      <div class="tools-grid" id="toolsGrid">
+
+        <!-- ===== 已上线 ===== -->
+        <div class="tools-group-label" style="grid-column: 1 / -1;">已上线</div>
+
+        <!-- LOL 猜英雄 - 已上线 -->
+        <a class="tool-card" data-cat="game" href="lol-guess.html?v=21" style="text-decoration:none;color:inherit;cursor:pointer;">
+          <div class="tool-header">
+            <div class="tool-icon" style="background:#0a0e1a;">🎧</div>
+            <h3>LOL 猜英雄</h3>
+          </div>
+          <p class="tool-desc">6 种玩法：听音效 / 台词 / 看技能图标 / 原画 / 表情猜英雄，经典属性推理。点击开始游戏 →</p>
+          <div class="tags"><span class="tag">游戏</span><span class="tag">LOL</span><span class="tag tag-online">在线使用</span></div>
+        </a>
+
+        <!-- 王者荣耀 猜英雄 - 已上线 -->
+        <a class="tool-card" data-cat="game" href="wzry-guess.html?v=10" style="text-decoration:none;color:inherit;cursor:pointer;">
+          <div class="tool-header">
+            <div class="tool-icon" style="background:#0a0e1a;">🛡️</div>
+            <h3>王者荣耀 猜英雄</h3>
+          </div>
+          <p class="tool-desc">7 种玩法：经典属性推理 / 技能图标 / 原画 / 皮肤 / 称号 / 台词猜英雄 + KPL 问答。点击开始游戏 →</p>
+          <div class="tags"><span class="tag">游戏</span><span class="tag">王者荣耀</span><span class="tag tag-online">在线使用</span></div>
+        </a>
+
+        <!-- 炉石传说 猜卡牌 - 已上线 -->
+        <a class="tool-card" data-cat="game" href="hs-guess.html?v=2" style="text-decoration:none;color:inherit;cursor:pointer;">
+          <div class="tool-header">
+            <div class="tool-icon" style="background:#0a0e1a;">🔥</div>
+            <h3>炉石传说 猜卡牌</h3>
+          </div>
+          <p class="tool-desc">175 张经典卡 · 6 种玩法：属性推理 / 原画 / 台词 / 效果 / 猜费用 / 冷知识问答。点击开始游戏 →</p>
+          <div class="tags"><span class="tag">游戏</span><span class="tag">炉石传说</span><span class="tag tag-online">在线使用</span></div>
+        </a>
+
+        <!-- 疾风幸存者 - 已上线 -->
+        <a class="tool-card" data-cat="game" href="yasuo-run.html" style="text-decoration:none;color:inherit;cursor:pointer;">
+          <div class="tool-header">
+            <div class="tool-icon" style="background:#0a1a24;">🌪️</div>
+            <h3>疾风幸存者 · 亚索</h3>
+          </div>
+          <p class="tool-desc">类「吸血鬼幸存者」：操控亚索自动旋风斩迎击暗影入侵者，拾经验宝石升级，三选一强化风之力，挑战存活时长。点击开始游戏 →</p>
+          <div class="tags"><span class="tag">游戏</span><span class="tag">幸存者</span><span class="tag tag-online">在线使用</span></div>
+        </a>
+
+        <!-- 分享卡片生成器 - 已上线 -->
+        <a class="tool-card" data-cat="util" href="share-card.html" style="text-decoration:none;color:inherit;cursor:pointer;">
+          <div class="tool-header">
+            <div class="tool-icon" style="background:#e8f0fe;">🔗</div>
+            <h3>分享卡片生成器</h3>
+          </div>
+          <p class="tool-desc">把标题 + 链接做成一张带二维码的漂亮分享卡片，下载图片直接发微信，朋友扫码就能进。点击使用 →</p>
+          <div class="tags"><span class="tag">分享</span><span class="tag">二维码</span><span class="tag tag-online">在线使用</span></div>
+        </a>
+
+        <!-- 实用工具 - 已上线 -->
+        <a class="tool-card" data-cat="util" href="json-compressor.html" style="text-decoration:none;color:inherit;cursor:pointer;">
+          <div class="tool-header">
+            <div class="tool-icon" style="background:#e6f4ea;">📦</div>
+            <h3>JSON 压缩器</h3>
+          </div>
+          <p class="tool-desc">将多行格式 JSON 压缩为单行紧凑格式，减小文件体积。点击在线使用 →</p>
+          <div class="tags"><span class="tag">Python</span><span class="tag">JSON</span><span class="tag tag-online">在线使用</span></div>
+        </a>
+
+        <!-- 创意网页 - 已上线 -->
+        <a class="tool-card" data-cat="creative" href="firework.html" style="text-decoration:none;color:inherit;cursor:pointer;">
+          <div class="tool-header">
+            <div class="tool-icon" style="background:#fef0f0;">🎆</div>
+            <h3>烟花特效</h3>
+          </div>
+          <p class="tool-desc">点击屏幕放烟花，多种爆炸形态，自动播放模式。点击在线体验 →</p>
+          <div class="tags"><span class="tag">HTML</span><span class="tag">Canvas</span><span class="tag">JS</span><span class="tag tag-online">在线使用</span></div>
+        </a>
+
+        <!-- Chrome 插件 - 已上线 -->
+        <a class="tool-card" data-cat="util" href="video-autopause.html" style="text-decoration:none;color:inherit;cursor:pointer;">
+          <div class="tool-header">
+            <div class="tool-icon" style="background:#e8f5e9;">🎬</div>
+            <h3>视频自动暂停器</h3>
+          </div>
+          <p class="tool-desc">Chrome 插件：打开网页自动定位视频并暂停，兼容广告视频。查看安装教程 →</p>
+          <div class="tags"><span class="tag">Chrome</span><span class="tag">JS</span><span class="tag">广告兼容</span><span class="tag tag-online">查看详情</span></div>
+        </a>
+
+        <!-- 游戏开发 - 已上线 -->
+        <a class="tool-card" data-cat="game" href="excel-checker.html" style="text-decoration:none;color:inherit;cursor:pointer;">
+          <div class="tool-header">
+            <div class="tool-icon" style="background:#fff0e6;">🔍</div>
+            <h3>Excel 关卡表校验</h3>
+          </div>
+          <p class="tool-desc">浏览器拖拽 Excel 文件，自动检查 parent/child 主题组合数据是否完整。点击在线使用 →</p>
+          <div class="tags"><span class="tag">HTML</span><span class="tag">SheetJS</span><span class="tag tag-online">在线使用</span></div>
+        </a>
+
+        <a class="tool-card" data-cat="game" href="json-to-excel.html" style="text-decoration:none;color:inherit;cursor:pointer;">
+          <div class="tool-header">
+            <div class="tool-icon" style="background:#fff0e6;">🔄</div>
+            <h3>JSON 转 Excel</h3>
+          </div>
+          <p class="tool-desc">将关卡 JSON 数据在浏览器中导出为 Excel 表格，方便策划查看。点击在线使用 →</p>
+          <div class="tags"><span class="tag">HTML</span><span class="tag">xlsx</span><span class="tag tag-online">在线使用</span></div>
+        </a>
+
+        <!-- 图像处理 - 已上线 -->
+        <a class="tool-card" data-cat="image" href="gaussian-blur.html" style="text-decoration:none;color:inherit;cursor:pointer;">
+          <div class="tool-header">
+            <div class="tool-icon" style="background:#f0eaff;"> Blur</div>
+            <h3>高斯模糊工具</h3>
+          </div>
+          <p class="tool-desc">浏览器端图片高斯模糊处理，支持自定义模糊半径和前后对比预览。点击在线使用 →</p>
+          <div class="tags"><span class="tag">HTML</span><span class="tag">Canvas</span><span class="tag tag-online">在线使用</span></div>
+        </a>
+
+
+        <!-- AI 创意 - 已上线 -->
+        <a class="tool-card" data-cat="ai" href="ai-dianping.html" style="text-decoration:none;color:inherit;cursor:pointer;">
+          <div class="tool-header">
+            <div class="tool-icon" style="background:#0a1f1a;">🤖</div>
+            <h3>AI 英雄点评师</h3>
+          </div>
+          <p class="tool-desc">输入英雄名 / 外号，AI 生成能力评级、上手难度、职业点评和一句话骚话。点击开始点评 →</p>
+          <div class="tags"><span class="tag">AI</span><span class="tag">LOL</span><span class="tag">王者</span><span class="tag tag-online">在线使用</span></div>
+        </a>
+
+        <a class="tool-card" data-cat="ai" href="geng-baike.html" style="text-decoration:none;color:inherit;cursor:pointer;">
+          <div class="tool-header">
+            <div class="tool-icon" style="background:#1a1410;">📖</div>
+            <h3>游戏梗百科</h3>
+          </div>
+          <p class="tool-desc">LOL / 王者 / 炉石 / 通用游戏梗 38 条，搜索、翻牌、复制，对线不再词穷。点击翻牌 →</p>
+          <div class="tags"><span class="tag">AI</span><span class="tag">梗百科</span><span class="tag tag-online">在线使用</span></div>
+        </a>
+
+        <a class="tool-card" data-cat="ai" href="duiyou-quotes.html" style="text-decoration:none;color:inherit;cursor:pointer;">
+          <div class="tool-header">
+            <div class="tool-icon" style="background:#1a1a2e;">🗣️</div>
+            <h3>AI 队友语录生成器</h3>
+          </div>
+          <p class="tool-desc">开局 / 逆风 / 甩锅 / 邀功…一键生成队友式发言，连发 5 条直接复制开喷。点击生成 →</p>
+          <div class="tags"><span class="tag">AI</span><span class="tag">语录</span><span class="tag tag-online">在线使用</span></div>
+        </a>
+
+        <a class="tool-card" data-cat="ai" href="kaifeng-sim.html" style="text-decoration:none;color:inherit;cursor:pointer;">
+          <div class="tool-header">
+            <div class="tool-icon" style="background:#241a0a;">🎁</div>
+            <h3>炉石开包模拟器</h3>
+          </div>
+          <p class="tool-desc">175 张真实卡面模拟开包，稀有 / 史诗 / 传说概率 + 40 包保底，战报一键分享。点击开包 →</p>
+          <div class="tags"><span class="tag">AI</span><span class="tag">炉石</span><span class="tag tag-online">在线使用</span></div>
+        </a>
+
+        <!-- ===== 待上传 ===== -->
+        <div class="tools-group-label" style="grid-column: 1 / -1;">待上传</div>
+
+        <!-- 游戏开发 - 待上传 -->
+        <div class="tool-card pending" data-cat="game">
+          <div class="tool-header">
+            <div class="tool-icon" style="background:#fff0e6;">📋</div>
+            <h3>Excel 校验 Python 版</h3>
+          </div>
+          <p class="tool-desc">Python 版关卡表校验，用 pandas/openpyxl 检查数据完整性。</p>
+          <div class="tags"><span class="tag">Python</span><span class="tag">openpyxl</span><span class="tag tag-pending">待上传</span></div>
+        </div>
+
+        <div class="tool-card pending" data-cat="game">
+          <div class="tool-header">
+            <div class="tool-icon" style="background:#fff0e6;">🗑️</div>
+            <h3>删除指定难度关卡</h3>
+          </div>
+          <p class="tool-desc">从关卡 JSON 中批量删除指定难度等级，支持按起始关卡过滤。</p>
+          <div class="tags"><span class="tag">Node.js</span><span class="tag">JSON</span><span class="tag tag-pending">待上传</span></div>
+        </div>
+
+        <div class="tool-card pending" data-cat="game">
+          <div class="tool-header">
+            <div class="tool-icon" style="background:#fff0e6;">🔀</div>
+            <h3>合并关卡 JSON</h3>
+          </div>
+          <p class="tool-desc">将多个关卡 JSON 文件合并为一个，自动处理编号和格式。</p>
+          <div class="tags"><span class="tag">Node.js</span><span class="tag">JSON</span><span class="tag tag-pending">待上传</span></div>
+        </div>
+
+        <div class="tool-card pending" data-cat="game">
+          <div class="tool-header">
+            <div class="tool-icon" style="background:#fff0e6;">📐</div>
+            <h3>关卡 JSON 格式化</h3>
+          </div>
+          <p class="tool-desc">将被压缩成一行的关卡 JSON 还原为一关一行的可读格式。</p>
+          <div class="tags"><span class="tag">Node.js</span><span class="tag">Format</span><span class="tag tag-pending">待上传</span></div>
+        </div>
+
+        <div class="tool-card pending" data-cat="game">
+          <div class="tool-header">
+            <div class="tool-icon" style="background:#fff0e6;">🧩</div>
+            <h3>Prefab 拆分工具</h3>
+          </div>
+          <p class="tool-desc">将 Cocos Creator 的 Prefab 文件按子节点数量自动拆分为多个 Prefab。</p>
+          <div class="tags"><span class="tag">Python</span><span class="tag">Cocos</span><span class="tag tag-pending">待上传</span></div>
+        </div>
+
+        <div class="tool-card pending" data-cat="game">
+          <div class="tool-header">
+            <div class="tool-icon" style="background:#fff0e6;">😀</div>
+            <h3>Emoji 转图片</h3>
+          </div>
+          <p class="tool-desc">遍历所有 Unicode Emoji 范围，批量将 Emoji 渲染为图片文件。</p>
+          <div class="tags"><span class="tag">Node.js</span><span class="tag">Canvas</span><span class="tag tag-pending">待上传</span></div>
+        </div>
+
+        <!-- 图像处理 - 待上传 -->
+        <div class="tool-card pending" data-cat="image">
+          <div class="tool-header">
+            <div class="tool-icon" style="background:#f0eaff;">🎨</div>
+            <h3>像素画转换</h3>
+          </div>
+          <p class="tool-desc">将普通图片缩小为 40x40 像素画风格，再放大输出，生成马赛克效果。</p>
+          <div class="tags"><span class="tag">Python</span><span class="tag">Pillow</span><span class="tag tag-pending">待上传</span></div>
+        </div>
+
+        <div class="tool-card pending" data-cat="image">
+          <div class="tool-header">
+            <div class="tool-icon" style="background:#f0eaff;">🔩</div>
+            <h3>棋盘图生成器</h3>
+          </div>
+          <p class="tool-desc">批量生成棋盘/螺丝预览图，支持自定义模板和批量输出。</p>
+          <div class="tags"><span class="tag">Python</span><span class="tag">Pillow</span><span class="tag tag-pending">待上传</span></div>
+        </div>
+
+        <div class="tool-card pending" data-cat="image">
+          <div class="tool-header">
+            <div class="tool-icon" style="background:#f0eaff;">🖼️</div>
+            <h3>预览图生成器</h3>
+          </div>
+          <p class="tool-desc">根据数据自动生成游戏内关卡的预览截图，批量处理。</p>
+          <div class="tags"><span class="tag">Python</span><span class="tag">Pillow</span><span class="tag tag-pending">待上传</span></div>
+        </div>
+
+        <div class="tool-card pending" data-cat="image">
+          <div class="tool-header">
+            <div class="tool-icon" style="background:#f0eaff;">📊</div>
+            <h3>图形 JSON 导出</h3>
+          </div>
+          <p class="tool-desc">从图形数据中提取并导出 JSON，用于游戏资源配置。</p>
+          <div class="tags"><span class="tag">Python</span><span class="tag">JSON</span><span class="tag tag-pending">待上传</span></div>
+        </div>
+
+        <!-- 实用工具 - 待上传 -->
+        <div class="tool-card pending" data-cat="util">
+          <div class="tool-header">
+            <div class="tool-icon" style="background:#e6f4ea;">📌</div>
+            <h3>窗口置顶工具</h3>
+          </div>
+          <p class="tool-desc">使用 Win32 API 将任意窗口设置为始终置顶，配合 scrcpy 使用更佳。</p>
+          <div class="tags"><span class="tag">Python</span><span class="tag">Win32</span><span class="tag tag-pending">待上传</span></div>
+        </div>
+
+        <div class="tool-card pending" data-cat="util">
+          <div class="tool-header">
+            <div class="tool-icon" style="background:#e6f4ea;">📱</div>
+            <h3>安卓投屏 + 置顶</h3>
+          </div>
+          <p class="tool-desc">基于 scrcpy 的安卓设备投屏，启动后自动将窗口置顶，方便边投屏边操作。</p>
+          <div class="tags"><span class="tag">scrcpy</span><span class="tag">ADB</span><span class="tag">Python</span><span class="tag tag-pending">待上传</span></div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- 历程 -->
+  <section id="timeline" style="background:var(--card-bg); max-width:100%;">
+    <h2 class="section-title reveal">成长历程</h2>
+    <p class="section-subtitle reveal">一路走来的脚印</p>
+    <div class="timeline" style="max-width:600px; margin:0 auto;">
+      <div class="timeline-item reveal">
+        <div class="time">2026 · 现在</div>
+        <h3>搭建个人网站</h3>
+        <p>从零开始学习前端，搭建了自己的个人主页，持续迭代。</p>
+      </div>
+      <div class="timeline-item reveal">
+        <div class="time">2025</div>
+        <h3>深入前端世界</h3>
+        <p>系统学习 HTML/CSS/JS，开始做自己的小项目。</p>
+      </div>
+      <div class="timeline-item reveal">
+        <div class="time">2024</div>
+        <h3>探索与尝试</h3>
+        <p>接触各种技术工具，找到了感兴趣的方向。</p>
+      </div>
+      <div class="timeline-item reveal">
+        <div class="time">更早</div>
+        <h3>一切的开始</h3>
+        <p>第一次写下 Hello World，打开新世界的大门。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 联系 -->
+  <section id="contact">
+    <h2 class="section-title reveal">联系我</h2>
+    <p class="section-subtitle reveal">想聊聊？随时找我～</p>
+    <div class="contact-wrapper">
+      <div class="contact-cards">
+        <a href="mailto:huangshifu616@gmail.com" class="contact-card reveal">
+          <div class="icon">📧</div>
+          <div class="label">邮箱</div>
+          <div class="value">huangshifu616</div>
+        </a>
+        <button class="contact-card reveal" id="wechatCard">
+          <div class="icon">💬</div>
+          <div class="label">微信</div>
+          <div class="value">扫码添加</div>
+        </button>
+        <a href="https://whimsical-bombolone-6791e5.netlify.app" class="contact-card reveal">
+          <div class="icon">🌐</div>
+          <div class="label">网站</div>
+          <div class="value">柿子eeeee</div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <p>&copy; <span id="year">2026</span> 柿子eeeee · Made with <span class="heart">🍅</span> & care</p>
+  </footer>
+
+  <!-- 回到顶部 -->
+  <button class="back-top" id="backTop" title="回到顶部">↑</button>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    'use strict';
+
+    // ===== 滚动进度条 =====
+    const progressBar = document.getElementById('scrollProgress');
+    function updateProgress() {
+      const h = document.documentElement.scrollHeight - window.innerHeight;
+      progressBar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    }
+    window.addEventListener('scroll', updateProgress, { passive: true });
+    updateProgress();
+
+    // ===== 回到顶部 =====
+    const backTop = document.getElementById('backTop');
+    window.addEventListener('scroll', () => {
+      backTop.classList.toggle('show', window.scrollY > 500);
+    }, { passive: true });
+    backTop.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // ===== Hero 打字机 =====
+    const phrases = [
+      '热爱生活，热爱技术。',
+      '记录我的成长、作品与思考。',
+      '前端开发 · 小工具 · 游戏开发 · 折腾者'
+    ];
+    const typedEl = document.getElementById('typed');
+    let phraseIdx = 0, charIdx = 0, isDeleting = false;
+    function typeTick() {
+      const current = phrases[phraseIdx];
+      if (!isDeleting) {
+        charIdx++;
+        typedEl.textContent = current.slice(0, charIdx);
+        if (charIdx === current.length) {
+          isDeleting = true;
+          setTimeout(typeTick, 1800);
+          return;
+        }
+        setTimeout(typeTick, 90);
+      } else {
+        charIdx--;
+        typedEl.textContent = current.slice(0, charIdx);
+        if (charIdx === 0) {
+          isDeleting = false;
+          phraseIdx = (phraseIdx + 1) % phrases.length;
+          setTimeout(typeTick, 400);
+          return;
+        }
+        setTimeout(typeTick, 45);
+      }
+    }
+    typeTick();
+
+    // ===== 滚动渐入动画 =====
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('visible');
+          revealObserver.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+    // ===== 统计数字滚动动画 =====
+    const countObserver = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (!e.isIntersecting) return;
+        const el = e.target;
+        const target = parseFloat(el.dataset.target);
+        const suffix = el.dataset.suffix || '';
+        if (isNaN(target)) {
+          countObserver.unobserve(el);
+          return;
+        }
+        const duration = 1200;
+        const t0 = performance.now();
+        function tick(t) {
+          const p = Math.min((t - t0) / duration, 1);
+          const eased = 1 - Math.pow(1 - p, 3);
+          el.textContent = Math.round(target * eased) + suffix;
+          if (p < 1) requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
+        countObserver.unobserve(el);
+      });
+    }, { threshold: 0.5 });
+    document.querySelectorAll('.num[data-target]').forEach(el => countObserver.observe(el));
+
+    // ===== 深色模式 =====
+    const themeToggle = document.getElementById('themeToggle');
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') document.body.classList.add('dark');
+    function syncThemeIcon() {
+      themeToggle.textContent = document.body.classList.contains('dark') ? '☀️' : '🌙';
+    }
+    syncThemeIcon();
+    themeToggle.addEventListener('click', () => {
+      document.body.classList.toggle('dark');
+      localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+      syncThemeIcon();
+    });
+
+    // ===== 移动端汉堡菜单 =====
+    const hamburger = document.getElementById('hamburger');
+    const navLinks = document.getElementById('navLinks');
+    hamburger.addEventListener('click', () => {
+      navLinks.classList.toggle('open');
+    });
+    navLinks.querySelectorAll('a').forEach(a => {
+      a.addEventListener('click', () => navLinks.classList.remove('open'));
+    });
+
+    // ===== 工具箱：筛选 + 搜索 =====
+    let currentCat = 'all';
+    const toolSearch = document.getElementById('toolSearch');
+    const toolCards = document.querySelectorAll('#toolsGrid .tool-card');
+
+    function filterTools(cat, btn) {
+      currentCat = cat;
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      applyFilters();
+    }
+
+    function applyFilters() {
+      const q = toolSearch.value.trim().toLowerCase();
+      toolCards.forEach(c => {
+        const matchCat = currentCat === 'all' || c.dataset.cat === currentCat;
+        const matchQ = !q || c.textContent.toLowerCase().includes(q);
+        c.style.display = matchCat && matchQ ? '' : 'none';
+      });
+      // 隐藏没有可见卡片的组标签
+      document.querySelectorAll('#toolsGrid .tools-group-label').forEach(label => {
+        let sib = label.nextElementSibling;
+        let hasVisible = false;
+        while (sib && !sib.classList.contains('tools-group-label')) {
+          if (sib.classList.contains('tool-card') && sib.style.display !== 'none') {
+            hasVisible = true;
+            break;
+          }
+          sib = sib.nextElementSibling;
+        }
+        label.style.display = hasVisible ? '' : 'none';
+      });
+    }
+    toolSearch.addEventListener('input', applyFilters);
+
+    // 工具计数（自动统计，以后加工具不用改数字）
+    document.getElementById('onlineCount').textContent =
+      document.querySelectorAll('#toolsGrid .tool-card:not(.pending)').length;
+    document.getElementById('pendingCount').textContent =
+      document.querySelectorAll('#toolsGrid .tool-card.pending').length;
+
+    // ===== Toast =====
+    let toastTimer = null;
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.add('show');
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('show'), 2500);
+    }
+    document.getElementById('wechatCard').addEventListener('click', () => {
+      showToast('二维码暂未上传，欢迎先邮件联系 📧');
+    });
+
+    // ===== Footer 年份自动更新 =====
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+<script>
+/* 移除平台右下角水印角标（shadow DOM .watermark-root，直接移除节点，防重注入轮询） */
+(function(){
+  function killBadge(){
+    try{
+      var list = document.querySelectorAll('body > div');
+      for(var i=0;i<list.length;i++){
+        var d = list[i];
+        if(d.shadowRoot && d.shadowRoot.querySelector('.watermark-root')){
+          if(d.parentNode) d.parentNode.removeChild(d);
+        }
+      }
+    }catch(e){}
+  }
+  killBadge();
+  new MutationObserver(killBadge).observe(document.body,{childList:true});
+  setInterval(killBadge, 300);
+})();
+</script>
+</body>
+</html>

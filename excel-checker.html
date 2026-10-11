@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel 数据验证工具</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary: #3498db;
+            --success: #2ecc71;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --light: #f8f9fa;
+            --dark: #343a40;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            color: var(--dark);
+        }
+
+        header {
+            text-align: center;
+            padding: 30px 20px;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: var(--dark);
+            position: relative;
+            display: inline-block;
+        }
+
+        h1::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: var(--primary);
+            border-radius: 2px;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: #666;
+            max-width: 700px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+        }
+
+        @media (min-width: 768px) {
+            .container {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-title {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .card-title i {
+            margin-right: 12px;
+            font-size: 1.8rem;
+        }
+
+        .drop-area {
+            border: 3px dashed #ccc;
+            border-radius: 8px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background-color: #f9f9f9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 250px;
+        }
+
+        .drop-area:hover,
+        .drop-area.dragover {
+            border-color: var(--primary);
+            background-color: rgba(52, 152, 219, 0.05);
+        }
+
+        .drop-area i {
+            font-size: 3.5rem;
+            color: #ccc;
+            margin-bottom: 20px;
+        }
+
+        .drop-area.dragover i {
+            color: var(--primary);
+        }
+
+        .drop-text {
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            color: #666;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 30px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        .btn i {
+            margin-right: 8px;
+        }
+
+        .btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .result-area {
+            min-height: 300px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .summary {
+            background: var(--light);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        .summary.success {
+            background: rgba(46, 204, 113, 0.15);
+            color: var(--success);
+        }
+
+        .summary.error {
+            background: rgba(231, 76, 60, 0.15);
+            color: var(--danger);
+        }
+
+        .errors-container {
+            flex: 1;
+            overflow-y: auto;
+            max-height: 350px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .errors-title {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+        }
+
+        .error-list {
+            list-style-type: none;
+        }
+
+        .error-item {
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            background: rgba(231, 76, 60, 0.1);
+            border-left: 4px solid var(--danger);
+            position: relative;
+        }
+
+        .error-item::before {
+            content: "!";
+            position: absolute;
+            left: -12px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 24px;
+            height: 24px;
+            background: var(--danger);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .no-errors {
+            text-align: center;
+            padding: 30px;
+            color: var(--success);
+            font-size: 1.1rem;
+        }
+
+        .no-errors i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px 20px 10px;
+            margin-top: auto;
+            color: #777;
+            font-size: 0.9rem;
+        }
+
+        .instructions {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 20px;
+        }
+
+        .instructions h3 {
+            color: var(--primary);
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        .instruction-list {
+            padding-left: 20px;
+        }
+
+        .instruction-list li {
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+
+        .icon {
+            font-size: 1.8rem;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>Excel 数据验证工具</h1>
+        <p class="subtitle">拖放Excel文件进行数据验证，检查parent_2和child组合列是否符合规则要求</p>
+    </header>
+
+    <div class="container">
+        <div class="card">
+            <h2 class="card-title">
+                <span class="icon">📤</span> 上传Excel文件
+            </h2>
+            <div id="drop-area" class="drop-area">
+                <div class="drop-text">
+                    <p>拖放Excel文件到此处</p>
+                    <p>或</p>
+                </div>
+                <input type="file" id="file-input" class="file-input" accept=".xlsx, .xls">
+                <button id="browse-btn" class="btn">
+                    <span>选择文件</span>
+                </button>
+            </div>
+
+            <div class="instructions">
+                <h3>验证规则说明</h3>
+                <ul class="instruction-list">
+                    <li>检查 parent_2 列（H列）是否有至少4个值（分号分隔）,且数量为行数</li>
+                    <li>检查所有 child_1_i 列（从I列开始）的值是否正好有4个值</li>
+                    <li>检查所有 child_2_i 列（从P列开始）的值是否正好有4个值</li>
+                    <li>验证从第4行开始的数据（跳过表头）</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 class="card-title">
+                <span class="icon">📋</span> 验证结果
+            </h2>
+            <div id="result-area" class="result-area">
+                <div id="summary" class="summary">
+                    请上传Excel文件进行验证
+                </div>
+                <div class="errors-title">
+                    <span class="icon">⚠️</span> 错误详情
+                </div>
+                <div id="errors-container" class="errors-container">
+                    <div class="no-errors">
+                        <span class="icon">✅</span>
+                        没有错误信息
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>Excel数据验证工具 | 基于SheetJS实现浏览器端Excel解析</p>
+        <p>无需后端支持，所有处理均在浏览器中完成</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const dropArea = document.getElementById('drop-area');
+            const fileInput = document.getElementById('file-input');
+            const browseBtn = document.getElementById('browse-btn');
+            const summary = document.getElementById('summary');
+            const errorsContainer = document.getElementById('errors-container');
+
+            // 点击按钮触发文件选择
+            browseBtn.addEventListener('click', () => {
+                fileInput.click();
+            });
+
+            // 处理文件选择
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length) {
+                    handleFile(e.target.files[0]);
+                }
+            });
+
+            // 拖放事件处理
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropArea.addEventListener(eventName, highlight, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, unhighlight, false);
+            });
+
+            function highlight() {
+                dropArea.classList.add('dragover');
+            }
+
+            function unhighlight() {
+                dropArea.classList.remove('dragover');
+            }
+
+            // 处理拖放文件
+            dropArea.addEventListener('drop', (e) => {
+                const dt = e.dataTransfer;
+                const file = dt.files[0];
+                handleFile(file);
+            });
+
+            // 处理Excel文件
+            function handleFile(file) {
+                if (!file) return;
+
+                const reader = new FileReader();
+
+                reader.onload = function (e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+
+                        // 处理第一个工作表
+                        const firstSheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[firstSheetName];
+
+                        // 检查数据
+                        const result = checkThemeConditions(worksheet);
+
+                        // 显示结果
+                        displayResults(result);
+                    } catch (error) {
+                        console.error('Error processing file:', error);
+                        summary.textContent = `处理文件时出错: ${error.message}`;
+                        summary.className = 'summary error';
+                    }
+                };
+
+                reader.readAsArrayBuffer(file);
+                summary.textContent = `正在处理: ${file.name}...`;
+                summary.className = 'summary';
+            }
+
+            // Excel数据验证逻辑
+            function checkThemeConditions(worksheet) {
+                const result = {
+                    totalRows: 0,
+                    validRows: 0,
+                    errors: []
+                };
+
+                // 获取工作表范围
+                const range = XLSX.utils.decode_range(worksheet['!ref']);
+
+                // 从第4行开始（索引3）
+                for (let rowIdx = 3; rowIdx <= range.e.r; rowIdx++) {
+                    const rowNum = rowIdx + 1;
+                    result.totalRows++;
+                    const titleCount = worksheet[XLSX.utils.encode_cell({ r: rowIdx, c: 4 })].v.split('#')[0];
+                    // 获取parent_2的值（H列，索引7）
+                    const parent2Cell = worksheet[XLSX.utils.encode_cell({ r: rowIdx, c: 8 })];
+                    const parent2Value = parent2Cell ? parent2Cell.v : '';
+
+                    // 规则1：检查parent_2是否有至少4个值
+                    if (!parent2Value || parent2Value.split(';').length < 4) {
+                        result.errors.push({
+                            row: rowNum,
+                            message: `第${rowNum - 3}关: parent_2 值不足4个 -> ${parent2Value}`
+                        });
+                        continue;
+                    }
+                    if (!parent2Value || parent2Value.split(';').length < titleCount) {
+                        result.errors.push({
+                            row: rowNum,
+                            message: `第${rowNum - 3}关: parent_2 值不足-> ${parent2Value}, 应为${titleCount}`
+                        });
+                        continue;
+                    }
+
+                    // 检查一级主题组合
+                    const parent1Cell = worksheet[XLSX.utils.encode_cell({ r: rowIdx, c: 7 })];
+                    const parent1Value = parent1Cell ? parent1Cell.v : '';
+                    console.log('parent1Value', parent1Value, parent1Cell);
+                    if (parent1Value) {
+                        const parent1Values = parent1Value.split(';');
+
+                        for (let i = 0; i < parent1Values.length; i++) {
+                            // child_1_1从第9列开始（索引8）
+                            const colIdx = 9 + i;
+                            const childCell = worksheet[XLSX.utils.encode_cell({ r: rowIdx, c: colIdx })];
+                            const childValue = childCell ? childCell.v : '';
+
+                            if (!childValue || childValue.split(';').length !== 4) {
+                                result.errors.push({
+                                    row: rowNum,
+                                    message: `第${rowNum - 3}关: child_1_${i + 1} 值不是4个 -> ${childValue}`
+                                });
+                            }
+                        }
+                    }
+
+                    // 规则2：检查child组合列
+                    const parent2Values = parent2Value.split(';');
+
+                    for (let i = 0; i < parent2Values.length; i++) {
+                        // child_2_1从第16列开始（索引15）
+                        const colIdx = 16 + i;
+                        const childCell = worksheet[XLSX.utils.encode_cell({ r: rowIdx, c: colIdx })];
+                        const childValue = childCell ? childCell.v : '';
+
+                        if (!childValue || childValue.split(';').length !== 4) {
+                            result.errors.push({
+                                row: rowNum,
+                                message: `第${rowNum - 3}关: child_2_${i + 1} 值不是4个 -> ${childValue}`
+                            });
+                        }
+                    }
+
+                    result.validRows++;
+                }
+
+                return result;
+            }
+
+            // 显示验证结果
+            function displayResults(result) {
+                const validCount = result.validRows;
+                const totalCount = result.totalRows;
+
+                if (result.errors.length === 0) {
+                    summary.innerHTML = `<span class="icon">✅</span> 检查完成! 所有数据符合要求<br>
+                                        有效行数: ${validCount}/${totalCount}`;
+                    summary.className = 'summary success';
+
+                    errorsContainer.innerHTML = `
+                        <div class="no-errors">
+                            <span class="icon">🎉</span>
+                            恭喜！所有数据都符合要求
+                        </div>
+                    `;
+                } else {
+                    summary.innerHTML = `<span class="icon">⚠️</span> 检查完成! 发现 ${result.errors.length} 个错误<br>
+                                        有效行数: ${validCount}/${totalCount}`;
+                    summary.className = 'summary error';
+
+                    let errorsHTML = '<ul class="error-list">';
+
+                    result.errors.forEach(error => {
+                        errorsHTML += `
+                            <li class="error-item">
+                                ${error.message}
+                            </li>
+                        `;
+                    });
+
+                    errorsHTML += '</ul>';
+                    errorsContainer.innerHTML = errorsHTML;
+                }
+            }
+        });
+    </script>
+<script>
+/* 移除平台右下角水印角标（shadow DOM .watermark-root，直接移除节点，防重注入轮询） */
+(function(){
+  function killBadge(){
+    try{
+      var list = document.querySelectorAll('body > div');
+      for(var i=0;i<list.length;i++){
+        var d = list[i];
+        if(d.shadowRoot && d.shadowRoot.querySelector('.watermark-root')){
+          if(d.parentNode) d.parentNode.removeChild(d);
+        }
+      }
+    }catch(e){}
+  }
+  killBadge();
+  new MutationObserver(killBadge).observe(document.body,{childList:true});
+  setInterval(killBadge, 300);
+})();
+</script>
+</body>
+
+</html>

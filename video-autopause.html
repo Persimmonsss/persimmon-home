@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>视频自动暂停器 - 柿子eeeee</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: #0d0d1a;
+      color: #e0e0e0;
+      min-height: 100vh;
+    }
+    nav {
+      position: fixed; top: 0; left: 0; right: 0;
+      background: rgba(13,13,26,0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255,140,0,0.15);
+      z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px; height: 60px;
+    }
+    nav .logo { display: flex; align-items: center; gap: 8px; text-decoration: none; color: #ff8c00; font-weight: bold; font-size: 18px; }
+    nav .links { display: flex; gap: 20px; }
+    nav .links a { color: #aaa; text-decoration: none; font-size: 14px; transition: color 0.2s; }
+    nav .links a:hover { color: #ff8c00; }
+
+    .container { max-width: 800px; margin: 0 auto; padding: 100px 24px 60px; }
+    h1 { font-size: 32px; margin-bottom: 8px; color: #ff8c00; }
+    .subtitle { color: #888; margin-bottom: 32px; font-size: 15px; }
+
+    .card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,140,0,0.1);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    .card h2 { font-size: 18px; color: #ff8c00; margin-bottom: 12px; }
+    .card p { line-height: 1.8; color: #ccc; margin-bottom: 8px; font-size: 14px; }
+    .card ul { padding-left: 20px; margin: 8px 0; }
+    .card li { line-height: 2; color: #ccc; font-size: 14px; }
+
+    code {
+      background: rgba(255,140,0,0.1);
+      color: #ffb347;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: "Cascadia Code", Consolas, monospace;
+    }
+
+    .download-btn {
+      display: inline-block;
+      background: linear-gradient(135deg, #ff8c00, #ff6b00);
+      color: #fff;
+      padding: 12px 32px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 16px;
+      margin: 8px 0;
+      transition: transform 0.2s;
+    }
+    .download-btn:hover { transform: translateY(-2px); }
+
+    .step {
+      display: flex; gap: 12px; align-items: flex-start; margin-bottom: 16px;
+    }
+    .step-num {
+      flex-shrink: 0;
+      width: 28px; height: 28px;
+      background: rgba(255,140,0,0.15);
+      border: 1px solid rgba(255,140,0,0.3);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; color: #ff8c00; font-weight: bold;
+    }
+    .step-text { line-height: 1.7; color: #ccc; font-size: 14px; padding-top: 4px; }
+    .step-text strong { color: #fff; }
+
+    .tag {
+      display: inline-block;
+      padding: 2px 10px;
+      background: rgba(255,140,0,0.15);
+      border: 1px solid rgba(255,140,0,0.3);
+      border-radius: 12px;
+      font-size: 12px;
+      color: #ff8c00;
+      margin-right: 6px;
+    }
+
+    @media (max-width: 600px) {
+      .container { padding: 80px 16px 40px; }
+      h1 { font-size: 24px; }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="index.html" class="logo">🍅 柿子eeeee</a>
+    <div class="links">
+      <a href="index.html#tools">工具箱</a>
+      <a href="index.html#about">关于</a>
+      <a href="index.html#contact">联系</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <span class="tag">Chrome 插件</span>
+    <span class="tag">效率工具</span>
+    <h1>视频自动暂停器</h1>
+    <p class="subtitle">打开网页自动定位视频并暂停播放，跳过广告自动播放的烦恼</p>
+
+    <div class="card">
+      <h2>功能说明</h2>
+      <p>打开任何包含视频的网页时，插件会自动：</p>
+      <ul>
+        <li>检测页面中的视频元素（包括动态加载的）</li>
+        <li>平滑滚动到第一个可见视频位置</li>
+        <li>自动触发播放（静默模式，绕过浏览器自动播放限制）</li>
+        <li>播放开始后<strong>立即暂停</strong>，避免广告/预览自动播放</li>
+        <li>兼容广告视频——监听所有视频元素的播放事件，包括延迟注入的广告</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>下载插件</h2>
+      <p>点击下方按钮下载插件压缩包，解压后即可安装。</p>
+      <a href="chrome-extension.zip" download class="download-btn">⬇ 下载 Chrome 插件 (zip)</a>
+    </div>
+
+    <div class="card">
+      <h2>安装步骤</h2>
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-text">点击上方按钮下载 zip 压缩包，解压到本地任意位置</div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-text">打开 Chrome 浏览器，地址栏输入 <code>chrome://extensions</code></div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-text">打开右上角的<strong>「开发者模式」</strong>开关</div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-text">点击<strong>「加载已解压的扩展程序」</strong>，选择 <code>chrome-extension</code> 文件夹</div>
+      </div>
+      <div class="step">
+        <div class="step-num">5</div>
+        <div class="step-text">安装完成！打开任何有视频的网页即可自动生效</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>技术原理</h2>
+      <p><strong>检测机制：</strong>使用 <code>MutationObserver</code> 监听 DOM 变化 + 定时扫描，兼容动态加载的视频和延迟注入的广告。</p>
+      <p><strong>自动播放：</strong>设置 <code>muted=true</code> 绕过浏览器自动播放策略，触发 <code>video.play()</code>。</p>
+      <p><strong>立即暂停：</strong>监听 <code>play</code> 和 <code>playing</code> 事件，50ms 内执行 <code>video.pause()</code>。</p>
+      <p><strong>广告兼容：</strong>对所有视频元素（包括广告视频）都注册暂停监听器，无论哪个视频先播放都会被暂停。</p>
+    </div>
+
+    <div class="card">
+      <h2>注意事项</h2>
+      <ul>
+        <li>部分网站的视频在 iframe 内（跨域），受浏览器安全策略限制无法直接控制</li>
+        <li>某些定制播放器（如加密直播流）可能无法触发标准 play 事件</li>
+        <li>插件仅暂停视频播放，不拦截广告内容本身</li>
+      </ul>
+    </div>
+
+    <p style="text-align:center; margin-top:32px;">
+      <a href="index.html" style="color:#888; text-decoration:none; font-size:14px;">← 返回工具箱</a>
+    </p>
+  </div>
+<script>
+/* 移除平台右下角水印角标（shadow DOM .watermark-root，直接移除节点，防重注入轮询） */
+(function(){
+  function killBadge(){
+    try{
+      var list = document.querySelectorAll('body > div');
+      for(var i=0;i<list.length;i++){
+        var d = list[i];
+        if(d.shadowRoot && d.shadowRoot.querySelector('.watermark-root')){
+          if(d.parentNode) d.parentNode.removeChild(d);
+        }
+      }
+    }catch(e){}
+  }
+  killBadge();
+  new MutationObserver(killBadge).observe(document.body,{childList:true});
+  setInterval(killBadge, 300);
+})();
+</script>
+</body>
+</html>

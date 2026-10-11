@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LOL 猜英雄 - 柿子工具箱</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚔️</text></svg>">
+<style>
+:root{
+  --bg:#0a0e1a; --bg2:#0f1526; --card:#141c30; --card2:#1a2440;
+  --gold:#c8aa6e; --gold2:#a9873f; --blue:#0ac8b9; --blue2:#097b72;
+  --text:#e8e6e3; --muted:#8a93a8; --ok:#3fb950; --warn:#d29922; --bad:#e5534b;
+  --cell-ok:#1b5e20; --cell-part:#7a4d0d; --cell-bad:#6b1f1a;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+button{font-family:inherit;}
+body{background:radial-gradient(1200px 600px at 20% -10%, #15203c 0%, var(--bg) 55%);color:var(--text);font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;min-height:100vh;}
+a{color:var(--gold);text-decoration:none;}
+.wrap{max-width:980px;margin:0 auto;padding:16px;}
+/* header */
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 0;}
+.brand{display:flex;align-items:center;gap:10px;font-size:20px;font-weight:700;}
+.brand .dot{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#ff8a3d,#ff5e3a);display:flex;align-items:center;justify-content:center;font-size:18px;}
+.streak{background:var(--card);border:1px solid #223;border-radius:12px;padding:6px 14px;font-size:14px;color:var(--muted);}
+.streak b{color:var(--gold);font-size:18px;margin-left:4px;}
+/* tabs */
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 16px;}
+.tab{flex:1;min-width:100px;padding:10px 8px;border-radius:12px;background:var(--card);border:1px solid #22314d;color:var(--muted);cursor:pointer;text-align:center;font-size:13px;transition:.15s;user-select:none;}
+.tab:hover{border-color:var(--gold);color:var(--text);}
+.tab.active{background:linear-gradient(135deg,#1c2a4a,#14203a);border-color:var(--gold);color:var(--gold);font-weight:600;}
+.tab .ic{display:block;font-size:18px;margin-bottom:2px;}
+/* card */
+.card{background:var(--card);border:1px solid #22314d;border-radius:16px;padding:20px;margin-bottom:16px;position:relative;}
+.card::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:linear-gradient(90deg,var(--gold),transparent);opacity:.7;}
+.qnum{color:var(--muted);font-size:13px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:8px;}
+.qnum .hint-left{color:var(--gold);}
+.qnum .actions{display:flex;gap:8px;align-items:center;}
+/* 图例 */
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin:10px 0 16px;padding:10px 12px;background:var(--bg2);border:1px solid #22314d;border-radius:10px;font-size:12px;color:var(--muted);}
+.legend .lg{display:inline-flex;align-items:center;gap:5px;}
+.legend .sw{width:14px;height:14px;border-radius:4px;display:inline-block;}
+.sw-ok{background:var(--cell-ok);} .sw-part{background:var(--cell-part);} .sw-bad{background:var(--cell-bad);}
+/* 输入 */
+.guess-row{display:flex;gap:10px;margin-top:14px;position:relative;}
+.guess-input-wrap{position:relative;flex:1;}
+#guessInput{width:100%;padding:12px 14px;border-radius:12px;background:var(--bg2);border:1px solid #2a3a5e;color:var(--text);font-size:15px;outline:none;transition:.15s;}
+#guessInput:focus{border-color:var(--gold);}
+.btn{padding:12px 22px;border-radius:12px;border:1px solid #2a3a5e;background:var(--card2);color:var(--text);cursor:pointer;font-size:14px;transition:.15s;white-space:nowrap;}
+.btn:hover{border-color:var(--gold);}
+.btn-gold{background:linear-gradient(135deg,#c8aa6e,#a9873f);border:none;color:#0a0e1a;font-weight:700;}
+.btn-gold:hover{filter:brightness(1.1);}
+.btn-ghost{background:transparent;color:var(--muted);}
+.btn-ghost:hover{color:var(--gold);border-color:var(--gold);}
+/* 下拉匹配 */
+.suggest{position:absolute;left:0;right:0;top:calc(100% + 6px);background:#0d1626;border:1px solid #2a3a5e;border-radius:12px;max-height:300px;overflow-y:auto;z-index:100;display:none;box-shadow:0 12px 32px rgba(0,0,0,.5);}
+.suggest.show{display:block;}
+.sug-item{display:flex;align-items:center;gap:10px;padding:8px 12px;cursor:pointer;border-bottom:1px solid #16213a;}
+.sug-item:last-child{border-bottom:none;}
+.sug-item:hover,.sug-item.sel{background:#1c2a4a;}
+.sug-item img{width:34px;height:34px;border-radius:8px;background:#000;}
+.sug-item .nm{font-size:14px;font-weight:600;}
+.sug-item .tt{font-size:12px;color:var(--muted);margin-left:6px;}
+/* 对比表（经典） */
+.tbl-wrap{overflow-x:auto;margin-top:16px;border-radius:10px;border:1px solid #22314d;}
+table.cmp{border-collapse:collapse;width:100%;min-width:640px;font-size:13px;}
+table.cmp th{background:#0d1626;color:var(--muted);padding:8px 10px;font-weight:600;text-align:left;border-bottom:1px solid #22314d;white-space:nowrap;}
+table.cmp th:first-child,table.cmp td:first-child{position:sticky;left:0;z-index:2;background:#0d1626;}
+table.cmp td{padding:8px 10px;border-bottom:1px solid #16213a;white-space:nowrap;}
+table.cmp tr:last-child td{border-bottom:none;}
+table.cmp td.cell-ok{background:var(--cell-ok);color:#d7ffe3;font-weight:600;}
+table.cmp td.cell-part{background:var(--cell-part);color:#ffe8b3;font-weight:600;}
+table.cmp td.cell-bad{background:var(--cell-bad);color:#ffd6d3;}
+td.hero-cell{display:flex;align-items:center;gap:8px;background:transparent!important;color:var(--text);font-weight:600;}
+td.hero-cell img{width:32px;height:32px;border-radius:6px;background:#000;}
+td .arr{font-size:12px;margin-left:2px;}
+/* 题面 */
+.qarea{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:230px;background:var(--bg2);border:1px dashed #2a3a5e;border-radius:12px;padding:20px;text-align:center;}
+.qarea #qbody{width:100%;}
+.play-btn{width:104px;height:104px;border-radius:50%;border:2px solid var(--gold);background:radial-gradient(circle at 35% 30%, #24406e, #14203a 70%);color:var(--gold);font-size:40px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s;box-shadow:0 0 30px rgba(200,170,110,.25);}
+.play-btn:hover{transform:scale(1.05);box-shadow:0 0 44px rgba(200,170,110,.4);}
+.play-btn.playing{animation:pulse 1s infinite;}
+@keyframes pulse{0%,100%{box-shadow:0 0 24px rgba(200,170,110,.3);}50%{box-shadow:0 0 44px rgba(200,170,110,.65);}}
+.splash-box{width:100%;height:230px;border-radius:10px;overflow:hidden;position:relative;background:#000;}
+.splash-box img{width:100%;height:100%;object-fit:cover;transition:transform .3s;}
+.icon-row{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;}
+.icon-row .ab{width:82px;height:86px;border-radius:12px;background:#0d1626;border:1px solid #2a3a5e;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:12px;color:var(--muted);}
+.icon-row .ab img{width:54px;height:54px;border-radius:8px;object-fit:cover;}
+.sfx-btn{cursor:pointer;transition:.15s;}
+.sfx-btn:hover{border-color:var(--gold);color:var(--gold);}
+.sfx-btn .sfx-key{font-size:18px;font-weight:700;color:var(--gold);}
+.sfx-btn .sfx-play{font-size:11px;color:var(--muted);}
+.sfx-btn:disabled{opacity:.35;cursor:not-allowed;}
+.sfx-btn.playing{border-color:#7fff00;color:#7fff00;}
+.emoji-big{font-size:60px;line-height:1.2;letter-spacing:6px;}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:560px;margin:14px auto 0;}
+.opt-btn{padding:14px 16px;border-radius:12px;background:var(--card2);border:1px solid #2a3a5e;color:var(--text);font-size:15px;cursor:pointer;transition:.15s;font-weight:600;}
+.opt-btn:hover{border-color:var(--gold);color:var(--gold);}
+.opt-btn.ok{background:var(--cell-ok);border-color:var(--ok);color:#d7ffe3;}
+.opt-btn.bad{background:var(--cell-bad);border-color:var(--bad);color:#ffd6d3;}
+.opt-btn.dis{opacity:.35;cursor:not-allowed;}
+.qz-q{font-size:17px;font-weight:600;line-height:1.7;max-width:640px;margin-bottom:4px;}
+.ask-wrap{display:flex;flex-direction:column;gap:12px;}
+.ask-input-row{display:flex;gap:8px;}
+.ask-input-row input{flex:1;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;color:var(--text);font-size:14px;outline:none;transition:border .2s;}
+.ask-input-row input:focus{border-color:var(--gold);}
+.ask-chips{display:flex;flex-wrap:wrap;gap:7px;max-height:170px;overflow-y:auto;padding-right:2px;}
+.ask-chip{background:var(--panel);border:1px solid var(--line);color:var(--dim);border-radius:999px;padding:7px 13px;font-size:12.5px;cursor:pointer;transition:all .2s;text-align:left;}
+.ask-chip:hover{border-color:var(--gold);color:#f3e2c7;}
+.ask-chip.done{opacity:.38;text-decoration:line-through;pointer-events:none;}
+.ask-log{display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;}
+.ask-row{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:9px 13px;font-size:13px;animation:feedIn .25s ease;}
+.ask-row .aq{color:var(--text);flex:1;}
+.ask-row .aa{font-weight:700;flex-shrink:0;}
+.ask-row.yes .aa{color:#7ed18c;}
+.ask-row.no .aa{color:#e58a7a;}
+.ask-remain{font-size:13px;color:var(--gold);font-weight:700;}
+.qz-note{font-size:13px;color:var(--muted);margin-top:8px;max-width:640px;}
+.hint-text{margin-top:10px;color:var(--muted);font-size:13px;line-height:1.7;}
+/* feed */
+.feed{margin-top:12px;display:flex;flex-direction:column;gap:8px;}
+.feed .row{padding:10px 14px;border-radius:10px;font-size:14px;}
+.feed .row.ok{background:rgba(63,185,80,.12);border:1px solid var(--cell-ok);color:#a7f3bd;}
+.feed .row.bad{background:rgba(229,83,75,.12);border:1px solid var(--cell-bad);color:#fecaca;}
+.feed .row.info{background:rgba(210,153,34,.12);border:1px solid var(--cell-part);color:#fde68a;}
+/* modal */
+.modal-mask{position:fixed;inset:0;background:rgba(4,8,16,.8);z-index:100;display:none;align-items:center;justify-content:center;padding:20px;}
+.modal-mask.show{display:flex;}
+.modal{background:linear-gradient(160deg,#16203a,#0d1428);border:1px solid var(--gold);border-radius:20px;max-width:420px;width:100%;padding:26px;text-align:center;box-shadow:0 24px 80px rgba(0,0,0,.7);max-height:90vh;overflow-y:auto;}
+.modal .m-hero{width:96px;height:96px;border-radius:14px;object-fit:cover;border:2px solid var(--gold);background:#000;}
+.modal h2{color:var(--gold);font-size:26px;margin:12px 0 4px;}
+.modal .m-name{font-size:18px;font-weight:700;margin-bottom:4px;}
+.modal .m-tries{color:var(--muted);font-size:14px;margin:10px 0;}
+.modal .m-stats{background:var(--bg2);border-radius:12px;padding:12px;margin:12px 0;text-align:left;}
+.modal .m-stats h3{font-size:13px;color:var(--muted);margin-bottom:8px;}
+.bar-row{display:flex;align-items:center;gap:8px;font-size:12px;margin:3px 0;color:var(--muted);}
+.bar-row .bar{flex:1;height:16px;background:#0d1626;border-radius:4px;overflow:hidden;position:relative;}
+.bar-row .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:4px;}
+.bar-row .n{width:14px;text-align:right;}
+.modal .m-actions{display:flex;gap:10px;justify-content:center;margin-top:14px;flex-wrap:wrap;}
+.modal .m-share{background:var(--bg2);border:1px solid #2a3a5e;border-radius:10px;padding:10px 12px;margin-top:12px;font-size:12px;color:var(--muted);word-break:break-all;text-align:left;max-height:110px;overflow-y:auto;}
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:#1c2a4a;border:1px solid var(--gold);color:var(--text);padding:10px 18px;border-radius:12px;font-size:14px;z-index:200;display:none;box-shadow:0 8px 30px rgba(0,0,0,.5);}
+.toast.show{display:block;animation:toastin .25s;}
+@keyframes toastin{from{opacity:0;transform:translate(-50%,8px);}to{opacity:1;transform:translate(-50%,0);}}
+@media (max-width:640px){
+  .tabs{gap:6px;}
+  .tab{min-width:70px;font-size:12px;padding:8px 4px;}
+  .modal{max-width:96%;padding:20px;}
+}
+/* ===== 丝滑动效 ===== */
+.card,.btn,.tab,.sug-item,.opt-btn{transition:all .22s ease;}
+.card:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(0,0,0,.35);}
+.btn:active{transform:scale(.95);}
+@keyframes feedIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+#feed .row{animation:feedIn .32s ease both;}
+@keyframes modalPop{from{opacity:0;transform:scale(.92) translateY(14px);}to{opacity:1;transform:scale(1) translateY(0);}}
+.modal-mask .modal{animation:modalPop .3s cubic-bezier(.2,.9,.3,1.15) both;}
+@keyframes rowFlash{0%{background:rgba(200,168,110,.30);}100%{background:transparent;}}
+.cmp tbody tr:first-child{animation:rowFlash 1.4s ease .25s both;}
+@keyframes streakPop{0%{transform:scale(1);}40%{transform:scale(1.35);}100%{transform:scale(1);}}
+#streakNum{display:inline-block;}
+.streak-pop{animation:streakPop .45s ease;}
+.splash-box,.splash-box img{transition:transform .55s cubic-bezier(.25,.8,.3,1);}
+@keyframes toastIn{from{opacity:0;transform:translate(-50%,10px);}to{opacity:1;transform:translate(-50%,0);}}
+.toast{animation:toastIn .25s ease both;}
+html{scroll-behavior:smooth;}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="brand"><div class="dot">⚔️</div>LOL 猜英雄</div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="streak">连胜 <b id="streakNum">0</b></div>
+      <button class="btn btn-ghost" id="topShareBtn" style="padding:5px 10px;font-size:12px;">📤 分享</button>
+    </div>
+  </div>
+  <div class="tabs" id="tabs">
+    <div class="tab active" data-mode="classic"><span class="ic">⚔️</span>经典</div>
+    <div class="tab" data-mode="quote"><span class="ic">🎤</span>台词</div>
+    <div class="tab" data-mode="sfx"><span class="ic">🔊</span>音效</div>
+    <div class="tab" data-mode="ability"><span class="ic">🧩</span>技能</div>
+    <div class="tab" data-mode="emoji"><span class="ic">🎭</span>表情</div>
+    <div class="tab" data-mode="splash"><span class="ic">🖼</span>原画</div>
+    <div class="tab" data-mode="trophy"><span class="ic">🏆</span>冠军</div>
+    <div class="tab" data-mode="quiz"><span class="ic">🧠</span>问答</div>
+    <div class="tab" data-mode="ask"><span class="ic">❓</span>提问猜英雄</div>
+  </div>
+  <div class="card">
+    <div class="qnum">
+      <span class="mode-title" id="modeTitle">经典模式</span>
+      <span class="actions">
+        <span class="hint-left" id="hintLeft"></span>
+        <button class="btn btn-ghost" id="hintBtn" style="padding:6px 12px;font-size:13px;">💡 提示</button>
+      </span>
+    </div>
+    <div class="legend" id="legend" style="display:none;">
+      <span class="lg"><span class="sw sw-ok"></span>正确</span>
+      <span class="lg"><span class="sw sw-part"></span>部分正确</span>
+      <span class="lg"><span class="sw sw-bad"></span>错误</span>
+      <span class="lg"><span class="sw sw-bad"></span>⬇ 更低</span>
+      <span class="lg"><span class="sw sw-bad"></span>⬆ 更高</span>
+    </div>
+    <div class="qarea" id="qarea"><div id="qbody"></div></div>
+    <div class="guess-row">
+      <div class="guess-input-wrap">
+        <input id="guessInput" placeholder="输入英雄名字（支持中文 / 英文 / 外号）" autocomplete="off">
+        <div class="suggest" id="suggest"></div>
+      </div>
+      <button class="btn btn-gold" id="guessBtn">猜！</button>
+      <button class="btn btn-ghost" id="skipBtn">跳过</button>
+    </div>
+    <div class="feed" id="feed"></div>
+    <div class="tbl-wrap" id="tblWrap" style="display:none;"></div>
+  </div>
+  <div style="text-align:center;color:var(--muted);font-size:12px;padding:10px 0;">
+    数据来源：Riot Games Data Dragon / CommunityDragon · 粉丝自制，与拳头游戏无关 ·
+    <a href="index.html">← 返回工具箱</a>
+  </div>
+</div>
+
+<!-- 分享面板 -->
+<div class="modal-mask" id="shareModal">
+  <div class="modal" style="max-width:380px;text-align:center;">
+    <h2 style="margin:0 0 6px;">分享给朋友</h2>
+    <div style="color:var(--muted);font-size:13px;margin-bottom:12px;">朋友扫二维码或点链接，立刻开玩</div>
+    <div id="shareQr" style="display:inline-block;background:#fff;padding:8px;border-radius:10px;margin-bottom:12px;"></div>
+    <div class="m-share" id="shareModalText" style="max-height:70px;"></div>
+    <div class="m-actions" style="flex-direction:column;gap:8px;margin-top:12px;">
+      <button class="btn btn-gold" id="shareCopyBtn" style="width:100%;">📋 复制文案</button>
+      <button class="btn btn-ghost" id="shareSysBtn" style="width:100%;">📤 系统分享</button>
+      <button class="btn btn-ghost" id="shareCloseBtn" style="width:100%;">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 胜利弹窗 -->
+<div class="modal-mask" id="modal">
+  <div class="modal">
+    <img class="m-hero" id="mHero" alt="">
+    <h2>胜利！</h2>
+    <div class="m-name" id="mName"></div>
+    <div class="m-tries" id="mTries"></div>
+    <div class="m-stats">
+      <h3 id="mStatsTitle">统计数据</h3>
+      <div id="mStats"></div>
+    </div>
+    <div class="m-actions">
+      <button class="btn btn-gold" id="mAgain">再来一题</button>
+      <button class="btn" id="mCopy">📋 复制结果</button>
+      <button class="btn btn-ghost" id="mShareBtn">📤 分享到微信</button>
+    </div>
+    <div class="m-share" id="mShare"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===================== 常量与映射 ===================== */
+const MODE_NAMES = {classic:"经典模式", quote:"台词模式", sfx:"音效模式", ability:"技能模式", emoji:"表情模式", splash:"原画模式", trophy:"冠军皮肤", quiz:"知识问答", ask:"提问猜英雄"};
+const G = {
+  gender:{Male:"男", Female:"女", Other:"其他"},
+  lane:{TOP:"上单", JUNGLE:"打野", MIDDLE:"中单", BOTTOM:"下路", SUPPORT:"辅助"},
+  species:{Human:"人类", Darkin:"暗裔", Vastayan:"瓦斯塔亚人", Minotaur:"牛头人", Undead:"亡灵", Yordle:"约德尔人", God:"神", Spirit:"灵体", Magicborn:"魔法师", Iceborn:"冰裔", Dragon:"龙", Celestial:"星灵", "God-Warrior":"天神战士", Ascended:"飞升者", Voidborn:"虚空生物", Golem:"魔像", "Magically Altered":"魔法改造", Construct:"造物", Vampire:"吸血鬼", Cyborg:"机械改造", Aspect:"星灵载体", "Chemically Altered":"化学改造", Demon:"恶魔", Unknown:"未知", Spiritualist:"灵魂行者", "Void-Touched":"虚空侵蚀", Dog:"犬", Yeti:"雪人", Brackern:"壳人族", Troll:"巨魔", Hemomancer:"血术师", Cat:"猫", Plant:"植物"},
+  resource:{MANA:"法力", ENERGY:"能量", NONE:"无耗材", BLOOD_WELL:"鲜血魔井", FRENZY:"狂暴", HEALTH:"生命值", RAGE:"怒气", COURAGE:"勇气", SHIELD:"护盾", FURY:"怒意", FEROCITY:"残暴值", HEAT:"热量", GRIT:"豪意", CRIMSON_RUSH:"猩红冲刺", FLOW:"剑意"},
+  range:{Melee:"近战", Ranged:"远程"},
+  region:{ionia:"艾欧尼亚", noxus:"诺克萨斯", freljord:"弗雷尔卓德", demacia:"德玛西亚", piltover:"皮尔特沃夫", zaun:"祖安", shurima:"恕瑞玛", "mount-targon":"巨神峰", void:"虚空", bilgewater:"比尔吉沃特", "shadow-isles":"暗影岛", "bandle-city":"班德尔城", ixtal:"以绪塔尔", unaffiliated:"独立阵营"}
+};
+const tL = (m,v)=> (G[m]&&G[m][v])||v;
+const tLArr = (m,arr)=> arr.map(v=>tL(m,v)).join(" / ");
+/* ===================== 状态 ===================== */
+const $ = id=>document.getElementById(id);
+let HEROES = [], TROPHY = null, state = {};
+const STAT_KEY = "lol_guess_stats_v2";
+function loadStats(){
+  try{ return Object.assign({streak:0,maxStreak:0,won:0,modes:{},bestTries:{},modeWins:{},heroes:{}}, JSON.parse(localStorage.getItem(STAT_KEY)) || {}); }
+  catch(e){ return {streak:0,maxStreak:0,won:0,modes:{},bestTries:{},modeWins:{},heroes:{}}; }
+}
+function saveStats(s){ try{ localStorage.setItem(STAT_KEY, JSON.stringify(s)); }catch(e){} }
+function setStreak(n){
+  const el = $("streakNum");
+  el.textContent = n;
+  el.classList.remove("streak-pop");
+  void el.offsetWidth;
+  el.classList.add("streak-pop");
+}
+let stats = loadStats();
+// 知识问答题库（事实均来自公开确定的英雄联盟知识）
+const QUIZ = [
+{q:"2013 年 OGN 夏季赛决赛\u201c双劫之战\u201d中，Faker 残血劫反杀的是哪位选手的满血劫？", opts:["岳伦（Ryu）","Dade","PawN","Ambition"], ans:0, note:"岳伦的满血劫被残血劫极限反杀，成为英雄联盟史上最经典的操作之一。"},
+{q:"Faker 至今共获得过几次全球总决赛冠军？", opts:["6 次","3 次","4 次","5 次"], ans:0, note:"2013/2015/2016/2023/2024/2025 六冠，2025 年随 T1 达成史无前例三连冠。"},
+{q:"TheShy 在 2018 年 S8 半决赛\u201c天神下凡\u201d名场面中使用的英雄是？", opts:["剑魔","瑞文","卢锡安","杰斯"], ans:0, note:"河道一打五的剑魔经典画面。"},
+{q:"英雄联盟成为亚运会正式表演项目并夺得金牌是在哪一年？", opts:["2018 年","2014 年","2022 年","2016 年"], ans:0, note:"2018 雅加达亚运会 LOL 表演赛中国队夺冠。"},
+{q:"2023 年 S13 全球总决赛的 FMVP（决赛最有价值选手）是？", opts:["Zeus","Faker","Gumayusi","Keria"], ans:0, note:"Zeus 决赛剑魔剑姬发挥神勇，荣膺 FMVP。"},
+{q:"2018 年 S8 全球总决赛主题曲（RISE）的中文译名是？", opts:["登峰造极境","传奇永不熄","觉醒","无双"], ans:0, note:"RISE 官方中文名为\u201c登峰造极境\u201d。"},
+{q:"戏命师烬大招的第四发子弹有什么特殊效果？", opts:["必定暴击且对已损失生命值造成额外伤害","减速全场敌人","击退命中的目标","为全队回复生命"], ans:0, note:"第四发\u201c低语\u201d必定暴击，且目标已损失生命值越多伤害越高。"},
+{q:"星界游神巴德的大招可以让什么单位进入金身状态？", opts:["所有单位，包括防御塔和友军","仅敌方英雄","仅小兵和野怪","仅友军英雄"], ans:0, note:"金身范围内的一切（含防御塔、大小龙）都会被定住，是双刃剑。"},
+{q:"魂锁典狱长锤石的被动技能效果是？", opts:["收集灵魂永久增加护甲和法术强度","击杀回复生命","攻速随等级提升","移动速度不断提升"], ans:0, note:"周围死亡单位掉落灵魂，收集后永久成长，后期护甲惊人。"},
+{q:"翠神艾翁独特的野怪机制是？", opts:["不击杀野怪而是\u201c放生\u201d","秒杀野怪","偷取野怪经验","可以控制野怪"], ans:0, note:"艾翁用\u201c森林之友\u201d放生野怪，等一段时间后直接收取，不打不杀。"},
+{q:"暮光星灵佐伊的 W 技能可以拾取什么？", opts:["召唤师技能碎片","普通装备","金币袋","敌方英雄大招"], ans:0, note:"敌方用过的召唤师技能（还有火箭腰带等主动装备）会掉落，佐伊可以捡起来再用。"},
+{q:"亡灵战神塞恩的被动效果是？", opts:["死亡后继续战斗一段时间","死后自爆","死亡时复活队友","变成野怪继续攻击"], ans:0, note:"死亡后塞恩会继续战斗，攻速移速不断提升，直到能量耗尽。"},
+{q:"复仇之矛卡莉丝塔的被动（武术姿态）效果是？", opts:["普攻后向目标方向跳跃位移","普攻穿墙","普攻附带隐身","普攻加速全队"], ans:0, note:"每次普攻后可以位移一小段，走A风筝的核心机制。"},
+{q:"万花通灵妮蔻的被动技能可以做什么？", opts:["变身成队友的外观","分裂分身","与队友交换血量","偷学队友技能"], ans:0, note:"妮蔻可以伪装成任何队友的样子，连血条颜色都能模仿。"},
+{q:"血港鬼影派克的大招击杀敌人后有什么特殊效果？", opts:["全队共享击杀赏金","回复全队生命","刷新全队技能","全队隐身"], ans:0, note:"R 斩杀后\u201c你也有份\u201d，助攻的队友同样获得全额赏金。"},
+{q:"慎的大招\u201c慈悲度魂落\u201d可以为队友提供什么？", opts:["护盾并传送支援","全图嘲讽","复活效果","全图视野"], ans:0, note:"对任意队友施放，生成护盾后全图传送过去。"},
+{q:"卡牌大师的大招\u201c命运\u201d效果是？", opts:["暴露全图敌方位置并可传送","对全图敌人造成伤害","眩晕所有敌人","创造分身"], ans:0, note:"开启后敌方全部现形，几秒内可飞到地图任意位置。"},
+{q:"仙灵女巫璐璐的 W 技能对敌人施放会产生什么效果？", opts:["变形","眩晕","沉默","击退"], ans:0, note:"对敌人是\u201c奇思妙想\u201d变形（不能攻击施法），对队友则是加速。"},
+{q:"邪恶小法师维迦的 E 技能\u201c扭曲空间\u201d效果是？", opts:["穿过边界会被眩晕","全体减速","形成地形墙","拉拽敌人"], ans:0, note:"牢笼边缘会眩晕穿过者，中心只有减速，站边上是关键。"},
+{q:"解脱者塞拉斯的大招机制是？", opts:["偷取敌方英雄的大招使用","复制敌方装备","变身成敌方英雄","短暂无敌"], ans:0, note:"塞拉斯的 R 是\u201c其人之道\u201d，敌人有什么大招他就偷什么。"},
+{q:"魔法猫咪悠米的招牌机制是？", opts:["附身在队友身上并肩作战","制造分身","全图传送","复活队友"], ans:0, note:"悠米可以挂在队友身上提供增益，自己无法被选定。"},
+{q:"以下哪位英雄没有任何消耗资源（无蓝条、无能量条）？", opts:["暗裔剑魔","符文法师","卡牌大师","九尾妖狐"], ans:0, note:"剑魔技能无消耗，瑞兹/卡牌用蓝，阿狸用蓝。"},
+{q:"2025 年 S15 全球总决赛的 FMVP（决赛最有价值选手）是？", opts:["Gumayusi","Faker","Oner","Keria"], ans:0, note:"Gumayusi 决赛稳定发挥荣膺 FMVP，Uzi 为其颁奖。"},
+{q:"峡谷中\u201c河蟹\u201d的正式名称是？", opts:["峡谷迅捷蟹","河湾巨兽","海克斯龙虾","深水鳄鱼"], ans:0, note:"召唤师峡谷河道中央的\u201c峡谷迅捷蟹\u201d，击杀后提供视野。"},
+{q:"获得全球总决赛冠军次数最多的战队是？", opts:["T1（SKT，6 次）","EDG（3 次）","iG（2 次）","FPX（2 次）"], ans:0, note:"T1 六次捧杯：2013/2015/2016/2023/2024/2025，2023-2025 三连冠。"},
+{q:"Uzi 第一次打进全球总决赛是在哪一年？", opts:["2013 年","2012 年","2015 年","2017 年"], ans:0, note:"2013 年随皇族首次进入世界赛并获得亚军。"},
+{q:"Meiko（田野）目前效力于哪支战队？", opts:["iG","EDG","TES","RNG"], ans:0, note:"Meiko 2014-2023 效力 EDG 九年，2023 年底转会 TES，2024 年底加入 iG 并续约至今。"},
+{q:"JackeyLove 出道并夺得 S8 冠军的战队是？", opts:["iG","RNG","TES","EDG"], ans:0, note:"JKL 出道即巅峰，2018 年随 iG 夺冠。"},
+{q:"2015 年季中冠军赛（MSI）的冠军战队是？", opts:["EDG","SKT","RNG","KT"], ans:0, note:"EDG 在决赛 3:2 击败 SKT，厂长招牌寡妇发挥出色。"},
+{q:"2025 年 S15 全球总决赛 T1 在决赛击败的对手是？", opts:["KT","Gen.G","HLE","JDG"], ans:0, note:"S15 决赛（成都）T1 3:2 战胜 KT，实现三连冠、队史第六冠。"},
+];
+
+/* ===================== 工具 ===================== */
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function guessCandidates(q){
+  q = q.trim().toLowerCase();
+  if(!q) return [];
+  const pool = state.mode==="ask" ? (state.askCands||HEROES) : HEROES;
+  return pool.filter(h=>{
+    if(h.cn.toLowerCase().includes(q) || h.title.toLowerCase().includes(q) || h.id.toLowerCase().includes(q)) return true;
+    if(h.keywords && h.keywords.toLowerCase().split(",").some(k=>k && k.toLowerCase().includes(q))) return true;
+    return false;
+  }).slice(0,8);
+}
+/* ===================== 对比逻辑（经典） ===================== */
+function cmpEqual(a,b){ return a===b ? "ok" : "bad"; }
+function cmpList(a,b){
+  if(a.length===0 && b.length===0) return "ok";
+  const inter = a.filter(x=>b.includes(x));
+  if(inter.length===a.length && inter.length===b.length) return "ok";
+  return inter.length>0 ? "part" : "bad";
+}
+function cmpYear(g,a){ if(g===a) return "ok"; return g>a ? "low" : "high"; }
+function heroCell(h){
+  return `<div class="hero-cell"><img src="${h.head}" alt="">${h.cn}</div>`;
+}
+function cmpRow(h){
+  const a = state.hero, g = h;
+  const cells = [
+    cmpEqual(g.gender, a.gender),
+    cmpList(g.lanes, a.lanes),
+    cmpList(g.species, a.species),
+    cmpEqual(g.resource, a.resource),
+    cmpEqual(g.rangeType, a.rangeType),
+    cmpList(g.region, a.region),
+    cmpYear(g.year, a.year),
+  ];
+  const val = [
+    tL("gender", g.gender),
+    tLArr("lane", g.lanes),
+    tLArr("species", g.species),
+    tL("resource", g.resource),
+    tL("range", g.rangeType),
+    tLArr("region", g.region),
+    String(g.year),
+  ];
+  return {cells, val};
+}
+/* ===================== 提问猜英雄 ===================== */
+const ASK_Q = [
+  {l:"来自艾欧尼亚吗？", kw:["艾欧尼亚","艾欧尼","ionia","均衡"], t:h=>(h.region||[]).includes("ionia")},
+  {l:"来自诺克萨斯吗？", kw:["诺克萨斯","诺克","noxus"], t:h=>(h.region||[]).includes("noxus")},
+  {l:"来自德玛西亚吗？", kw:["德玛西亚","德玛","demacia"], t:h=>(h.region||[]).includes("demacia")},
+  {l:"来自弗雷尔卓德吗？", kw:["弗雷尔卓德","弗雷","freljord","极地"], t:h=>(h.region||[]).includes("freljord")},
+  {l:"来自皮尔特沃夫吗？", kw:["皮尔特沃夫","皮城","皮尔特","piltover"], t:h=>(h.region||[]).includes("piltover")},
+  {l:"来自祖安吗？", kw:["祖安","zaun"], t:h=>(h.region||[]).includes("zaun")},
+  {l:"来自比尔吉沃特吗？", kw:["比尔吉沃特","比尔","bilgewater"], t:h=>(h.region||[]).includes("bilgewater")},
+  {l:"来自暗影岛吗？", kw:["暗影岛","暗影","shadow"], t:h=>(h.region||[]).includes("shadow-isles")},
+  {l:"来自恕瑞玛吗？", kw:["恕瑞玛","恕瑞","shurima","沙漠"], t:h=>(h.region||[]).includes("shurima")},
+  {l:"来自班德尔城吗？", kw:["班德尔城","班德尔","bandle"], t:h=>(h.region||[]).includes("bandle-city")},
+  {l:"来自以绪塔尔吗？", kw:["以绪塔尔","以绪","ixtal"], t:h=>(h.region||[]).includes("ixtal")},
+  {l:"来自虚空吗？", kw:["虚空","void"], t:h=>(h.region||[]).includes("void")},
+  {l:"来自巨神峰吗？", kw:["巨神峰","巨神","targon"], t:h=>(h.region||[]).includes("mount-targon")},
+  {l:"是独立阵营（不属于任何地区）吗？", kw:["独立","无归属","unaffiliated"], t:h=>(h.region||[]).includes("unaffiliated")},
+  {l:"主打上路（上单）吗？", kw:["上单","上路","top"], t:h=>(h.lanes||[]).includes("TOP")},
+  {l:"主打中路（中单）吗？", kw:["中单","中路","mid","middle"], t:h=>(h.lanes||[]).includes("MIDDLE")},
+  {l:"走下路（射手位）吗？", kw:["下路","射手","bottom","adc"], t:h=>(h.lanes||[]).includes("BOTTOM")},
+  {l:"是辅助位吗？", kw:["辅助","support"], t:h=>(h.lanes||[]).includes("SUPPORT")},
+  {l:"是打野英雄吗？", kw:["打野","jungle"], t:h=>(h.lanes||[]).includes("JUNGLE")},
+  {l:"是法师吗？", kw:["法师","ap"], t:h=>(h.tags||[]).includes("Mage")},
+  {l:"是坦克吗？", kw:["坦克","肉"], t:h=>(h.tags||[]).includes("Tank")},
+  {l:"是射手吗？", kw:["射手"], t:h=>(h.tags||[]).includes("Marksman")},
+  {l:"是刺客吗？", kw:["刺客"], t:h=>(h.tags||[]).includes("Assassin")},
+  {l:"是战士吗？", kw:["战士"], t:h=>(h.tags||[]).includes("Fighter")},
+  {l:"是辅助吗？", kw:["辅助","奶妈"], t:h=>(h.tags||[]).includes("Support")},
+  {l:"是远程英雄吗？", kw:["远程","长手","ranged"], t:h=>h.rangeType==="Ranged"},
+  {l:"是女性英雄吗？", kw:["女性","女英雄","female"], t:h=>h.gender==="Female"},
+  {l:"是男性英雄吗？", kw:["男性","男英雄","male"], t:h=>h.gender==="Male"},
+  {l:"使用法力值吗？", kw:["法力","蓝条","mana"], t:h=>h.resource==="MANA"},
+  {l:"使用能量吗？", kw:["能量","energy"], t:h=>h.resource==="ENERGY"},
+  {l:"没有资源条吗？", kw:["无耗材","没资源","无资源","none"], t:h=>h.resource==="NONE"},
+  {l:"使用生命值施放技能吗？", kw:["生命值","耗血","health"], t:h=>h.resource==="HEALTH"},
+  {l:"是人类吗？", kw:["人类","human"], t:h=>(h.species||[]).includes("Human")},
+  {l:"是约德尔人吗？", kw:["约德尔","yordle"], t:h=>(h.species||[]).includes("Yordle")},
+  {l:"是暗裔吗？", kw:["暗裔","darkin"], t:h=>(h.species||[]).includes("Darkin")},
+  {l:"是虚空生物吗？", kw:["虚空生物","voidborn"], t:h=>(h.species||[]).includes("Voidborn")||(h.species||[]).includes("Void-Touched")},
+  {l:"是亡灵吗？", kw:["亡灵","undead"], t:h=>(h.species||[]).includes("Undead")},
+  {l:"是龙吗？", kw:["龙族","dragon"], t:h=>(h.species||[]).includes("Dragon")},
+  {l:"是瓦斯塔亚人吗？", kw:["瓦斯塔亚","vastayan"], t:h=>(h.species||[]).includes("Vastayan")},
+  {l:"是神级存在吗？", kw:["半神","神级","god","星灵"], t:h=>(h.species||[]).some(x=>["God","God-Warrior","Celestial","Aspect"].includes(x))},
+  {l:"2016 年之前就上线了吗？", kw:["老英雄","2016 年之前","老牌"], t:h=>h.year<=2016},
+  {l:"2019 年之后才上线吗？", kw:["新英雄","2019 年之后","新出"], t:h=>h.year>=2019},
+];
+/* ===== 语义解析：任意问题（不是固定题库，理解后作答） ===== */
+const TAG_CN = {Mage:"法师", Tank:"坦克", Marksman:"射手", Assassin:"刺客", Fighter:"战士", Support:"辅助"};
+const FACTS = [
+  {prop:"gender", type:"enum", values:[
+    {v:"Female", kw:["女性","女英雄","女的","是女","妹子","姑娘","雌"], label:"是女性"},
+    {v:"Male", kw:["男性","男英雄","男的","是男","汉子","雄"], label:"是男性"},
+  ]},
+  {prop:"region", type:"list", values:[
+    {v:"ionia", kw:["艾欧尼亚","艾欧尼","均衡教派"], label:"来自艾欧尼亚"},
+    {v:"noxus", kw:["诺克萨斯","诺克"], label:"来自诺克萨斯"},
+    {v:"demacia", kw:["德玛西亚","德玛"], label:"来自德玛西亚"},
+    {v:"freljord", kw:["弗雷尔卓德","弗雷","极地"], label:"来自弗雷尔卓德"},
+    {v:"piltover", kw:["皮尔特沃夫","皮城","皮尔特"], label:"来自皮尔特沃夫"},
+    {v:"zaun", kw:["祖安"], label:"来自祖安"},
+    {v:"bilgewater", kw:["比尔吉沃特","比尔"], label:"来自比尔吉沃特"},
+    {v:"shadow-isles", kw:["暗影岛"], label:"来自暗影岛"},
+    {v:"shurima", kw:["恕瑞玛","沙漠"], label:"来自恕瑞玛"},
+    {v:"bandle-city", kw:["班德尔城","班德尔"], label:"来自班德尔城"},
+    {v:"ixtal", kw:["以绪塔尔","以绪"], label:"来自以绪塔尔"},
+    {v:"void", kw:["虚空"], label:"来自虚空"},
+    {v:"mount-targon", kw:["巨神峰","巨神"], label:"来自巨神峰"},
+    {v:"unaffiliated", kw:["无归属","独立阵营","不属于任何地区"], label:"是独立阵营"},
+  ]},
+  {prop:"lanes", type:"list", values:[
+    {v:"TOP", kw:["上路","上单"], label:"主打上路"},
+    {v:"MIDDLE", kw:["中路","中单"], label:"主打中路"},
+    {v:"BOTTOM", kw:["下路","射手位","adc"], label:"走下路"},
+    {v:"SUPPORT", kw:["辅助位","打辅助"], label:"是辅助位"},
+    {v:"JUNGLE", kw:["打野","野区"], label:"是打野"},
+  ]},
+  {prop:"rangeType", type:"enum", values:[
+    {v:"Ranged", kw:["远程","长手"], label:"是远程"},
+    {v:"Melee", kw:["近战","短手"], label:"是近战"},
+  ]},
+  {prop:"tags", type:"list", values:[
+    {v:"Mage", kw:["法师","ap"], label:"是法师"},
+    {v:"Tank", kw:["坦克","肉盾"], label:"是坦克"},
+    {v:"Marksman", kw:["射手","ad"], label:"是射手"},
+    {v:"Assassin", kw:["刺客"], label:"是刺客"},
+    {v:"Fighter", kw:["战士","斗士"], label:"是战士"},
+    {v:"Support", kw:["辅助","奶妈"], label:"是辅助"},
+  ]},
+  {prop:"species", type:"list", values:[
+    {v:"Human", kw:["人类","人形","是人"], label:"是人类"},
+    {v:"Yordle", kw:["约德尔","矮"], label:"是约德尔人"},
+    {v:"Darkin", kw:["暗裔"], label:"是暗裔"},
+    {v:"Voidborn", kw:["虚空生物"], label:"是虚空生物"},
+    {v:"Undead", kw:["亡灵","死灵","僵尸"], label:"是亡灵"},
+    {v:"Dragon", kw:["龙"], label:"是龙"},
+    {v:"Vastayan", kw:["瓦斯塔亚","半兽"], label:"是瓦斯塔亚人"},
+    {v:"Demon", kw:["恶魔"], label:"是恶魔"},
+    {v:"Aspect", kw:["星灵","半神"], label:"是星灵/半神"},
+  ]},
+  {prop:"resource", type:"enum", values:[
+    {v:"MANA", kw:["法力","蓝条"], label:"使用法力值"},
+    {v:"ENERGY", kw:["能量"], label:"使用能量"},
+    {v:"NONE", kw:["无耗材","没资源","无资源"], label:"没有资源条"},
+    {v:"HEALTH", kw:["生命值","耗血"], label:"使用生命值"},
+    {v:"RAGE", kw:["怒气"], label:"使用怒气"},
+  ]},
+  {prop:"year", type:"year", label:"上线年份"},
+];
+const OPENS = [
+  {re:/来自哪|从哪里来|从哪来|哪里|哪个地区|什么地方|哪个国家|哪的人/, label:"地区", get:h=>h.region, disp:v=>"来自 " + tL("region",v), list:true},
+  {re:/什么位置|哪一路|打什么位置|什么路|走哪/, label:"分路", get:h=>h.lanes, disp:v=>"主打 " + tL("lane",v), list:true},
+  {re:/哪个种族|什么种族|哪一族|是不是人|是人还是/, label:"种族", get:h=>h.species, disp:v=>"是 " + tL("species",v), list:true},
+  {re:/哪年|什么时候上线|几几年|什么年份/, label:"年份", get:h=>h.year, disp:v=>v + " 年上线", list:false},
+  {re:/男的女的|什么性别/, label:"性别", get:h=>h.gender, disp:v=>tL("gender",v), list:false},
+  {re:/什么资源|什么耗/, label:"资源", get:h=>h.resource, disp:v=>"用" + (tL("resource",v)||v), list:false},
+  {re:/什么定位|是干嘛的|是什么类型/, label:"定位", get:h=>h.tags, disp:v=>TAG_CN[v]||v, list:true},
+];
+function askNorm(s){
+  return s.toLowerCase()
+    .replace(/[？?。，、！!；;：:～~·.…\s]+/g,"")
+    .replace(/是不是|是否|可否|可不可以/g,"是")
+    .replace(/吗|呢|吧|啊|呀|嘛|哦|的|地|得|一个|一位|个|名|这位|这个|那位|那个/g,"");
+}
+function factTest(f, vv){
+  if(f.type==="enum") return h=>h[f.prop]===vv;
+  return h=>{ const a = h[f.prop]||[]; return Array.isArray(a) ? a.includes(vv) : a===vv; };
+}
+function parseCond(sub){
+  let neg = false, t = sub;
+  t = t.replace(/^(不是|并非|不是个|不是位|没有|不可能|非)/, ()=>{ neg = true; return ""; });
+  if(/^不/.test(t)){ t = t.replace(/^不/,""); neg = !neg; }
+  for(const f of FACTS){
+    if(f.type==="year"){
+      const m = t.match(/(19|20)\d{2}/);
+      if(m){
+        const y = +m[0];
+        if(/之前|以前|前|早于/.test(t)) return {label:"在 " + y + " 年之前上线", test:h=>h.year<=y, neg};
+        if(/之后|以后|后|晚于/.test(t)) return {label:"在 " + y + " 年之后上线", test:h=>h.year>=y, neg};
+        return {label:"在 " + y + " 年上线", test:h=>h.year===y, neg};
+      }
+      if(/老|元老|早期|开服/.test(t)) return {label:"是老英雄（2016 年前）", test:h=>h.year<=2016, neg};
+      if(/新|近期|刚出|最新/.test(t)) return {label:"是新英雄（2019 年后）", test:h=>h.year>=2019, neg};
+      continue;
+    }
+    for(const v of f.values){
+      for(const k of v.kw){
+        if(t.includes(k)) return {label:v.label, test:factTest(f, v.v), neg};
+      }
+    }
+  }
+  return null;
+}
+function askOpen(s){
+  for(const o of OPENS){
+    if(o.re.test(s)) return o;
+  }
+  return null;
+}
+function parseAsk(raw){
+  const s = askNorm(raw);
+  if(/还是/.test(s) && !/不是/.test(s)){ return {hint:"有选择的问题先分开问吧，比如：是法师吗？"}; }
+  if(/^(你好|您好|在吗|hi|hello|嗨|嗨喽|哈喽|喂|哈罗)/.test(s) || s==="在") return {talk:"在的！问我关于英雄的问题吧，比如：是法师吗？"};
+  if(/是英雄吗|是不是英雄|谁是英雄/.test(s)) return {talk:"TA 当然是一位英雄啦，快用问题缩小范围猜出 TA"};
+  if(/不知道|随便|算了|跳过提问|直接猜/.test(s)) return {talk:"那就直接猜吧，输入英雄名字点「猜！」"};
+  const op = askOpen(s);
+  if(op) return {open:op, raw};
+  const subs = s.split(/并且|而且|还|又|也|同时|以及|跟|与|还有|外加/).filter(x=>x);
+  const conds = [];
+  for(const sub of subs){
+    const c = parseCond(sub);
+    if(!c) return {sug: sub};
+    conds.push(c);
+  }
+  if(!conds.length) return {sug: s};
+  return {conds, raw};
+}
+function doAsk(q){
+  const label = q.label;
+  if(state.askAsked[label]){ toast("这个问题问过啦"); return; }
+  state.askAsked[label] = true;
+  state.askCount++;
+  const base = q.test(state.hero);
+  const ans = q.neg ? !base : base;
+  state.askCands = state.askCands.filter(h=>{ const b = q.test(h); return (q.neg ? !b : b) === ans; });
+  pushAskLog(label, ans);
+  afterAsk();
+}
+function doAskOpen(o, raw){
+  const h = state.hero;
+  const v = o.get(h);
+  const first = Array.isArray(v) ? v[0] : v;
+  const label = raw || ("TA 的" + o.label);
+  if(state.askAsked[label]){ toast("这个问题问过啦"); return; }
+  state.askAsked[label] = true;
+  state.askCount++;
+  const note = o.disp(first);
+  state.askCands = state.askCands.filter(x=>{ const xv = o.get(x); return Array.isArray(xv) ? xv.includes(first) : xv === first; });
+  pushAskLog(label, true, note);
+  afterAsk();
+}
+function afterAsk(){
+  renderAskChips();
+  renderAskLog();
+  const ar = $("askRemain");
+  ar.textContent = `候选英雄：${state.askCands.length} 位` + (state.askCands.length<=5 ? " · 范围很小，快猜！" : "");
+  if(state.askCands.length<=3) toast("只剩 " + state.askCands.length + " 位候选了，直接猜吧！");
+}
+function askByInput(){
+  const raw = $("askInput").value.trim();
+  if(!raw){ toast("输入一个问题，比如：是法师吗"); return; }
+  const r = parseAsk(raw);
+  if(r.talk){ toast(r.talk); return; }
+  if(r.hint){ toast(r.hint); return; }
+  if(r.open){ doAskOpen(r.open, raw); $("askInput").value = ""; return; }
+  if(r.sug){ toast("没太听懂～试试问：是法师吗 / 来自弗雷尔卓德吗 / 是女性吗，或点下面的预设问题"); return; }
+  doAsk({label:r.raw, test:h=>r.conds.every(c=>{ const b = c.test(h); return c.neg ? !b : b; }), neg:false});
+  $("askInput").value = "";
+}
+function renderAskChips(){
+  const box = $("askChips"); if(!box) return;
+  box.innerHTML = ASK_Q.map((q,i)=>`<button class="ask-chip ${state.askAsked[q.l]?"done":""}" data-i="${i}">${q.l}</button>`).join("");
+  box.querySelectorAll(".ask-chip").forEach(b=>{
+    b.onclick = ()=>{
+      if(b.classList.contains("done")){ toast("这个问题问过啦"); return; }
+      doAsk({label:ASK_Q[+b.dataset.i].l, test:ASK_Q[+b.dataset.i].t, neg:false});
+    };
+  });
+}
+function renderAskLog(){
+  const box = $("askLog"); if(!box) return;
+  box.innerHTML = (state.askLog||[]).map((r,i)=>`<div class="ask-row ${r.ans?"yes":"no"}"><span class="aq">Q${i+1}：${r.q}</span><span class="aa">${r.note ? r.note : (r.ans?"✅ 是":"❌ 不是")}</span></div>`).join("");
+}
+/* ===================== 渲染 ===================== */
+function renderHintText(){
+  $("hintLeft").textContent = `剩余提示 ${Math.max(0, state.maxTries - state.usedHints)} 次`;
+}
+function pushAskLog(q, ans, note){ if(!state.askLog) state.askLog = []; state.askLog.push({q, ans, note}); }
+function renderQuestion(){
+  state.usedHints = 0; state.used = 0; state.maxTries = 5; state.hintOrder = null;
+  $("feed").innerHTML = "";
+  $("suggest").classList.remove("show");
+  $("guessInput").value = ""; $("guessInput").focus();
+  $("tblWrap").style.display = "none"; $("tblWrap").innerHTML = "";
+  const gr = document.querySelector(".guess-row");
+  gr.style.display = (state.mode==="trophy" || state.mode==="quiz") ? "none" : "";
+  renderHintText();
+  const h = state.hero, mode = state.mode;
+  const q = $("qbody");
+  if(mode==="classic"){
+    $("legend").style.display = "";
+    $("tblWrap").style.display = "none";
+    $("tblWrap").innerHTML = "";
+    q.innerHTML = `<div style="color:var(--muted);font-size:14px;line-height:1.8;">根据属性猜测英雄<br>猜得越多，线索越多 —— 每次猜完会给你对比反馈</div>`;
+  } else if(mode==="quote"){
+    q.innerHTML = `<button class="play-btn" id="playBtn">▶</button><div class="hint-text">听这段禁选语音（中文配音），猜是哪位英雄</div>`;
+  } else if(mode==="sfx"){
+    const flags = h.abil || "1111";
+    q.innerHTML = `<div class="icon-row">${["Q","W","E","R"].map((k,i)=>`<button class="ab sfx-btn" data-k="${k}" ${flags[i]==="1"?"":"disabled"}><span class="sfx-key">${k}</span><span class="sfx-play">▶ 播放</span></button>`).join("")}</div><div class="hint-text">听 TA 的技能音效猜英雄：点 Q/W/E/R 分别试听对应技能（顺序与技能图标一致）</div>`;
+  } else if(mode==="ability"){
+    const n = 1 + Math.floor(Math.random()*2);
+    const ks = shuffle(["q","w","e","r"]).slice(0,n);
+    q.innerHTML = `<div class="icon-row">${ks.map(k=>`<div class="ab"><img src="${h.icons[k]}" alt=""><b>技能 ?</b></div>`).join("")}</div><div class="hint-text">识别这些技能图标，猜是哪位英雄</div>`;
+  } else if(mode==="emoji"){
+    q.innerHTML = `<div class="emoji-big">${h.emoji}</div><div class="hint-text">看这组表情，猜是哪位英雄</div>`;
+  } else if(mode==="splash"){
+    state.zoom = 2.0;
+    state.pos = {x: 35+Math.random()*30, y: 24+Math.random()*18};
+    q.innerHTML = `<div class="splash-box" id="splashBox"><img id="splashImg" src="${h.splash0}" alt="" draggable="false"></div><div class="hint-text" id="zoomText">局部放大 2.0× · 猜错会缩小画面</div>`;
+    applyZoom();
+  } else if(mode==="trophy"){
+    const skins = TROPHY.skins;
+    state.t = skins[Math.floor(Math.random()*skins.length)];
+    state.tzoom = 1.8; state.pos = {x:50, y:35};
+    const wrong = shuffle(TROPHY.teams.filter(t=>t!==state.t.team)).slice(0,3);
+    state.opts = shuffle([{label:state.t.team,ok:true},...wrong.map(t=>({label:t,ok:false}))]);
+    q.innerHTML = `<div class="splash-box" style="max-width:560px;margin:0 auto;"><img id="trophyImg" src="${state.t.img}" alt=""></div>
+      <div class="hint-text" id="zoomText">局部放大 1.8× · 猜错会缩小画面</div>
+      <div class="hint-text" style="margin:6px 0 2px;">这张冠军皮肤（局部）属于哪支战队？</div>
+      <div class="opts">${state.opts.map((o,i)=>`<button class="opt-btn" data-i="${i}">${o.label}</button>`).join("")}</div>`;
+    applyZoom();
+  } else if(mode==="quiz"){
+    state.qz = QUIZ[Math.floor(Math.random()*QUIZ.length)];
+    const idxs = shuffle([0,1,2,3]);
+    state.opts = idxs.map(i=>({label:state.qz.opts[i], ok:i===state.qz.ans}));
+    q.innerHTML = `<div class="qz-q">${state.qz.q}</div>
+      <div class="opts">${state.opts.map((o,i)=>`<button class="opt-btn" data-i="${i}">${o.label}</button>`).join("")}</div>
+      <div class="qz-note" id="qzNote"></div>`;
+  } else if(mode==="ask"){
+    state.askAsked = {}; state.askCount = 0; state.askCands = HEROES.slice();
+    q.innerHTML = `
+      <div class="ask-wrap">
+        <div class="ask-intro" style="color:var(--muted);font-size:13.5px;line-height:1.8;">目标英雄已锁定（头像为 ？）。用提问缩小范围，比如：「是法师吗」「来自弗雷尔卓德吗」。问完就猜！</div>
+        <div class="ask-input-row">
+          <input id="askInput" placeholder="输入问题，如：是远程吗 / 来自诺克萨斯吗" autocomplete="off">
+          <button class="btn btn-gold" id="askBtn" style="padding:0 18px;">提问</button>
+        </div>
+        <div class="ask-chips" id="askChips"></div>
+        <div class="ask-log" id="askLog"></div>
+        <div class="ask-remain" id="askRemain">候选英雄：${HEROES.length} 位</div>
+      </div>`;
+    renderAskChips();
+    $("askBtn").onclick = askByInput;
+    $("askInput").addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); askByInput(); } });
+  }
+  const pb = $("playBtn");
+  if(pb){
+    pb.onclick = ()=>{
+      const src = mode==="quote" ? h.vo : h.sfx;
+      playAudio(src, pb);
+    };
+  }
+  document.querySelectorAll(".sfx-btn").forEach(b=>{
+    b.onclick = ()=>{ if(b.disabled){ toast("该英雄没有此技能音效（无此技能或官方未收录）"); return; } playAbility(h, b.dataset.k, b); };
+  });
+  document.querySelectorAll(".opt-btn").forEach(b=>{
+    b.onclick = ()=>{ answer(+b.dataset.i); };
+  });
+}
+function applyZoom(){
+  const img = $("splashImg") || $("trophyImg"); if(!img) return;
+  const z = state.mode==="trophy" ? state.tzoom : state.zoom;
+  img.style.transform = `scale(${z})`;
+  img.style.transformOrigin = `${state.pos.x}% ${state.pos.y}%`;
+  const t = $("zoomText");
+  if(t) t.textContent = z<=1.05 ? "完整原画 · 已经看全了" : `已放大 ${z.toFixed(1)}× 局部 · 猜错会缩小画面`;
+}
+let curAudio = null, curBtn = null;
+function playAudio(src, btn){
+  if(curAudio){ curAudio.pause(); if(curBtn) curBtn.classList.remove("playing"); }
+  if(curAudio && curAudio.dataset.src===src && !curAudio.paused){ curAudio=null; curBtn=null; return; }
+  const a = new Audio(src);
+  a.dataset.src = src;
+  a.onended = ()=>{ btn.classList.remove("playing"); if(curAudio===a) curAudio=null; };
+  a.play().catch(()=>{});
+  curAudio = a; curBtn = btn;
+  btn.classList.add("playing");
+}
+const ABIL = "https://d28xe8vt774jo5.cloudfront.net/champion-abilities";
+function abilityUrl(h, k){
+  const pid = String(h.key).padStart(4, "0");
+  return ABIL + "/" + pid + "/ability_" + pid + "_" + k + "1.webm";
+}
+function setSfxText(btn, t){ const s = btn.querySelector(".sfx-play"); if(s) s.textContent = t; }
+function resetSfxBtn(btn){ if(!btn) return; btn.classList.remove("playing"); setSfxText(btn, "▶ 播放"); }
+function playAbility(h, k, btn){
+  if(curAudio){ curAudio.pause(); if(curBtn) resetSfxBtn(curBtn); }
+  let v = $("abilV");
+  if(!v){
+    v = document.createElement("video");
+    v.id = "abilV";
+    v.preload = "auto";
+    v.style.cssText = "position:fixed;left:-9999px;top:0;width:2px;height:2px;opacity:0;pointer-events:none;";
+    document.body.appendChild(v);
+  }
+  v.pause();
+  const done = ()=>{ if(curBtn) resetSfxBtn(curBtn); curAudio = null; curBtn = null; };
+  v.onended = done;
+  v.onerror = ()=>{ done(); toast("音效加载失败，请检查网络后重试"); };
+  v.src = abilityUrl(h, k);
+  v.play().then(()=>{ btn.classList.add("playing"); setSfxText(btn, "播放中…"); }).catch(()=>{ done(); toast("音效加载失败，请检查网络后重试"); });
+  curAudio = v; curBtn = btn;
+}
+/* ===================== 提示 ===================== */
+function hint(){
+  if(state.usedHints >= state.maxTries){
+    toast("提示用完了，继续猜吧");
+    return;
+  }
+  state.usedHints++;
+  const h = state.hero, mode = state.mode;
+  let msg;
+  if(mode==="classic" || mode==="ask"){
+    if(!state.hintOrder) state.hintOrder = shuffle([1,2,3,4,5]);
+    const n = state.hintOrder[state.usedHints-1];
+    msg = n===1 ? `提示：TA 是${h.lanes.map(l=>"「"+tL("lane",l)+"」").join("")}英雄，${h.rangeType==="Melee"?"近战":"远程"}`
+      : n===2 ? `提示：性别 ${tL("gender",h.gender)} · ${h.species.map(s=>tL("species",s)).join("、")}`
+      : n===3 ? `提示：资源类型 ${h.resource?tL("resource",h.resource):"无耗材"}`
+      : n===4 ? `提示：来自 ${h.region.map(r=>tL("region",r)).join("、")}`
+      : `提示：这个英雄 ${h.year} 年上线`;
+  } else if(mode==="trophy"){
+    msg = `提示：这是 ${state.t.cn} 的皮肤（皮肤名：${state.t.name}）`;
+  } else if(mode==="quiz"){
+    const btns = document.querySelectorAll(".opt-btn");
+    let done = false;
+    btns.forEach((b,j)=>{
+      if(!done && !state.opts[j].ok && !b.classList.contains("dis")){ b.classList.add("dis"); done = true; }
+    });
+    msg = done ? "提示：已帮你排除一个错误选项" : "提示：已经没有错误选项可排除了";
+  } else {
+    if(!state.hintOrder) state.hintOrder = shuffle([1,2,3,4,5]);
+    const n = state.hintOrder[state.usedHints-1];
+    msg = n===1 ? `提示：TA 是${h.lanes.map(l=>"「"+tL("lane",l)+"」").join("")}英雄`
+      : n===2 ? `提示：${h.species.map(s=>tL("species",s)).join("、")} · ${h.rangeType==="Melee"?"近战":"远程"}`
+      : n===3 ? `提示：来自 ${h.region.map(r=>tL("region",r)).join("、")}`
+      : n===4 ? `提示：性别 ${tL("gender",h.gender)} · ${h.resource?tL("resource",h.resource):"无耗材"}`
+      : `提示：这个英雄 ${h.year} 年上线`;
+  }
+  $("feed").innerHTML = `<div class="row info">💡 ${msg}</div>`;
+  renderHintText();
+}
+/* ===================== 下拉匹配 ===================== */
+let sugSel = -1, sugItems = [];
+function showSuggest(){
+  const q = $("guessInput").value;
+  sugItems = guessCandidates(q);
+  const box = $("suggest");
+  if(!sugItems.length){ box.classList.remove("show"); return; }
+  box.innerHTML = sugItems.map((h,i)=>`
+    <div class="sug-item ${i===sugSel?"sel":""}" data-i="${i}">
+      <img src="${h.head}" alt=""><span class="nm">${h.cn}</span><span class="tt">${h.title}</span>
+    </div>`).join("");
+  box.classList.add("show");
+  const _ir = $("guessInput").getBoundingClientRect();
+  const _below = window.innerHeight - _ir.bottom, _above = _ir.top;
+  const _up = _below < 190 && _above > _below;
+  let _avail = _up ? _above : _below;
+  let _maxH = Math.min(300, _avail - 10);
+  if(_maxH < 70) _maxH = Math.max(46, _avail - 6);
+  if(_up){
+    box.style.top = "auto";
+    box.style.bottom = (_ir.height + 6) + "px";
+  } else {
+    box.style.top = "calc(100% + 6px)";
+    box.style.bottom = "auto";
+  }
+  box.style.maxHeight = _maxH + "px";
+}
+/* ===================== 猜 ===================== */
+function guess(heroArg){
+  const h = heroArg || pickHeroFromInput();
+  if(!h){ toast("没有这个英雄，看看下拉列表里的名字"); return; }
+  const mode = state.mode, a = state.hero;
+  state.used++;
+  if(h.key === a.key){
+    win();
+    return;
+  }
+  if(mode==="ask"){
+    state.askCands = state.askCands.filter(x=>x.key!==h.key);
+    $("feed").innerHTML = `<div class="row bad">✘ ${h.cn} 不对，已排除（还剩 ${state.askCands.length} 位候选）</div>`;
+    const ar = $("askRemain"); if(ar) ar.textContent = `候选英雄：${state.askCands.length} 位`;
+  } else if(mode==="classic"){
+    addCmpRow(h);
+    $("feed").innerHTML = `<div class="row bad">✘ ${h.cn} 不对，继续猜（答案属性已在表格里对比）</div>`;
+  } else {
+    if(mode==="splash" && state.zoom > 1.0){
+      state.zoom = Math.max(1.0, state.zoom - 0.4);
+      applyZoom();
+    }
+    $("feed").innerHTML = `<div class="row bad">✘ ${h.cn} 不对，再试试</div>`;
+  }
+  stats.streak = 0; saveStats(stats); setStreak(0);
+  $("suggest").classList.remove("show");
+  $("guessInput").value = ""; $("guessInput").focus();
+}
+function answer(i){
+  const o = state.opts[i];
+  const mode = state.mode;
+  const btns = document.querySelectorAll(".opt-btn");
+  if(btns[i] && btns[i].classList.contains("dis")) return;
+  state.used++;
+  if(o.ok){
+    btns.forEach((b,j)=>{ b.classList.add(j===i?"ok":"dis"); });
+    stats.streak++; stats.won++;
+    stats.maxStreak = Math.max(stats.maxStreak, stats.streak);
+    saveStats(stats); setStreak(stats.streak);
+    let msg = mode==="trophy"
+      ? `✓ 答对了！${state.t.name} 属于 ${state.t.team}（英雄：${state.t.cn}）`
+      : `✓ 答对了！ ${state.qz.note||""}`;
+    $("feed").innerHTML = `<div class="row ok">${msg}</div>` + $("feed").innerHTML;
+    setTimeout(renderQuestion, 1400);
+  } else {
+    btns.forEach((b,j)=>{ if(state.opts[j].ok) b.classList.add("ok"); if(j===i) b.classList.add("bad"); });
+    stats.streak = 0; setStreak(0);
+    if(mode==="trophy" && state.tzoom > 1.0){
+      state.tzoom = Math.max(1.0, state.tzoom - 0.4);
+      applyZoom();
+    }
+    let msg = mode==="trophy"
+      ? `✘ 不对，这是 ${state.t.team} 的皮肤（${state.t.name}，英雄：${state.t.cn}）`
+      : `✘ 不对，正确答案是「${state.qz.opts[state.qz.ans]}」 ${state.qz.note||""}`;
+    $("feed").innerHTML = `<div class="row bad">${msg}</div>` + $("feed").innerHTML;
+    setTimeout(renderQuestion, 1800);
+  }
+}
+function pickHeroFromInput(){
+  const v = $("guessInput").value.trim().toLowerCase();
+  if(!v) return null;
+  return HEROES.find(h=>h.cn.toLowerCase()===v || h.title.toLowerCase()===v || h.id.toLowerCase()===v) || null;
+}
+function slowScroll(el, target, ms){
+  const start = el.scrollLeft, diff = target - start, t0 = performance.now();
+  function step(now){
+    const p = Math.min(1, (now - t0) / ms);
+    const e = 1 - Math.pow(1 - p, 3);
+    el.scrollLeft = start + diff * e;
+    if(p < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+function addCmpRow(h){
+  const wrap = $("tblWrap");
+  wrap.style.display = "";
+  const c = cmpRow(h);
+  const arrMark = {ok:"", low:"<span class='arr'>↓</span>", high:"<span class='arr'>↑</span>"};
+  let t = wrap.innerHTML;
+  const isNew = !t;
+  if(isNew){
+    t = `<table class="cmp"><thead><tr><th>英雄</th><th>性别</th><th>位置</th><th>种族</th><th>资源</th><th>射程</th><th>地区</th><th>年份</th></tr></thead><tbody>`;
+    requestAnimationFrame(()=>{
+      if(wrap.scrollWidth > wrap.clientWidth + 4){
+        slowScroll(wrap, wrap.scrollWidth, 700);
+        setTimeout(()=>{ slowScroll(wrap, 0, 700); }, 1500);
+      }
+    });
+  } else {
+    t = t.replace("</tbody></table>", "");
+  }
+  const row = `<tr><td>${heroCell(h)}</td>` + c.val.map((v,i)=>{
+    const cl = c.cells[i]==="ok" ? "cell-ok" : c.cells[i]==="part" ? "cell-part" : "cell-bad";
+    let mark = "";
+    if(i===6) mark = arrMark[c.cells[i]]||"";
+    return `<td class="${cl}">${v}${mark}</td>`;
+  }).join("") + `</tr>`;
+  t = t.replace("<tbody>", "<tbody>" + row);
+  t += "</tbody></table>";
+  wrap.innerHTML = t;
+  wrap.scrollTop = 0;
+}
+/* ===================== 胜利 ===================== */
+function win(){
+  const h = state.hero, mode = state.mode;
+  stats.streak++; stats.won++;
+  stats.maxStreak = Math.max(stats.maxStreak, stats.streak);
+  const modes = stats.modes[mode] = stats.modes[mode] || {dist:[]};
+  const t = Math.min(state.used, 15);
+  modes.dist[t-1] = (modes.dist[t-1]||0)+1;
+  stats.modeWins[mode] = (stats.modeWins[mode]||0)+1;
+  stats.bestTries[mode] = Math.min(stats.bestTries[mode]||99, state.used);
+  stats.heroes[h.key] = (stats.heroes[h.key]||0)+1;
+  saveStats(stats);
+  setStreak(stats.streak);
+  $("mHero").src = h.splash0;
+  $("mName").textContent = `${h.cn} · ${h.title}`;
+  $("mTries").textContent = mode==="ask" ? `提问 ${state.askCount} 次 · 猜测 ${state.used} 次` : `尝试次数：${state.used}`;
+  $("mStatsTitle").textContent = `${MODE_NAMES[mode]} · 猜测次数分布`;
+  let bars = "", mx = 0;
+  for(const n of modes.dist) mx = Math.max(mx, n||0);
+  for(let i=0;i<modes.dist.length;i++){
+    const c = modes.dist[i]||0;
+    if(!c) continue;
+    bars += `<div class="bar-row"><span class="n">${i+1}</span><div class="bar"><i style="width:${Math.round(c/mx*100)}%"></i></div><span>${c}</span></div>`;
+  }
+  $("mStats").innerHTML = (stats.maxStreak ? `<div class="bar-row"><span>最高连胜</span><div class="bar"><i style="width:${Math.min((stats.maxStreak||0)*10,100)}%"></i></div><span class="n">${stats.maxStreak||0}</span></div>` : "") + (bars || `<div style="color:var(--muted);font-size:13px;">这是你在该模式的第一胜！</div>`);
+  $("mShare").textContent = buildShare(mode, h, state.used);
+  $("modal").classList.add("show");
+}
+function buildShare(mode, h, tries){
+  let text = mode==="ask"
+    ? `我在「提问猜英雄」中问了 ${state.askCount||0} 个问题，猜中了英雄 ${h.cn} ⚔️`
+    : `我在 ${MODE_NAMES[mode]} 中猜中了英雄 ${h.cn}，使用了 ${tries} 次尝试 ⚔️`;
+  if(mode==="classic"){
+    const tbody = document.querySelector("table.cmp tbody");
+    if(tbody){
+      const rows = [];
+      tbody.querySelectorAll("tr").forEach(tr=>{
+        let line = "";
+        tr.querySelectorAll("td").forEach((td,i)=>{
+          if(i===0) return;
+          line += td.className.includes("cell-ok")?"🟩":td.className.includes("cell-part")?"🟧":"🟥";
+        });
+        rows.push(line);
+      });
+      if(rows.length) text += "\n" + rows.join("\n");
+    }
+  }
+  text += `\n柿子eeeee 工具箱`;
+  return text;
+}
+/* ===================== 题 ===================== */
+function nextQuestion(){
+  const pool = state.mode==="sfx" ? HEROES.filter(h=>(h.abil||"1111").includes("1")) : HEROES;
+  state.hero = pool[Math.floor(Math.random()*pool.length)];
+  state.streak = 0; setStreak(0);
+  renderQuestion();
+}
+function skip(){
+  state.streak = 0; setStreak(0);
+  let msg;
+  if(state.mode==="trophy") msg = `跳过，正确答案：${state.t.name}（${state.t.team} · ${state.t.cn}）`;
+  else if(state.mode==="quiz") msg = `跳过，正确答案：「${state.qz.opts[state.qz.ans]}」 ${state.qz.note||""}`;
+  else { const h = state.hero; msg = `跳过，正确答案是 ${h.cn} · ${h.title}`; }
+  $("feed").innerHTML = `<div class="row info">${msg}</div>` + $("feed").innerHTML;
+  if(state.mode==="trophy" || state.mode==="quiz" || state.mode==="ask"){ setTimeout(renderQuestion, 1400); }
+}
+/* ===================== 事件 ===================== */
+document.querySelectorAll(".tab").forEach(t=>{
+  t.onclick = ()=>{
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+    t.classList.add("active");
+    state.mode = t.dataset.mode;
+    $("modeTitle").textContent = MODE_NAMES[state.mode];
+    $("legend").style.display = state.mode==="classic" ? "" : "none";
+    nextQuestion();
+  };
+});
+$("guessBtn").onclick = ()=> guess();
+$("guessInput").addEventListener("input", ()=>{ sugSel=-1; showSuggest(); });
+$("guessInput").addEventListener("keydown", e=>{
+  if(e.key==="ArrowDown"){ e.preventDefault(); if(!sugItems.length) showSuggest(); sugSel=Math.min(sugSel+1, sugItems.length-1); showSuggest(); }
+  else if(e.key==="ArrowUp"){ e.preventDefault(); sugSel=Math.max(sugSel-1, 0); showSuggest(); }
+  else if(e.key==="Enter"){ if(sugItems.length && sugSel>=0){ guess(sugItems[sugSel]); } else { guess(); } }
+  else if(e.key==="Escape"){ $("suggest").classList.remove("show"); }
+});
+$("suggest").addEventListener("click", e=>{
+  const it = e.target.closest(".sug-item");
+  if(it){ guess(sugItems[+it.dataset.i]); }
+});
+$("suggest").addEventListener("wheel", e=>{
+  const _box = $("suggest");
+  if(_box.scrollHeight > _box.clientHeight){
+    e.preventDefault();
+    _box.scrollTop += e.deltaY;
+  }
+}, {passive:false});
+$("hintBtn").onclick = hint;
+$("skipBtn").onclick = skip;
+$("mAgain").onclick = ()=>{ $("modal").classList.remove("show"); nextQuestion(); };
+$("modal").addEventListener("click", e=>{ if(e.target===$("modal")) $("modal").classList.remove("show"); });
+
+/* ===== 分享 ===== */
+function shareResult(){
+  const text = $("mShare").textContent || "";
+  const link = location.origin + location.pathname;
+  const full = text + " " + link;
+  if(navigator.share){
+    navigator.share({title:"柿子eeeee · 猜英雄", text, url: location.href})
+      .then(()=>{})
+      .catch(()=>copyText(full));
+    return;
+  }
+  copyText(full);
+}
+function copyText(t){
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(t).then(()=>toast("分享文案已复制，去微信粘贴吧")).catch(()=>copyFallback(t));
+  } else copyFallback(t);
+}
+function copyFallback(t){
+  const ta = document.createElement("textarea");
+  ta.value = t; ta.style.position = "fixed"; ta.style.opacity = "0";
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand("copy"); toast("分享文案已复制，去微信粘贴吧"); }
+  catch(e){ toast("复制失败，请长按文字手动复制"); }
+  document.body.removeChild(ta);
+}
+
+
+/* ===== 分享面板 ===== */
+function openShare(){
+  const mode = state.mode || "classic";
+  let text = "";
+  try{
+    if(state.hero) text = buildShare(mode, state.hero, state.used || state.guessed.length || 0);
+  }catch(e){}
+  if(!text) text = document.title + "：来挑战吧！";
+  $("shareModalText").textContent = text + "  " + location.origin + location.pathname;
+  const qr = $("shareQr");
+  qr.innerHTML = "";
+  try{
+    if(typeof QRCode !== "undefined"){
+      new QRCode(qr, {text: location.href, width: 176, height: 176, correctLevel: QRCode.CorrectLevel.M});
+    } else {
+      qr.innerHTML = `<div style="color:#333;font-size:12px;padding:6px;word-break:break-all;max-width:200px;">${location.href}</div>`;
+    }
+  }catch(e){
+    qr.innerHTML = `<div style="color:#333;font-size:12px;padding:6px;word-break:break-all;max-width:200px;">${location.href}</div>`;
+  }
+  $("shareModal").classList.add("show");
+}
+function shareFromPanel(sys){
+  const text = $("shareModalText").textContent || location.href;
+  if(sys && navigator.share){
+    navigator.share({title: document.title, text, url: location.href}).catch(()=>copyText(text));
+  } else {
+    copyText(text);
+  }
+}
+
+$("mShareBtn").onclick = shareResult;
+  $("topShareBtn").onclick = openShare;
+  $("shareCopyBtn").onclick = ()=>shareFromPanel(false);
+  $("shareSysBtn").onclick = ()=>shareFromPanel(true);
+  $("shareCloseBtn").onclick = ()=>{ $("shareModal").classList.remove("show"); };
+  $("shareModal").onclick = e=>{ if(e.target === $("shareModal")) $("shareModal").classList.remove("show"); };
+$("mCopy").onclick = ()=>{
+  const txt = $("mShare").textContent;
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(()=>toast("已复制到剪贴板！")).catch(()=>fallbackCopy(txt));
+  } else fallbackCopy(txt);
+};
+function fallbackCopy(txt){
+  const ta = document.createElement("textarea");
+  ta.value = txt; document.body.appendChild(ta); ta.select();
+  try{ document.execCommand("copy"); toast("已复制到剪贴板！"); }catch(e){ toast("复制失败，请手动复制"); }
+  document.body.removeChild(ta);
+}
+let toastTimer = null;
+function toast(msg){
+  const t = $("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove("show"), 2200);
+}
+/* ===================== 启动 ===================== */
+const FALLBACK = {"heroes":[{"key":266,"id":"Aatrox","cn":"暗裔剑魔","title":"亚托克斯","gender":"Male","lanes":["TOP"],"species":["Darkin"],"resource":"BLOOD_WELL","rangeType":"Melee","region":["unaffiliated"],"year":2013,"keywords":"剑魔,亚托克斯,暗裔剑魔,jianmo,yatuokesi,anyijianmo,Aatrox,jm,ayjm,ytks","emoji":"😈🗡️🤜","sfx":"assets/sfx/266.ogg","vo":"assets/vo/266.ogg","icons":{"q":"assets/spells/Aatrox_0.webp","w":"assets/spells/Aatrox_1.webp","e":"assets/spells/Aatrox_2.webp","r":"assets/spells/Aatrox_3.webp"},"splash":"assets/splash/Aatrox.webp","head":"assets/icons/Aatrox.webp","splash0":"assets/splash0/Aatrox.webp","abil":"1111"},{"key":103,"id":"Ahri","cn":"九尾妖狐","title":"阿狸","gender":"Female","lanes":["MIDDLE"],"species":["Vastayan"],"resource":"MANA","rangeType":"Ranged","region":["ionia"],"year":2011,"keywords":"九尾,九尾妖狐,狐狸,阿狸,jiuwei,jiuweiyaohu,huli,ali,ahri,jwyh,al,hl,jw","emoji":"🦊🔵🎯","sfx":"assets/sfx/103.ogg","vo":"assets/vo/103.ogg","icons":{"q":"assets/spells/Ahri_0.webp","w":"assets/spells/Ahri_1.webp","e":"assets/spells/Ahri_2.webp","r":"assets/spells/Ahri_3.webp"},"splash":"assets/splash/Ahri.webp","head":"assets/icons/Ahri.webp","splash0":"assets/splash0/Ahri.webp","abil":"1111"},{"key":84,"id":"Akali","cn":"离群之刺","title":"阿卡丽","gender":"Female","lanes":["MIDDLE","TOP"],"species":["Human"],"resource":"ENERGY","rangeType":"Melee","region":["ionia"],"year":2010,"keywords":"阿卡丽,离群之刺,akali,liqunzhici,akl,lqzc","emoji":"🧍🥷⚡","sfx":"assets/sfx/84.ogg","vo":"assets/vo/84.ogg","icons":{"q":"assets/spells/Akali_0.webp","w":"assets/spells/Akali_1.webp","e":"assets/spells/Akali_2.webp","r":"assets/spells/Akali_3.webp"},"splash":"assets/splash/Akali.webp","head":"assets/icons/Akali.webp","splash0":"assets/splash0/Akali.webp","abil":"1111"},{"key":166,"id":"Akshan","cn":"影哨","title":"阿克尚","gender":"Male","lanes":["MIDDLE","TOP"],"species":["Human"],"resource":"MANA","rangeType":"Ranged","region":["shurima"],"year":2021,"keywords":"影哨,阿克尚,阿克,阿,yingshao,akeshang,ake,a","emoji":"🧍🏜️🔵","sfx":"assets/sfx/166.ogg","vo":"assets/vo/166.ogg","icons":{"q":"assets/spells/Akshan_0.webp","w":"assets/spells/Akshan_1.webp","e":"assets/spells/Akshan_2.webp","r":"assets/spells/Akshan_3.webp"},"splash":"assets/splash/Akshan.webp","head":"assets/icons/Akshan.webp","splash0":"assets/splash0/Akshan.webp","abil":"1111"},{"key":12,"id":"Alistar","cn":"牛头酋长","title":"阿利斯塔","gender":"Male","lanes":["SUPPORT"],"species":["Minotaur"],"resource":"MANA","rangeType":"Melee","region":["unaffiliated"],"year":2009,"keywords":"阿利斯塔,牛头,牛头酋长,酋长,alisita,niutou,niutouqiuzhang,qiuzhang,Alistar,alst,nt,ntqz,qz","emoji":"🐮🤜🤜","sfx":"assets/sfx/12.ogg","vo":"assets/vo/12.ogg","icons":{"q":"assets/spells/Alistar_0.webp","w":"assets/spells/Alistar_1.webp","e":"assets/spells/Alistar_2.webp","r":"assets/spells/Alistar_3.webp"},"splash":"assets/splash/Alistar.webp","head":"assets/icons/Alistar.webp","splash0":"assets/splash0/Alistar.webp","abil":"1111"},{"key":799,"id":"Ambessa","cn":"铁血狼母","title":"安蓓萨","gender":"Female","lanes":["TOP"],"species":["Human"],"resource":"ENERGY","rangeType":"Melee","region":["noxus"],"year":2024,"keywords":"安蓓萨,铁血狼母,anbeisa,tiexuelangmu","emoji":"🧍🔴⚡","sfx":"assets/sfx/799.ogg","vo":"assets/vo/799.ogg","icons":{"q":"assets/spells/Ambessa_0.webp","w":"assets/spells/Ambessa_1.webp","e":"assets/spells/Ambessa_2.webp","r":"assets/spells/Ambessa_3.webp"},"splash":"assets/splash/Ambessa.webp","head":"assets/icons/Ambessa.webp","splash0":"assets/splash0/Ambessa.webp","abil":"1111"},{"key":32,"id":"Amumu","cn":"殇之木乃伊","title":"阿木木","gender":"Male","lanes":["JUNGLE","SUPPORT"],"species":["Undead","Yordle"],"resource":"MANA","rangeType":"Melee","region":["shurima"],"year":2009,"keywords":"阿木木,木乃伊,分头,殇之木乃伊,木木,伤之木乃伊,amumu,munaiyi,fentou,shangzhimunaiyi,amm,szmny,mny,ft,mm,mumu","emoji":"💀😢🔵","sfx":"assets/sfx/32.ogg","vo":"assets/vo/32.ogg","icons":{"q":"assets/spells/Amumu_0.webp","w":"assets/spells/Amumu_1.webp","e":"assets/spells/Amumu_2.webp","r":"assets/spells/Amumu_3.webp"},"splash":"assets/splash/Amumu.webp","head":"assets/icons/Amumu.webp","splash0":"assets/splash0/Amumu.webp","abil":"1111"},{"key":34,"id":"Anivia","cn":"冰晶凤凰","title":"艾尼维亚","gender":"Female","lanes":["MIDDLE"],"species":["God","Spirit"],"resource":"MANA","rangeType":"Ranged","region":["freljord"],"year":2009,"keywords":"凤凰,冰晶凤凰,艾尼维亚,Anivia,fenghuang,bingjingfenghuang,ainiweiya,anwy,bjfh,fh","emoji":"✨🐦🔵","sfx":"assets/sfx/34.ogg","vo":"assets/vo/34.ogg","icons":{"q":"assets/spells/Anivia_0.webp","w":"assets/spells/Anivia_1.webp","e":"assets/spells/Anivia_2.webp","r":"assets/spells/Anivia_3.webp"},"splash":"assets/splash/Anivia.webp","head":"assets/icons/Anivia.webp","splash0":"assets/splash0/Anivia.webp","abil":"1111"},{"key":1,"id":"Annie","cn":"黑暗之女","title":"安妮","gender":"Female","lanes":["MIDDLE"],"species":["Human","Magicborn"],"resource":"MANA","rangeType":"Ranged","region":["unaffiliated"],"year":2009,"keywords":"安妮,黑暗之女,火女,Annie,anni,heianzhinv,huonv,an,hazn,hn","emoji":"🧍🧸🎯","sfx":"assets/sfx/1.ogg","vo":"assets/vo/1.ogg","icons":{"q":"assets/spells/Annie_0.webp","w":"assets/spells/Annie_1.webp","e":"assets/spells/Annie_2.webp","r":"assets/spells/Annie_3.webp"},"splash":"assets/splash/Annie.webp","head":"assets/icons/Annie.webp","splash0":"assets/splash0/Annie.webp","abil":"1111"},{"key":523,"id":"Aphelios","cn":"残月之肃","title":"厄斐琉斯","gender":"Male","lanes":["BOTTOM"],"species":["Human"],"resource":"MANA","rangeType":"Ranged","region":["mount-targon"],"year":2019,"keywords":"残月之肃,厄斐琉斯,Aphelios,efls,cyzs,canyuezhisu,efeiliusi","emoji":"🧍⛰️🔵","sfx":"assets/sfx/523.ogg","vo":"assets/vo/523.ogg","icons":{"q":"assets/spells/Aphelios_0.webp","w":"assets/spells/Aphelios_1.webp","e":"assets/spells/Aphelios_2.webp","r":"assets/spells/Aphelios_3.webp"},"splash":"assets/splash/Aphelios.webp","head":"assets/icons/Aphelios.webp","splash0":"assets/splash0/Aphelios.webp","abil":"1101"},{"key":22,"id":"Ashe","cn":"寒冰射手","title":"艾希","gender":"Female","lanes":["BOTTOM","SUPPORT"],"species":["Human","Iceborn"],"resource":"MANA","rangeType":"Ranged","region":["freljord"],"year":2009,"keywords":"艾希,寒冰,爱射,艾射,冰弓,Ashe,aixi,hanbing,aishe,aishe,binggong,ax,hb,as,bg","emoji":"🧍🏹🔵","sfx":"assets/sfx/22.ogg","vo":"assets/vo/22.ogg","icons":{"q":"assets/spells/Ashe_0.webp","w":"assets/spells/Ashe_1.webp","e":"assets/spells/Ashe_2.webp","r":"assets/spells/Ashe_3.webp"},"splash":"assets/splash/Ashe.webp","head":"assets/icons/Ashe.webp","splash0":"assets/splash0/Ashe.webp","abil":"1111"},{"key":136,"id":"AurelionSol","cn":"铸星龙王","title":"奥瑞利安·索尔","gender":"Male","lanes":["MIDDLE"],"species":["Dragon","Celestial"],"resource":"MANA","rangeType":"Ranged","region":["unaffiliated"],"year":2016,"keywords":"铸星龙王,奥瑞利安索尔,索尔,龙王,AurelionSol,zhuxinglongwang,aoruiliansuoer,suoer,longwang,zxlw,lw,se,arlasr","emoji":"🐉🎯🎯","sfx":"assets/sfx/136.ogg","vo":"assets/vo/136.ogg","icons":{"q":"assets/spells/AurelionSol_0.webp","w":"assets/spells/AurelionSol_1.webp","e":"assets/spells/AurelionSol_2.webp","r":"assets/spells/AurelionSol_3.webp"},"splash":"assets/splash/AurelionSol.webp","head":"assets/icons/AurelionSol.webp","splash0":"assets/splash0/AurelionSol.webp","abil":"1111"},{"key":893,"id":"Aurora","cn":"双界灵兔","title":"阿萝拉","gender":"Female","lanes":["MIDDLE","TOP"],"species":["Vastayan"],"resource":"MANA","rangeType":"Ranged","region":["freljord"],"year":2024,"keywords":"阿萝拉,双界灵兔,aluola,shuangjielingtu","emoji":"🦊❄️🔵","sfx":"assets/sfx/893.ogg","vo":"assets/vo/893.ogg","icons":{"q":"assets/spells/Aurora_0.webp","w":"assets/spells/Aurora_1.webp","e":"assets/spells/Aurora_2.webp","r":"assets/spells/Aurora_3.webp"},"splash":"assets/splash/Aurora.webp","head":"assets/icons/Aurora.webp","splash0":"assets/splash0/Aurora.webp","abil":"1111"},{"key":268,"id":"Azir","cn":"沙漠皇帝","title":"阿兹尔","gender":"Male","lanes":["MIDDLE"],"species":["God-Warrior","Ascended"],"resource":"MANA","rangeType":"Ranged","region":["shurima"],"year":2014,"keywords":"沙漠皇帝,阿兹尔,沙皇,Azir,shamohuangdi,azier,shahuang,smhd,aze,sh","emoji":"⚔️🐦🔵","sfx":"assets/sfx/268.ogg","vo":"assets/vo/268.ogg","icons":{"q":"assets/spells/Azir_0.webp","w":"assets/spells/Azir_1.webp","e":"assets/spells/Azir_2.webp","r":"assets/spells/Azir_3.webp"},"splash":"assets/splash/Azir.webp","head":"assets/icons/Azir.webp","splash0":"assets/splash0/Azir.webp","abil":"1111"},{"key":432,"id":"Bard","cn":"星界游神","title":"巴德","gender":"Male","lanes":["SUPPORT"],"species":["Celestial"],"resource":"MANA","rangeType":"Ranged","region":["unaffiliated"],"year":2015,"keywords":"星界游神,巴德,Bard,xingjieyoushen,bade,xjys,bd","emoji":"🌟🎵🎯","sfx":"assets/sfx/432.ogg","vo":"assets/vo/432.ogg","icons":{"q":"assets/spells/Bard_0.webp","w":"assets/spells/Bard_1.webp","e":"assets/spells/Bard_2.webp","r":"assets/spells/Bard_3.webp"},"splash":"assets/splash/Bard.webp","head":"assets/icons/Bard.webp","splash0":"assets/splash0/Bard.webp","abil":"1111"},{"key":200,"id":"Belveth","cn":"虚空女皇","title":"卑尔维斯","gender":"Female","lanes":["JUNGLE"],"species":["Voidborn"],"resource":"NONE","rangeType":"Melee","region":["void"],"year":2022,"keywords":"虚空女皇,Belveth,卑尔维斯,xukongnvhuang,beierweisi","emoji":"👾🌀💪","sfx":"assets/sfx/200.ogg","vo":"assets/vo/200.ogg","icons":{"q":"assets/spells/Belveth_0.webp","w":"assets/spells/Belveth_1.webp","e":"assets/spells/Belveth_2.webp","r":"assets/spells/Belveth_3.webp"},"splash":"assets/splash/Belveth.webp","head":"assets/icons/Belveth.webp","splash0":"assets/splash0/Belveth.webp","abil":"1111"},{"key":53,"id":"Blitzcrank","cn":"蒸汽机器人","title":"布里茨","gender":"Male","lanes":["SUPPORT"],"species":["Golem"],"resource":"MANA","rangeType":"Melee","region":["zaun"],"year":2009,"keywords":"蒸汽机器人,布里茨,机器人,Blitzcrank,zhengqijiqiren,bulici,jiqiren,zqjqr,jqr,blc","emoji":"🗿🤖🔵","sfx":"assets/sfx/53.ogg","vo":"assets/vo/53.ogg","icons":{"q":"assets/spells/Blitzcrank_0.webp","w":"assets/spells/Blitzcrank_1.webp","e":"assets/spells/Blitzcrank_2.webp","r":"assets/spells/Blitzcrank_3.webp"},"splash":"assets/splash/Blitzcrank.webp","head":"assets/icons/Blitzcrank.webp","splash0":"assets/splash0/Blitzcrank.webp","abil":"1111"},{"key":63,"id":"Brand","cn":"复仇焰魂","title":"布兰德","gender":"Male","lanes":["BOTTOM","JUNGLE","MIDDLE","SUPPORT"],"species":["Human","Magically Altered"],"resource":"MANA","rangeType":"Ranged","region":["unaffiliated"],"year":2011,"keywords":"复仇焰魂,布兰德,火男,Brand,fuchouyanhun,bulande,huonan,cfyh,bld,hn","emoji":"🧍🔥🎯","sfx":"assets/sfx/63.ogg","vo":"assets/vo/63.ogg","icons":{"q":"assets/spells/Brand_0.webp","w":"assets/spells/Brand_1.webp","e":"assets/spells/Brand_2.webp","r":"assets/spells/Brand_3.webp"},"splash":"assets/splash/Brand.webp","head":"assets/icons/Brand.webp","splash0":"assets/splash0/Brand.webp","abil":"1111"},{"key":201,"id":"Braum","cn":"弗雷尔卓德之心","title":"布隆","gender":"Male","lanes":["SUPPORT"],"species":["Human","Iceborn"],"resource":"MANA","rangeType":"Melee","region":["freljord"],"year":2014,"keywords":"弗雷尔卓德之心,布隆,bl,Braum,flezdzx,fuleierzhuodezhixin,bulong","emoji":"🧍🛡️🔵","sfx":"assets/sfx/201.ogg","vo":"assets/vo/201.ogg","icons":{"q":"assets/spells/Braum_0.webp","w":"assets/spells/Braum_1.webp","e":"assets/spells/Braum_2.webp","r":"assets/spells/Braum_3.webp"},"splash":"assets/splash/Braum.webp","head":"assets/icons/Braum.webp","splash0":"assets/splash0/Braum.webp","abil":"1111"},{"key":233,"id":"Briar","cn":"狂厄蔷薇","title":"贝蕾亚","gender":"Female","lanes":["JUNGLE"],"species":["Construct","Vampire"],"resource":"FRENZY","rangeType":"Melee","region":["noxus"],"year":2023,"keywords":"贝蕾亚,beileiya,狂,蔷薇","emoji":"🤖🔴😡","sfx":"assets/sfx/233.ogg","vo":"assets/vo/233.ogg","icons":{"q":"assets/spells/Briar_0.webp","w":"assets/spells/Briar_1.webp","e":"assets/spells/Briar_2.webp","r":"assets/spells/Briar_3.webp"},"splash":"assets/splash/Briar.webp","head":"assets/icons/Briar.webp","splash0":"assets/splash0/Briar.webp","abil":"1111"},{"key":51,"id":"Caitlyn","cn":"皮城女警","title":"凯特琳","gender":"Female","lanes":["BOTTOM"],"species":["Human"],"resource":"MANA","rangeType":"Ranged","region":["piltover"],"year":2011,"keywords":"皮城女警,凯特琳,女警,皮城,Caitlyn,pichengnvjing,kaitelin,nvjing,picheng,pc,nj,pcnj,ctl","emoji":"🧍🔫🔵","sfx":"assets/sfx/51.ogg","vo":"assets/vo/51.ogg","icons":{"q":"assets/spells/Caitlyn_0.webp","w":"assets/spells/Caitlyn_1.webp","e":"assets/spells/Caitlyn_2.webp","r":"assets/spells/Caitlyn_3.webp"},"splash":"assets/splash/Caitlyn.webp","head":"assets/icons/Caitlyn.webp","splash0":"assets/splash0/Caitlyn.webp","abil":"1111"},{"key":164,"id":"Camille","cn":"青钢影","title":"卡蜜尔","gender":"Female","lanes":["SUPPORT","TOP"],"species":["Human","Cyborg"],"resource":"MANA","rangeType":"Melee","region":["piltover"],"year":2016,"keywords":"青钢影,卡蜜尔,卡密尔,Camille,腿女,qinggangying,kamier,kamier,tuinv,qgy,kme,tn","emoji":"🧍🦿🔵","sfx":"assets/sfx/164.ogg","vo":"assets/vo/164.ogg","icons":{"q":"assets/spells/Camille_0.webp","w":"assets/spells/Camille_1.webp","e":"assets/spells/Camille_2.webp","r":"assets/spells/Camille_3.webp"},"splash":"assets/splash/Camille.webp","head":"assets/icons/Camille.webp","splash0":"assets/splash0/Camille.webp","abil":"1111"},{"key":69,"id":"Cassiopeia","cn":"魔蛇之拥","title":"卡西奥佩娅","gender":"Female","lanes":["BOTTOM","MIDDLE","TOP"],"species":["Human","Magically Altered"],"resource":"MANA","rangeType":"Ranged","region":["noxus"],"year":2010,"keywords":"魔蛇之拥,卡西奥佩娅,蛇女,Cassiopeia,moshezhiyong,kaxiaopeiya,shenv,mszy,kxapy,sn","emoji":"🧍🐍🔵","sfx":"assets/sfx/69.ogg","vo":"assets/vo/69.ogg","icons":{"q":"assets/spells/Cassiopeia_0.webp","w":"assets/spells/Cassiopeia_1.webp","e":"assets/spells/Cassiopeia_2.webp","r":"assets/spells/Cassiopeia_3.webp"},"splash":"assets/splash/Cassiopeia.webp","head":"assets/icons/Cassiopeia.webp","splash0":"assets/splash0/Cassiopeia.webp","abil":"1111"},{"key":31,"id":"Chogath","cn":"虚空恐惧","title":"科加斯","gender":"Male","lanes":["MIDDLE","TOP"],"species":["Voidborn"],"resource":"MANA","rangeType":"Melee","region":["void"],"year":2009,"keywords":"虚空恐惧,科加斯,大虫子,虫子,Chogath,xukongkongju,kejiasi,dachongzi,chongzi,xkkj,kjs,dcz,cz","emoji":"👾🌀🔵","sfx":"assets/sfx/31.ogg","vo":"assets/vo/31.ogg","icons":{"q":"assets/spells/Chogath_0.webp","w":"assets/spells/Chogath_1.webp","e":"assets/spells/Chogath_2.webp","r":"assets/spells/Chogath_3.webp"},"splash":"assets/splash/Chogath.webp","head":"assets/icons/Chogath.webp","splash0":"assets/splash0/Chogath.webp","abil":"1111"},{"key":42,"id":"Corki","cn":"英勇投弹手","title":"库奇","gender":"Male","lanes":["MIDDLE"],"species":["Yordle"],"resource":"MANA","rangeType":"Ranged","region":["bandle-city"],"year":2009,"keywords":"英勇投弹手,库奇,飞机,Corki,yingyongtoudanshou,kuqi,feiji,fj,kq,yytds","emoji":"🧸🍄🔵","sfx":"assets/sfx/42.ogg","vo":"assets/vo/42.ogg","icons":{"q":"assets/spells/Corki_0.webp","w":"assets/spells/Corki_1.webp","e":"assets/spells/Corki_2.webp","r":"assets/spells/Corki_3.webp"},"splash":"assets/splash/Corki.webp","head":"assets/icons/Corki.webp","splash0":"assets/splash0/Corki.webp","abil":"1111"},{"key":122,"id":"Darius","cn":"诺克萨斯之手","title":"德莱厄斯","gender":"Male","lanes":["TOP"],"species":["Human"],"resource":"MANA","rangeType":"Melee","region":["noxus"],"year":2012,"keywords":"诺克萨斯之手,德莱厄斯,诺手,Darius,nuokesasizhishou,delaiesi,nuoshou,nksszs,ns,dles","emoji":"🧍🪓🔵","sfx":"assets/sfx/122.ogg","vo":"assets/vo/122.ogg","icons":{"q":"assets/spells/Darius_0.webp","w":"assets/spells/Darius_1.webp","e":"assets/spells/Darius_2.webp","r":"assets/spells/Darius_3.webp"},"splash":"assets/splash/Darius.webp","head":"assets/icons/Darius.webp","splash0":"assets/splash0/Darius.webp","abil":"1111"},{"key":131,"id":"Diana","cn":"皎月女神","title":"黛安娜","gender":"Female","lanes":["JUNGLE","MIDDLE"],"species":["Human","Aspect"],"resource":"MANA","rangeType":"Melee","region":["mount-targon"],"year":2012,"keywords":"皎月女神,黛安娜,皎月,Diana,jiaoyuenvshen,daianna,jiaoyue,jy,dan,jyns","emoji":"🧍🌙🔵","sfx":"assets/sfx/131.ogg","vo":"assets/vo/131.ogg","icons":{"q":"assets/spells/Diana_0.webp","w":"assets/spells/Diana_1.webp","e":"assets/spells/Diana_2.webp","r":"assets/spells/Diana_3.webp"},"splash":"assets/splash/Diana.webp","head":"assets/icons/Diana.webp","splash0":"assets/splash0/Diana.webp","abil":"1111"},{"key":36,"id":"DrMundo","cn":"祖安狂人","title":"蒙多医生","gender":"Male","lanes":["TOP"],"species":["Human","Chemically Altered"],"resource":"HEALTH","rangeType":"Melee","region":["zaun"],"year":2009,"keywords":"祖安狂人,蒙多医生,蒙多,DrMundo,zuankuangren,mengduoyisheng,mengduo,md,mdys,zakr","emoji":"🧍🧪❤️","sfx":"assets/sfx/36.ogg","vo":"assets/vo/36.ogg","icons":{"q":"assets/spells/DrMundo_0.webp","w":"assets/spells/DrMundo_1.webp","e":"assets/spells/DrMundo_2.webp","r":"assets/spells/DrMundo_3.webp"},"splash":"assets/splash/DrMundo.webp","head":"assets/icons/DrMundo.webp","splash0":"assets/splash0/DrMundo.webp","abil":"1111"},{"key":119,"id":"Draven","cn":"荣耀行刑官","title":"德莱文","gender":"Male","lanes":["BOTTOM"],"species":["Human"],"resource":"MANA","rangeType":"Ranged","region":["noxus"],"year":2012,"keywords":"荣耀行刑官,德莱文,Draven,rongyaoxingxingguan,delaiwen,ryxxg,dlw","emoji":"🧍🪓🔵","sfx":"assets/sfx/119.ogg","vo":"assets/vo/119.ogg","icons":{"q":"assets/spells/Draven_0.webp","w":"assets/spells/Draven_1.webp","e":"assets/spells/Draven_2.webp","r":"assets/spells/Draven_3.webp"},"splash":"assets/splash/Draven.webp","head":"assets/icons/Draven.webp","splash0":"assets/splash0/Draven.webp","abil":"1111"},{"key":245,"id":"Ekko","cn":"时间刺客","title":"艾克","gender":"Male","lanes":["JUNGLE","MIDDLE"],"species":["Human"],"resource":"MANA","rangeType":"Melee","region":["zaun"],"year":2015,"keywords":"时间刺客,艾克,Ekko,shijiancike,aike,ak,sjck","emoji":"🧍⏱️🔵","sfx":"assets/sfx/245.ogg","vo":"assets/vo/245.ogg","icons":{"q":"assets/spells/Ekko_0.webp","w":"assets/spells/Ekko_1.webp","e":"assets/spells/Ekko_2.webp","r":"assets/spells/Ekko_3.webp"},"splash":"assets/splash/Ekko.webp","head":"assets/icons/Ekko.webp","splash0":"assets/splash0/Ekko.webp","abil":"1111"},{"key":60,"id":"Elise","cn":"蜘蛛女皇","title":"伊莉丝","gender":"Female","lanes":["JUNGLE"],"species":["Human","Magically Altered"],"resource":"MANA","rangeType":"Ranged","region":["shadow-isles"],"year":2012,"keywords":"蜘蛛女皇,伊莉丝,蜘蛛,Elise,zz,zznh,yls,zhizhunvhuang,yilisi,zhizhu","emoji":"🧍🕷️🔵","sfx":"assets/sfx/60.ogg","vo":"assets/vo/60.ogg","icons":{"q":"assets/spells/Elise_0.webp","w":"assets/spells/Elise_1.webp","e":"assets/spells/Elise_2.webp","r":"assets/spells/Elise_3.webp"},"splash":"assets/splash/Elise.webp","head":"assets/icons/Elise.webp","splash0":"assets/splash0/Elise.webp","abil":"1111"},{"key":28,"id":"Evelynn","cn":"痛苦之拥","title":"伊芙琳","gender":"Female","lanes":["JUNGLE"],"species":["Demon"],"resource":"MANA","rangeType":"Melee","region":["unaffiliated"],"year":2009,"keywords":"痛苦之拥,伊芙琳,寡妇,Evelynn,tongkuzhiyong,yifulin,guafu,gf,tkzy,yfl","emoji":"😈🌹🤜","sfx":"assets/sfx/28.ogg","vo":"assets/vo/28.ogg","icons":{"q":"assets/spells/Evelynn_0.webp","w":"assets/spells/Evelynn_1.webp","e":"assets/spells/Evelynn_2.webp","r":"assets/spells/Evelynn_3.webp"},"splash":"assets/splash/Evelynn.webp","head":"assets/icons/Evelynn.webp","splash0":"assets/splash0/Evelynn.webp","abil":"1111"},{"key":81,"id":"Ezreal","cn":"探险家","title":"伊泽瑞尔","gender":"Male","lanes":["BOTTOM"],"species":["Human","Magicborn"],"resource":"MANA","rangeType":"Ranged","region":["piltover"],"year":2010,"keywords":"探险家,伊泽瑞尔,ez,Ezreal,tanxianjia,yizeruier,txj,yzrr","emoji":"🧍⚙️🔵","sfx":"assets/sfx/81.ogg","vo":"assets/vo/81.ogg","icons":{"q":"assets/spells/Ezreal_0.webp","w":"assets/spells/Ezreal_1.webp","e":"assets/spells/Ezreal_2.webp","r":"assets/spells/Ezreal_3.webp"},"splash":"assets/splash/Ezreal.webp","head":"assets/icons/Ezreal.webp","splash0":"assets/splash0/Ezreal.webp","abil":"1111"},{"key":9,"id":"Fiddlesticks","cn":"远古恐惧","title":"费德提克","gender":"Other","lanes":["JUNGLE","SUPPORT"],"species":["Demon"],"resource":"MANA","rangeType":"Ranged","region":["unaffiliated"],"year":2009,"keywords":"稻草人,草人,caoren,dcr,cr","emoji":"😈🔵🎯","sfx":"assets/sfx/9.ogg","vo":"assets/vo/9.ogg","icons":{"q":"assets/spells/Fiddlesticks_0.webp","w":"assets/spells/Fiddlesticks_1.webp","e":"assets/spells/Fiddlesticks_2.webp","r":"assets/spells/Fiddlesticks_3.webp"},"splash":"assets/splash/Fiddlesticks.webp","head":"assets/icons/Fiddlesticks.webp","splash0":"assets/splash0/Fiddlesticks.webp","abil":"1111"},{"key":114,"id":"Fiora","cn":"无双剑姬","title":"菲奥娜","gender":"Female","lanes":["TOP"],"species":["Human"],"resource":"MANA","rangeType":"Melee","region":["demacia"],"year":2012,"keywords":"无双剑姬,菲奥娜,剑姬,Fiora,jj,wsjj,fan,wushuangjianji,feiaona,jianji","emoji":"🧍🗡️🔵","sfx":"assets/sfx/114.ogg","vo":"assets/vo/114.ogg","icons":{"q":"assets/spells/Fiora_0.webp","w":"assets/spells/Fiora_1.webp","e":"assets/spells/Fiora_2.webp","r":"assets/spells/Fiora_3.webp"},"splash":"assets/splash/Fiora.webp","head":"assets/icons/Fiora.webp","splash0":"assets/splash0/Fiora.webp","abil":"1111"},{"key":105,"id":"Fizz","cn":"潮汐海灵","title":"菲兹","gender":"Male","lanes":["MIDDLE"],"species":["Yordle"],"resource":"MANA","rangeType":"Melee","region":["unaffiliated"],"year":2011,"keywords":"潮汐海灵,菲兹,小鱼人,Fizz,fz,xyr,cxhl,chaoxihailing,feizi,xiaoyuren","emoji":"🧸🐟🤜","sfx":"assets/sfx/105.ogg","vo":"assets/vo/105.ogg","icons":{"q":"assets/spells/Fizz_0.webp","w":"assets/spells/Fizz_1.webp","e":"assets/spells/Fizz_2.webp","r":"assets/spells/Fizz_3.webp"},"splash":"assets/splash/Fizz.webp","head":"assets/icons/Fizz.webp","splash0":"assets/splash0/Fizz.webp","abil":"1111"},{"key":3,"id":"Galio","cn":"正义巨像","title":"加里奥","gender":"Male","lanes":["MIDDLE","SUPPORT"],"species":["Golem"],"resource":"MANA","rangeType":"Melee","region":["demacia"],"year":2010,"keywords":"正义巨像,加里奥,Galio,jla,zyjx,zhengyijuxiang,jialiao","emoji":"🗿🔵🤜","sfx":"assets/sfx/3.ogg","vo":"assets/vo/3.ogg","icons":{"q":"assets/spells/Galio_0.webp","w":"assets/spells/Galio_1.webp","e":"assets/spells/Galio_2.webp","r":"assets/spells/Galio_3.webp"},"splash":"assets/splash/Galio.webp","head":"assets/icons/Galio.webp","splash0":"assets/splash0/Galio.webp","abil":"1111"},{"key":41,"id":"Gangplank","cn":"海洋之灾","title":"普朗克","gender":"Male","lanes":["TOP"],"species":["Human"],"resource":"MANA","rangeType":"Melee","region":["bilgewater"],"year":2009,"keywords":"海洋之灾,普朗克,船长,plk,cz,hyzz,Gangplank,haiyangzhizai,pulangke,chuanzhang","emoji":"🧍⚓🔵","sfx":"assets/sfx/41.ogg","vo":"assets/vo/41.ogg","icons":{"q":"assets/spells/Gangplank_0.webp","w":"assets/spells/Gangplank_1.webp","e":"assets/spells/Gangplank_2.webp","r":"assets/spells/Gangplank_3.webp"},"splash":"assets/splash/Gangplank.webp","head":"assets/icons/Gangplank.webp","splash0":"assets/splash0/Gangplank.webp","abil":"1111"},{"key":86,"id":"Garen","cn":"德玛西亚之力","title":"盖伦","gender":"Male","lanes":["TOP"],"species":["Human"],"resource":"NONE","rangeType":"Melee","region":["demacia"],"year":2010,"keywords":"德玛西亚之力,盖伦,大宝剑,Garen,dbj,gl,dmxyzl,demaxiyazhili,gailun,dabaojian","emoji":"🧍⚔️💪","sfx":"assets/sfx/86.ogg","vo":"assets/vo/86.ogg","icons":{"q":"assets/spells/Garen_0.webp","w":"assets/spells/Garen_1.webp","e":"assets/spells/Garen_2.webp","r":"assets/spells/Garen_3.webp"},"splash":"assets/splash/Garen.webp","head":"assets/icons/Garen.webp","splash0":"assets/splash0/Garen.webp","abil":"1111"},{"key":150,"id":"Gnar","cn":"迷失之牙","title":"纳尔","gender":"Male","lanes":["TOP"],"species":["Yordle"],"resource":"RAGE","rangeType":"Ranged","region":["freljord"],"year":2014,"keywords":"迷失之牙,纳尔,Gnar,ne,mszy,mishizhiya,naer","emoji":"🧸🦎🔥","sfx":"assets/sfx/150.ogg","vo":"assets/vo/150.ogg","icons":{"q":"assets/spells/Gnar_0.webp","w":"assets/spells/Gnar_1.webp","e":"assets/spells/Gnar_2.webp","r":"assets/spells/Gnar_3.webp"},"splash":"assets/splash/Gnar.webp","head":"assets/icons/Gnar.webp","splash0":"assets/splash0/Gnar.webp","abil":"1111"},{"key":79,"id":"Gragas","cn":"酒桶","title":"古拉加斯","gender":"Male","lanes":["JUNGLE","MIDDLE","SUPPORT","TOP"],"species":["Human"],"resource":"MANA","rangeType":"Melee","region":["freljord"],"year":2010,"keywords":"酒桶,古拉加斯,啤酒人,肉蛋葱鸡,Gragas,pjr,jt,gljs,rdcj,jiutong,gulajiasi,pijiuren,roudancongji","emoji":"🧍❄️🔵","sfx":"assets/sfx/79.ogg","vo":"assets/vo/79.ogg","icons":{"q":"assets/spells/Gragas_0.webp","w":"assets/spells/Gragas_1.webp","e":"assets/spells/Gragas_2.webp","r":"assets/spells/Gragas_3.webp"},"splash":"assets/splash/Gragas.webp","head":"assets/icons/Gragas.webp","splash0":"assets/splash0/Gragas.webp","abil":"1111"},{"key":104,"id":"Graves","cn":"法外狂徒","title":"格雷福斯","gender":"Male","lanes":["JUNGLE"],"species":["Human"],"resource":"MANA","rangeType":"Ranged","region":["bilgewater"],"year":2011,"keywords":"法外狂徒,格雷福斯,男枪,Graves,nq,glfs,fwkt,fawaikuangtu,geleifusi,nanqiang","emoji":"🧍🔫🔵","sfx":"assets/sfx/104.ogg","vo":"assets/vo/104.ogg","icons":{"q":"assets/spells/Graves_0.webp","w":"assets/spells/Graves_1.webp","e":"assets/spells/Graves_2.webp","r":"assets/spells/Graves_3.webp"},"splash":"assets/splash/Graves.webp","head":"assets/icons/Graves.webp","splash0":"assets/splash0/Graves.webp","abil":"1111"},{"key":887,"id":"Gwen","cn":"灵罗娃娃","title":"格温","gender":"Female","lanes":["JUNGLE","TOP"],"species":["Construct","Magically Altered"],"resource":"MANA","rangeType":"Melee","region":["shadow-isles"],"year":2021,"keywords":"灵罗娃娃,格温,灵,娃wa,gw,Gw,,lingluowawa,gewen,ling,wa","emoji":"🤖🕯️🔵","sfx":"assets/sfx/887.ogg","vo":"assets/vo/887.ogg","icons":{"q":"assets/spells/Gwen_0.webp","w":"assets/spells/Gwen_1.webp","e":"assets/spells/Gwen_2.webp","r":"assets/spells/Gwen_3.webp"},"splash":"assets/splash/Gwen.webp","head":"assets/icons/Gwen.webp","splash0":"assets/splash0/Gwen.webp","abil":"1111"},{"key":120,"id":"Hecarim","cn":"战争之影","title":"赫卡里姆","gender":"Male","lanes":["JUNGLE"],"species":["Undead"],"resource":"MANA","rangeType":"Melee","region":["shadow-isles"],"year":2012,"keywords":"战争之影,赫卡里姆,人马,Hecarim,rm,zzzy,hlkm,zhanzhengzhiying,hekalimu,renma","emoji":"💀🐴🔵","sfx":"assets/sfx/120.ogg","vo":"assets/vo/120.ogg","icons":{"q":"assets/spells/Hecarim_0.webp","w":"assets/spells/Hecarim_1.webp","e":"assets/spells/Hecarim_2.webp","r":"assets/spells/Hecarim_3.webp"},"splash":"assets/splash/Hecarim.webp","head":"assets/icons/Hecarim.webp","splash0":"assets/splash0/Hecarim.webp","abil":"1111"},{"key":74,"id":"Heimerdinger","cn":"大发明家","title":"黑默丁格","gender":"Male","lanes":["BOTTOM","MIDDLE","SUPPORT","TOP"],"species":["Yordle"],"resource":"MANA","rangeType":"Ranged","region":["piltover"],"year":2009,"keywords":"大发明家,黑默丁格,大头,Heimerdinger,dt,dfmj,hmdg,dafamingjia,heimodingge,datou","emoji":"🧸🔬🔵","sfx":"assets/sfx/74.ogg","vo":"assets/vo/74.ogg","icons":{"q":"assets/spells/Heimerdinger_0.webp","w":"assets/spells/Heimerdinger_1.webp","e":"assets/spells/Heimerdinger_2.webp","r":"assets/spells/Heimerdinger_3.webp"},"splash":"assets/splash/Heimerdinger.webp","head":"assets/icons/Heimerdinger.webp","splash0":"assets/splash0/Heimerdinger.webp","abil":"1111"},{"key":910,"id":"Hwei","cn":"异画师","title":"彗","gender":"Male","lanes":["MIDDLE","SUPPORT"],"species":["Human"],"resource":"MANA","rangeType":"Ranged","region":["ionia"],"year":2023,"keywords":"异画师,彗,yihuashi,hui","emoji":"🧍🌸🔵","sfx":"assets/sfx/910.ogg","vo":"assets/vo/910.ogg","icons":{"q":"assets/spells/Hwei_0.webp","w":"assets/spells/Hwei_1.webp","e":"assets/spells/Hwei_2.webp","r":"assets/spells/Hwei_3.webp"},"splash":"assets/splash/Hwei.webp","head":"assets/icons/Hwei.webp","splash0":"assets/splash0/Hwei.webp","abil":"1111"},{"key":420,"id":"Illaoi","cn":"海兽祭司","title":"俄洛伊","gender":"Female","lanes":["TOP"],"species":["Human"],"resource":"MANA","rangeType":"Melee","region":["bilgewater"],"year":2015,"keywords":"海兽祭司,俄洛伊,触手妈,Illaoi,csm,ely,hsjs,haishoujisi,eluoyi,chushouma","emoji":"🧍🦑🔵","sfx":"assets/sfx/420.ogg","vo":"assets/vo/420.ogg","icons":{"q":"assets/spells/Illaoi_0.webp","w":"assets/spells/Illaoi_1.webp","e":"assets/spells/Illaoi_2.webp","r":"assets/spells/Illaoi_3.webp"},"splash":"assets/splash/Illaoi.webp","head":"assets/icons/Illaoi.webp","splash0":"assets/splash0/Illaoi.webp","abil":"1111"},{"key":39,"id":"Irelia","cn":"刀锋舞者","title":"艾瑞莉娅","gender":"Female","lanes":["MIDDLE","TOP"],"species":["Human"],"resource":"MANA","rangeType":"Melee","region":["ionia"],"year":2010,"keywords":"刀锋舞者,艾瑞莉娅,女刀,女刀锋,Irelia,nd,ndf,dfwz,arly,daofengwuzhe,airuiliya,nvdao,nvdaofeng","emoji":"🧍🗡️🔵","sfx":"assets/sfx/39.ogg","vo":"assets/vo/39.ogg","icons":{"q":"assets/spells/Irelia_0.webp","w":"assets/spells/Irelia_1.webp","e":"assets/spells/Irelia_2.webp","r":"assets/spells/Irelia_3.webp"},"splash":"assets/splash/Irelia.webp","head":"assets/icons/Irelia.webp","splash0":"assets/splash0/Irelia.webp","abil":"1111"},{"key":427,"id":"Ivern","cn":"翠神","title":"艾翁","gender":"Male","lanes":["JUNGLE","SUPPORT"],"species":["Human","Magically Altered","Spirit"],"resource":"MANA","rangeType":"Ranged","region":["ionia"],"year":2016,"keywords":"翠神,艾翁,小菊,Ivern,xj,cs,aw,cuishen,aiweng,xiaoju","emoji":"🧍🌸🔵","sfx":"assets/sfx/427.ogg","vo":"assets/vo/427.ogg","icons":{"q":"assets/spells/Ivern_0.webp","w":"assets/spells/Ivern_1.webp","e":"assets/spells/Ivern_2.webp","r":"assets/spells/Ivern_3.webp"},"splash":"assets/splash/Ivern.webp","head":"assets/icons/Ivern.webp","splash0":"assets/splash0/Ivern.webp","abil":"1111"},{"key":40,"id":"Janna","cn":"风暴之怒","title":"迦娜","gender":"Female","lanes":["SUPPORT"],"species":["God","Spirit"],"resource":"MANA","rangeType":"Ranged","region":["zaun"],"year":2009,"keywords":"风暴之怒,迦娜,风女,fn,jn,fbzn,Janna,fengbaozhinu,jiana,fengnv","emoji":"✨🌪️🔵","sfx":"assets/sfx/40.ogg","vo":"assets/vo/40.ogg","icons":{"q":"assets/spells/Janna_0.webp","w":"assets/spells/Janna_1.webp","e":"assets/spells/Janna_2.webp","r":"assets/spells/Janna_3.webp"},"splash":"assets/splash/Janna.webp","head":"assets/icons/Janna.webp","splash0":"assets/splash0/Janna.webp","abil":"1111"},{"key":59,"id":"JarvanIV","cn":"德玛西亚皇子","title":"嘉文四世","gender":"Male","lanes":["JUNGLE"],"species":["Human"],"resource":"MANA","rangeType":"Melee","region":["demacia"],"year":2011,"keywords":"德玛西亚皇子,嘉文四世,皇子,嘉文,JarvanIV,jw,hz,dmxyhz,jwss,demaxiyahuangzi,jiawensishi,huangzi,jiawen","emoji":"🧍🏰🔵","sfx":"assets/sfx/59.ogg","vo":"assets/vo/59.ogg","icons":{"q":"assets/spells/JarvanIV_0.webp","w":"assets/spells/JarvanIV_1.webp","e":"assets/spells/JarvanIV_2.webp","r":"assets/spells/JarvanIV_3.webp"},"splash":"assets/splash/JarvanIV.webp","head":"assets/icons/JarvanIV.webp","splash0":"assets/splash0/JarvanIV.webp","abil":"1111"},{"key":24,"id":"Jax","cn":"武器大师","title":"贾克斯","gender":"Male","lanes":["JUNGLE","TOP"],"species":["Unknown"],"resource":"MANA","rangeType":"Melee","region":["unaffiliated"],"year":2009,"keywords":"武器大师,贾克斯,武器,Jax,wq,jks,wqds,wuqidashi,jiakesi,wuqi","emoji":"❓🏏🤜","sfx":"assets/sfx/24.ogg","vo":"assets/vo/24.ogg","icons":{"q":"assets/spells/Jax_0.webp","w":"assets/spells/Jax_1.webp","e":"assets/spells/Jax_2.webp","r":"assets/spells/Jax_3.webp"},"splash":"assets/splash/Jax.webp","head":"assets/icons/Jax.webp","splash0":"assets/splash0/Jax.webp","abil":"1111"},{"key":126,"id":"Jayce","cn":"未来守护者","title":"杰斯","gender":"Male","lanes":["MIDDLE","TOP"],"species":["Human"],"resource":"MANA","rangeType":"Ranged","region":["piltover"],"year":2012,"keywords":"未来守护者,杰斯,Jayce,js,wlshz,weilaishouhuzhe,jiesi","emoji":"🧍🔨🔵","sfx":"assets/sfx/126.ogg","vo":"assets/vo/126.ogg","icons":{"q":"assets/spells/Jayce_0.webp","w":"assets/spells/Jayce_1.webp","e":"assets/spells/Jayce_2.webp","r":"assets/spells/Jayce_3.webp"},"splash":"assets/splash/Jayce.webp","head":"assets/icons/Jayce.webp","splash0":"assets/splash0/Jayce.webp","abil":"1111"},{"key":202,"id":"Jhin","cn":"戏命师","title":"烬","gender":"Male","lanes":["BOTTOM"],"species":["Human"],"resource":"MANA","rangeType":"Ranged","region":["ionia"],"year":2016,"keywords":"戏命师,烬,Jhin,j,xms,ximingshi,jin","emoji":"🧍🎭🔵","sfx":"assets/sfx/202.ogg","vo":"assets/vo/202.ogg","icons":{"q":"assets/spells/Jhin_0.webp","w":"assets/spells/Jhin_1.webp","e":"assets/spells/Jhin_2.webp","r":"assets/spells/Jhin_3.webp"},"splash":"assets/splash/Jhin.webp","head":"assets/icons/Jhin.webp","splash0":"assets/splash0/Jhin.webp","abil":"1111"},{"key":222,"id":"Jinx","cn":"暴走萝莉","title":"金克丝","gender":"Female","lanes":["BOTTOM"],"species":["Human","Chemically Altered"],"resource":"MANA","rangeType":"Ranged","region":["zaun"],"year":2013,"keywords":"暴走萝莉,萝莉,金克丝,Jinx,jks,ll,bzll,baozouluoli,luoli,jinkesi,金克丝","emoji":"🧍💣🔵","sfx":"assets/sfx/222.ogg","vo":"assets/vo/222.ogg","icons":{"q":"assets/spells/Jinx_0.webp","w":"assets/spells/Jinx_1.webp","e":"assets/spells/Jinx_2.webp","r":"assets/spells/Jinx_3.webp"},"splash":"assets/splash/Jinx.webp","head":"assets/icons/Jinx.webp","splash0":"assets/splash0/Jinx.webp","abil":"1111"},{"key":897,"id":"KSante","cn":"纳祖芒荣耀","title":"奎桑提","gender":"Male","lanes":["TOP"],"species":["Human"],"resource":"MANA","rangeType":"Melee","region":["shurima"],"year":2022,"keywords":"奎桑提,纳祖芒荣耀,kuisangti,nazumangrongyao","emoji":"🧍🏜️🔵","sfx":"assets/sfx/897.ogg","vo":"assets/vo/897.ogg","icons":{"q":"assets/spells/KSante_0.webp","w":"assets/spells/KSante_1.webp","e":"assets/spells/KSante_2.webp","r":"assets/spells/KSante_3.webp"},"splash":"assets/splash/KSante.webp","head":"assets/icons/KSante.webp","splash0":"assets/splash0/KSante.webp","abil":"1111"},{"key":145,"id":"Kaisa","cn":"虚空之女","title":"卡莎","gender":"Female","lanes":["BOTTOM"],"species":["Human","Voidborn"],"resource":"MANA","rangeType":"Ranged","region":["void"],"year":2018,"keywords":"虚空之女,卡莎,ks,xkzn,Kaisa,xukongzhinv,kasha","emoji":"🧍🦋🔵","sfx":"assets/sfx/145.ogg","vo":"assets/vo/145.ogg","icons":{"q":"assets/spells/Kaisa_0.webp","w":"assets/spells/Kaisa_1.webp","e":"assets/spells/Kaisa_2.webp","r":"assets/spells/Kaisa_3.webp"},"splash":"assets/splash/Kaisa.webp","head":"assets/icons/Kaisa.webp","splash0":"assets/splash0/Kaisa.webp","abil":"1111"},{"key":429,"id":"Kalista","cn":"复仇之矛","title":"卡莉丝塔","gender":"Female","lanes":["BOTTOM"],"species":["Undead"],"resource":"MANA","rangeType":"Ranged","region":["shadow-isles"],"year":2014,"keywords":"复仇之矛,卡莉丝塔,Kalista,fczm,klst,fuchouzhimao,kalisita","emoji":"💀🕯️🔵","sfx":"assets/sfx/429.ogg","vo":"assets/vo/429.ogg","icons":{"q":"assets/spells/Kalista_0.webp","w":"assets/spells/Kalista_1.webp","e":"assets/spells/Kalista_2.webp","r":"assets/spells/Kalista_3.webp"},"splash":"assets/splash/Kalista.webp","head":"assets/icons/Kalista.webp","splash0":"assets/splash0/Kalista.webp","abil":"1111"},{"key":43,"id":"Karma","cn":"天启者","title":"卡尔玛","gender":"Female","lanes":["MIDDLE","SUPPORT","TOP"],"species":["Human","Spiritualist"],"resource":"MANA","rangeType":"Ranged","region":["ionia"],"year":2011,"keywords":"天启者,卡尔玛,扇子妈,Karma,szm,kem,tqz,tianqizhe,kaerma,shanzima","emoji":"🧍🕉️🔵","sfx":"assets/sfx/43.ogg","vo":"assets/vo/43.ogg","icons":{"q":"assets/spells/Karma_0.webp","w":"assets/spells/Karma_1.webp","e":"assets/spells/Karma_2.webp","r":"assets/spells/Karma_3.webp"},"splash":"assets/splash/Karma.webp","head":"assets/icons/Karma.webp","splash0":"assets/splash0/Karma.webp","abil":"1111"},{"key":30,"id":"Karthus","cn":"死亡颂唱者","title":"卡尔萨斯","gender":"Male","lanes":["BOTTOM","JUNGLE"],"species":["Undead"],"resource":"MANA","rangeType":"Ranged","region":["shadow-isles"],"year":2009,"keywords":"死亡颂唱者,卡尔萨斯,死歌,Karthus,sg,kess,swscz,siwangsongchangzhe,kaersasi,sige","emoji":"💀🔵🎯","sfx":"assets/sfx/30.ogg","vo":"assets/vo/30.ogg","icons":{"q":"assets/spells/Karthus_0.webp","w":"assets/spells/Karthus_1.webp","e":"assets/spells/Karthus_2.webp","r":"assets/spells/Karthus_3.webp"},"splash":"assets/splash/Karthus.webp","head":"assets/icons/Karthus.webp","splash0":"assets/splash0/Karthus.webp","abil":"1111"},{"key":38,"id":"Kassadin","cn":"虚空行者","title":"卡萨丁","gender":"Male","lanes":["MIDDLE"],"species":["Human","Void-Touched"],"resource":"MANA","rangeType":"Melee","region":["void"],"year":2009,"keywords":"虚空行者,卡萨丁,ksd,xkxz,Kassadin,xukongxingzhe,kasading","emoji":"🧍🟣🔵","sfx":"assets/sfx/38.ogg","vo":"assets/vo/38.ogg","icons":{"q":"assets/spells/Kassadin_0.webp","w":"assets/spells/Kassadin_1.webp","e":"assets/spells/Kassadin_2.webp","r":"assets/spells/Kassadin_3.webp"},"splash":"assets/splash/Kassadin.webp","head":"assets/icons/Kassadin.webp","splash0":"assets/splash0/Kassadin.webp","abil":"1111"},{"key":55,"id":"Katarina","cn":"不祥之刃","title":"卡特琳娜","gender":"Female","lanes":["MIDDLE"],"species":["Human"],"resource":"NONE","rangeType":"Melee","region":["noxus"],"year":2009,"keywords":"不祥之刃,卡特琳娜,卡特,kt,ktln,bxzr,不详,bx,Katarina,buxiangzhiren,katelinna,kate,buxiang","emoji":"🧍🔪💪","sfx":"assets/sfx/55.ogg","vo":"assets/vo/55.ogg","icons":{"q":"assets/spells/Katarina_0.webp","w":"assets/spells/Katarina_1.webp","e":"assets/spells/Katarina_2.webp","r":"assets/spells/Katarina_3.webp"},"splash":"assets/splash/Katarina.webp","head":"assets/icons/Katarina.webp","splash0":"assets/splash0/Katarina.webp","abil":"1111"},{"key":10,"id":"Kayle","cn":"正义天使","title":"凯尔","gender":"Female","lanes":["TOP"],"species":["Aspect"],"resource":"MANA","rangeType":"Melee","region":["demacia"],"year":2009,"keywords":"正义天使,凯尔,天使,ts,zyts,ke,Kayle,zhengyitianshi,kaier,tianshi","emoji":"🌙🪽🔵","sfx":"assets/sfx/10.ogg","vo":"assets/vo/10.ogg","icons":{"q":"assets/spells/Kayle_0.webp","w":"assets/spells/Kayle_1.webp","e":"assets/spells/Kayle_2.webp","r":"assets/spells/Kayle_3.webp"},"splash":"assets/splash/Kayle.webp","head":"assets/icons/Kayle.webp","splash0":"assets/splash0/Kayle.webp","abil":"1111"},{"key":141,"id":"Kayn","cn":"影流之镰","title":"凯隐","gender":"Male","lanes":["JUNGLE"],"species":["Human","Darkin"],"resource":"MANA","rangeType":"Melee","region":["ionia"],"year":2017,"keywords":"影流之镰,凯隐,ky,ylzl,Kayn,yingliuzhilian,kaiyin","emoji":"🧍🌸🔵","sfx":"assets/sfx/141.ogg","vo":"assets/vo/141.ogg","icons":{"q":"assets/spells/Kayn_0.webp","w":"assets/spells/Kayn_1.webp","e":"assets/spells/Kayn_2.webp","r":"assets/spells/Kayn_3.webp"},"splash":"assets/splash/Kayn.webp","head":"assets/icons/Kayn.webp","splash0":"assets/splash0/Kayn.webp","abil":"1111"},{"key":85,"id":"Kennen","cn":"狂暴之心","title":"凯南","gender":"Male","lanes":["TOP"],"species":["Yordle"],"resource":"ENERGY","rangeType":"Ranged","region":["ionia"],"year":2010,"keywords":"狂暴之心,凯南,kn,kbzx,Kennen,kuangbaozhixin,kainan","emoji":"🧸⚡🎯","sfx":"assets/sfx/85.ogg","vo":"assets/vo/85.ogg","icons":{"q":"assets/spells/Kennen_0.webp","w":"assets/spells/Kennen_1.webp","e":"assets/spells/Kennen_2.webp","r":"assets/spells/Kennen_3.webp"},"splash":"assets/splash/Kennen.webp","head":"assets/icons/Kennen.webp","splash0":"assets/splash0/Kennen.webp","abil":"1111"},{"key":121,"id":"Khazix","cn":"虚空掠夺者","title":"卡兹克","gender":"Male","lanes":["JUNGLE"],"species":["Voidborn"],"resource":"MANA","rangeType":"Melee","region":["void"],"year":2012,"keywords":"虚空掠夺者,螳螂,卡兹克,kzk,tl,xkldz,Khazix,xukonglueduozhe,tanglang,kazike","emoji":"👾🌀🔵","sfx":"assets/sfx/121.ogg","vo":"assets/vo/121.ogg","icons":{"q":"assets/spells/Khazix_0.webp","w":"assets/spells/Khazix_1.webp","e":"assets/spells/Khazix_2.webp","r":"assets/spells/Khazix_3.webp"},"splash":"assets/splash/Khazix.webp","head":"assets/icons/Khazix.webp","splash0":"assets/splash0/Khazix.webp","abil":"1111"},{"key":203,"id":"Kindred","cn":"永猎双子","title":"千珏","gender":"Other","lanes":["JUNGLE"],"species":["God","Spirit"],"resource":"MANA","rangeType":"Ranged","region":["unaffiliated"],"year":2015,"keywords":"永猎双子,千珏,Kindred,qj,ylsz,yonglieshuangzi,qianjue","emoji":"✨🐑🎯","sfx":"assets/sfx/203.ogg","vo":"assets/vo/203.ogg","icons":{"q":"assets/spells/Kindred_0.webp","w":"assets/spells/Kindred_1.webp","e":"assets/spells/Kindred_2.webp","r":"assets/spells/Kindred_3.webp"},"splash":"assets/splash/Kindred.webp","head":"assets/icons/Kindred.webp","splash0":"assets/splash0/Kindred.webp","abil":"1111"},{"key":240,"id":"Kled","cn":"暴怒骑士","title":"克烈","gender":"Male","lanes":["TOP"],"species":["Yordle"],"resource":"COURAGE","rangeType":"Melee","region":["noxus"],"year":2016,"keywords":"暴怒骑士,克烈,kl,bnqs,baonuqishi,kelie","emoji":"🧸🔴🦁","sfx":"assets/sfx/240.ogg","vo":"assets/vo/240.ogg","icons":{"q":"assets/spells/Kled_0.webp","w":"assets/spells/Kled_1.webp","e":"assets/spells/Kled_2.webp","r":"assets/spells/Kled_3.webp"},"splash":"assets/splash/Kled.webp","head":"assets/icons/Kled.webp","splash0":"assets/splash0/Kled.webp","abil":"1111"},{"key":96,"id":"KogMaw","cn":"深渊巨口","title":"克格莫","gender":"Male","lanes":["BOTTOM"],"species":["Voidborn"],"resource":"MANA","rangeType":"Ranged","region":["void"],"year":2010,"keywords":"深渊巨口,克格莫,大嘴,KogMaw,dz,kgm,syjk,shenyuanjukou,kegemo,dazui","emoji":"👾🌀🔵","sfx":"assets/sfx/96.ogg","vo":"assets/vo/96.ogg","icons":{"q":"assets/spells/KogMaw_0.webp","w":"assets/spells/KogMaw_1.webp","e":"assets/spells/KogMaw_2.webp","r":"assets/spells/KogMaw_3.webp"},"splash":"assets/splash/KogMaw.webp","head":"assets/icons/KogMaw.webp","splash0":"assets/splash0/KogMaw.webp","abil":"1111"},{"key":7,"id":"Leblanc","cn":"诡术妖姬","title":"乐芙兰","gender":"Female","lanes":["MIDDLE"],"species":["Human","Magicborn"],"resource":"MANA","rangeType":"Ranged","region":["noxus"],"year":2010,"keywords":"诡术妖姬,妖姬,乐芙兰,Leblanc,lfl,yj,gsyj,guishuyaoji,yaoji,lefulan","emoji":"🧍🔴🔵","sfx":"assets/sfx/7.ogg","vo":"assets/vo/7.ogg","icons":{"q":"assets/spells/Leblanc_0.webp","w":"assets/spells/Leblanc_1.webp","e":"assets/spells/Leblanc_2.webp","r":"assets/spells/Leblanc_3.webp"},"splash":"assets/splash/Leblanc.webp","head":"assets/icons/Leblanc.webp","splash0":"assets/splash0/Leblanc.webp","abil":"1111"},{"key":64,"id":"LeeSin","cn":"盲僧","title":"李青","gender":"Male","lanes":["JUNGLE"],"species":["Human","Spiritualist"],"resource":"ENERGY","rangeType":"Melee","region":["ionia"],"year":2011,"keywords":"盲僧,瞎子,李青,lq,xz,ms,LeeSin,mangseng,xiazi,liqing","emoji":"🧍🥋⚡","sfx":"assets/sfx/64.ogg","vo":"assets/vo/64.ogg","icons":{"q":"assets/spells/LeeSin_0.webp","w":"assets/spells/LeeSin_1.webp","e":"assets/spells/LeeSin_2.webp","r":"assets/spells/LeeSin_3.webp"},"splash":"assets/splash/LeeSin.webp","head":"assets/icons/LeeSin.webp","splash0":"assets/splash0/LeeSin.webp","abil":"1111"},{"key":89,"id":"Leona","cn":"曙光女神","title":"蕾欧娜","gender":"Female","lanes":["SUPPORT"],"species":["Human","Aspect"],"resource":"MANA","rangeType":"Melee","region":["mount-targon"],"year":2011,"keywords":"曙光女神,蕾欧娜,日女,曙光,女坦,nt,rn,sg,lon,sgns,shuguangnvshen,leiouna,rinv,shuguang,Leona,nvtan","emoji":"🧍☀️🔵","sfx":"assets/sfx/89.ogg","vo":"assets/vo/89.ogg","icons":{"q":"assets/spells/Leona_0.webp","w":"assets/spells/Leona_1.webp","e":"assets/spells/Leona_2.webp","r":"assets/spells/Leona_3.webp"},"splash":"assets/splash/Leona.webp","head":"assets/icons/Leona.webp","splash0":"assets/splash0/Leona.webp","abil":"1111"},{"key":876,"id":"Lillia","cn":"含羞蓓蕾","title":"莉莉娅","gender":"Female","lanes":["JUNGLE"],"species":["Spirit"],"resource":"MANA","rangeType":"Melee","region":["ionia"],"year":2020,"keywords":"含羞蓓蕾,莉莉娅,小鹿,lly,hxbl,Lillia,hanxiubeilei,liliya,xiaolu","emoji":"👻🌸🔵","sfx":"assets/sfx/876.ogg","vo":"assets/vo/876.ogg","icons":{"q":"assets/spells/Lillia_0.webp","w":"assets/spells/Lillia_1.webp","e":"assets/spells/Lillia_2.webp","r":"assets/spells/Lillia_3.webp"},"splash":"assets/splash/Lillia.webp","head":"assets/icons/Lillia.webp","splash0":"assets/splash0/Lillia.webp","abil":"1111"},{"key":127,"id":"Lissandra","cn":"冰霜女巫","title":"丽桑卓","gender":"Female","lanes":["MIDDLE"],"species":["Human","Iceborn"],"resource":"MANA","rangeType":"Ranged","region":["freljord"],"year":2013,"keywords":"冰霜女巫,冰女,丽桑卓,Lissandra,bn,lsz,bsnw,bingshuangnvwu,bingnv,lisangzhuo","emoji":"🧍🧊🔵","sfx":"assets/sfx/127.ogg","vo":"assets/vo/127.ogg","icons":{"q":"assets/spells/Lissandra_0.webp","w":"assets/spells/Lissandra_1.webp","e":"assets/spells/Lissandra_2.webp","r":"assets/spells/Lissandra_3.webp"},"splash":"assets/splash/Lissandra.webp","head":"assets/icons/Lissandra.webp","splash0":"assets/splash0/Lissandra.webp","abil":"1111"},{"key":236,"id":"Lucian","cn":"圣枪游侠","title":"卢锡安","gender":"Male","lanes":["BOTTOM"],"species":["Human"],"resource":"MANA","rangeType":"Ranged","region":["unaffiliated"],"year":2013,"keywords":"圣枪游侠,卢锡安,奥巴马,Lucian,abm,lxa,sqyx,shengqiangyouxia,luxian,aobama","emoji":"🧍🔫🎯","sfx":"assets/sfx/236.ogg","vo":"assets/vo/236.ogg","icons":{"q":"assets/spells/Lucian_0.webp","w":"assets/spells/Lucian_1.webp","e":"assets/spells/Lucian_2.webp","r":"assets/spells/Lucian_3.webp"},"splash":"assets/splash/Lucian.webp","head":"assets/icons/Lucian.webp","splash0":"assets/splash0/Lucian.webp","abil":"1111"},{"key":117,"id":"Lulu","cn":"仙灵女巫","title":"璐璐","gender":"Female","lanes":["SUPPORT"],"species":["Yordle"],"resource":"MANA","rangeType":"Ranged","region":["bandle-city"],"year":2012,"keywords":"仙灵女巫,璐璐,ll,xlnw,Lulu,xianlingnvwu,lulu","emoji":"🧸🧚🔵","sfx":"assets/sfx/117.ogg","vo":"assets/vo/117.ogg","icons":{"q":"assets/spells/Lulu_0.webp","w":"assets/spells/Lulu_1.webp","e":"assets/spells/Lulu_2.webp","r":"assets/spells/Lulu_3.webp"},"splash":"assets/splash/Lulu.webp","head":"assets/icons/Lulu.webp","splash0":"assets/splash0/Lulu.webp","abil":"1111"},{"key":99,"id":"Lux","cn":"光辉女郎","title":"拉克丝","gender":"Female","lanes":["MIDDLE","SUPPORT"],"species":["Human","Magicborn"],"resource":"MANA","rangeType":"Ranged","region":["demacia"],"year":2010,"keywords":"光辉女郎,拉克丝,光辉,lux,lks,gh,ghnl,guanghuinvlang,lakesi,guanghui","emoji":"🧍💡🔵","sfx":"assets/sfx/99.ogg","vo":"assets/vo/99.ogg","icons":{"q":"assets/spells/Lux_0.webp","w":"assets/spells/Lux_1.webp","e":"assets/spells/Lux_2.webp","r":"assets/spells/Lux_3.webp"},"splash":"assets/splash/Lux.webp","head":"assets/icons/Lux.webp","splash0":"assets/splash0/Lux.webp","abil":"1111"},{"key":54,"id":"Malphite","cn":"熔岩巨兽","title":"墨菲特","gender":"Male","lanes":["MIDDLE","SUPPORT","TOP"],"species":["Golem"],"resource":"MANA","rangeType":"Melee","region":["ixtal"],"year":2009,"keywords":"熔岩巨兽,墨菲特,石头人,Malphite,str,mft,ryjs,rongyanjushou,mofeite,shitouren","emoji":"🗿🔵🤜","sfx":"assets/sfx/54.ogg","vo":"assets/vo/54.ogg","icons":{"q":"assets/spells/Malphite_0.webp","w":"assets/spells/Malphite_1.webp","e":"assets/spells/Malphite_2.webp","r":"assets/spells/Malphite_3.webp"},"splash":"assets/splash/Malphite.webp","head":"assets/icons/Malphite.webp","splash0":"assets/splash0/Malphite.webp","abil":"1111"},{"key":90,"id":"Malzahar","cn":"虚空先知","title":"玛尔扎哈","gender":"Male","lanes":["MIDDLE"],"species":["Human","Void-Touched"],"resource":"MANA","rangeType":"Ranged","region":["void"],"year":2010,"keywords":"虚空先知,玛尔扎哈,蚂蚱,马尔扎哈,Malzahar,mz,mezh,xkxz,xukongxianzhi,maerzhaha,mazha,maerzhaha","emoji":"🧍👁️🔵","sfx":"assets/sfx/90.ogg","vo":"assets/vo/90.ogg","icons":{"q":"assets/spells/Malzahar_0.webp","w":"assets/spells/Malzahar_1.webp","e":"assets/spells/Malzahar_2.webp","r":"assets/spells/Malzahar_3.webp"},"splash":"assets/splash/Malzahar.webp","head":"assets/icons/Malzahar.webp","splash0":"assets/splash0/Malzahar.webp","abil":"1111"},{"key":57,"id":"Maokai","cn":"扭曲树精","title":"茂凯","gender":"Male","lanes":["JUNGLE","SUPPORT","TOP"],"species":["Spirit","Magically Altered"],"resource":"MANA","rangeType":"Melee","region":["shadow-isles"],"year":2011,"keywords":"扭曲树精,茂凯,大树,ds,mk,nqsj,Maokai,niuqushujing,maokai,dashu","emoji":"👻🌳🔵","sfx":"assets/sfx/57.ogg","vo":"assets/vo/57.ogg","icons":{"q":"assets/spells/Maokai_0.webp","w":"assets/spells/Maokai_1.webp","e":"assets/spells/Maokai_2.webp","r":"assets/spells/Maokai_3.webp"},"splash":"assets/splash/Maokai.webp","head":"assets/icons/Maokai.webp","splash0":"assets/splash0/Maokai.webp","abil":"1111"},{"key":11,"id":"MasterYi","cn":"无极剑圣","title":"易","gender":"Male","lanes":["JUNGLE"],"species":["Human"],"resource":"MANA","rangeType":"Melee","region":["ionia"],"year":2009,"keywords":"无极剑圣,易,剑圣,js,y,wjjs,MasterYi,wujijiansheng,yi,jiansheng","emoji":"🧍🥷🔵","sfx":"assets/sfx/11.ogg","vo":"assets/vo/11.ogg","icons":{"q":"assets/spells/MasterYi_0.webp","w":"assets/spells/MasterYi_1.webp","e":"assets/spells/MasterYi_2.webp","r":"assets/spells/MasterYi_3.webp"},"splash":"assets/splash/MasterYi.webp","head":"assets/icons/MasterYi.webp","splash0":"assets/splash0/MasterYi.webp","abil":"1111"},{"key":800,"id":"Mel","cn":"流光镜影","title":"梅尔","gender":"Female","lanes":["MIDDLE","SUPPORT"],"species":["Human"],"resource":"MANA","rangeType":"Ranged","region":["noxus"],"year":2025,"keywords":"流光镜影,梅尔,liuguangjingying,meier","emoji":"🧍🔴🔵","sfx":"assets/sfx/800.ogg","vo":"assets/vo/800.ogg","icons":{"q":"assets/spells/Mel_0.webp","w":"assets/spells/Mel_1.webp","e":"assets/spells/Mel_2.webp","r":"assets/spells/Mel_3.webp"},"splash":"assets/splash/Mel.webp","head":"assets/icons/Mel.webp","splash0":"assets/splash0/Mel.webp","abil":"1111"},{"key":902,"id":"Milio","cn":"明烛","title":"米利欧","gender":"Male","lanes":["SUPPORT"],"species":["Human"],"resource":"MANA","rangeType":"Ranged","region":["ixtal"],"year":2023,"keywords":"明烛,米利欧,mingzhu,miliou","emoji":"🧍🌴🔵","sfx":"assets/sfx/902.ogg","vo":"assets/vo/902.ogg","icons":{"q":"assets/spells/Milio_0.webp","w":"assets/spells/Milio_1.webp","e":"assets/spells/Milio_2.webp","r":"assets/spells/Milio_3.webp"},"splash":"assets/splash/Milio.webp","head":"assets/icons/Milio.webp","splash0":"assets/splash0/Milio.webp","abil":"1111"},{"key":21,"id":"MissFortune","cn":"赏金猎人","title":"厄运小姐","gender":"Female","lanes":["BOTTOM"],"species":["Human"],"resource":"MANA","rangeType":"Ranged","region":["bilgewater"],"year":2010,"keywords":"赏金猎人,赏金,厄运小姐,MF,MissFortune,sj,sjlr,eyxj,shangjinlieren,shangjin,eyunxiaojie","emoji":"🧍🏴‍☠️🔵","sfx":"assets/sfx/21.ogg","vo":"assets/vo/21.ogg","icons":{"q":"assets/spells/MissFortune_0.webp","w":"assets/spells/MissFortune_1.webp","e":"assets/spells/MissFortune_2.webp","r":"assets/spells/MissFortune_3.webp"},"splash":"assets/splash/MissFortune.webp","head":"assets/icons/MissFortune.webp","splash0":"assets/splash0/MissFortune.webp","abil":"1111"},{"key":62,"id":"MonkeyKing","cn":"齐天大圣","title":"孙悟空","gender":"Male","lanes":["JUNGLE","TOP"],"species":["Vastayan"],"resource":"MANA","rangeType":"Melee","region":["ionia"],"year":2011,"keywords":"齐天大圣,孙悟空,MonkeyKing,猴子,hz,qtds,swk,qitiandasheng,sunwukong,houzi","emoji":"🦊🌸🔵","sfx":"assets/sfx/62.ogg","vo":"assets/vo/62.ogg","icons":{"q":"assets/spells/MonkeyKing_0.webp","w":"assets/spells/MonkeyKing_1.webp","e":"assets/spells/MonkeyKing_2.webp","r":"assets/spells/MonkeyKing_3.webp"},"splash":"assets/splash/MonkeyKing.webp","head":"assets/icons/MonkeyKing.webp","splash0":"assets/splash0/MonkeyKing.webp","abil":"1111"},{"key":82,"id":"Mordekaiser","cn":"铁铠冥魂","title":"莫德凯撒","gender":"Male","lanes":["TOP"],"species":["Undead"],"resource":"SHIELD","rangeType":"Melee","region":["noxus"],"year":2010,"keywords":"铁铠冥魂,莫德凯撒,铁男,Mordekaiser,tn,mdks,tkmh,tiekaiminghun,modekaisa,tienan","emoji":"💀🏰🛡️","sfx":"assets/sfx/82.ogg","vo":"assets/vo/82.ogg","icons":{"q":"assets/spells/Mordekaiser_0.webp","w":"assets/spells/Mordekaiser_1.webp","e":"assets/spells/Mordekaiser_2.webp","r":"assets/spells/Mordekaiser_3.webp"},"splash":"assets/splash/Mordekaiser.webp","head":"assets/icons/Mordekaiser.webp","splash0":"assets/splash0/Mordekaiser.webp","abil":"1111"},{"key":25,"id":"Morgana","cn":"堕落天使","title":"莫甘娜","gender":"Female","lanes":["JUNGLE","MIDDLE","SUPPORT"],"species":["Aspect"],"resource":"MANA","rangeType":"Ranged","region":["demacia"],"year":2009,"keywords":"堕落天使,莫甘娜,MGN,dlts,Morgana,duoluotianshi,moganna","emoji":"🌙🪽🔵","sfx":"assets/sfx/25.ogg","vo":"assets/vo/25.ogg","icons":{"q":"assets/spells/Morgana_0.webp","w":"assets/spells/Morgana_1.webp","e":"assets/spells/Morgana_2.webp","r":"assets/spells/Morgana_3.webp"},"splash":"assets/splash/Morgana.webp","head":"assets/icons/Morgana.webp","splash0":"assets/splash0/Morgana.webp","abil":"1111"},{"key":950,"id":"Naafiri","cn":"百裂冥犬","title":"纳亚菲利","gender":"Female","lanes":["MIDDLE"],"species":["Darkin","Dog"],"resource":"MANA","rangeType":"Melee","region":["shurima"],"year":2023,"keywords":"百裂冥犬,纳亚菲利,bailiemingquan,nayafeili","emoji":"😈🏜️🔵","sfx":"assets/sfx/950.ogg","vo":"assets/vo/950.ogg","icons":{"q":"assets/spells/Naafiri_0.webp","w":"assets/spells/Naafiri_1.webp","e":"assets/spells/Naafiri_2.webp","r":"assets/spells/Naafiri_3.webp"},"splash":"assets/splash/Naafiri.webp","head":"assets/icons/Naafiri.webp","splash0":"assets/splash0/Naafiri.webp","abil":"1111"},{"key":267,"id":"Nami","cn":"唤潮鲛姬","title":"娜美","gender":"Female","lanes":["SUPPORT"],"species":["Vastayan"],"resource":"MANA","rangeType":"Ranged","region":["unaffiliated"],"year":2012,"keywords":"唤潮鲛姬,鲛姬,娜美,nm,jj,hcjj,Nami,huanchaojiaoji,jiaoji,namei","emoji":"🦊🌊🎯","sfx":"assets/sfx/267.ogg","vo":"assets/vo/267.ogg","icons":{"q":"assets/spells/Nami_0.webp","w":"assets/spells/Nami_1.webp","e":"assets/spells/Nami_2.webp","r":"assets/spells/Nami_3.webp"},"splash":"assets/splash/Nami.webp","head":"assets/icons/Nami.webp","splash0":"assets/splash0/Nami.webp","abil":"1111"},{"key":75,"id":"Nasus","cn":"沙漠死神","title":"内瑟斯","gender":"Male","lanes":["TOP"],"species":["God-Warrior","Ascended"],"resource":"MANA","rangeType":"Melee","region":["shurima"],"year":2009,"keywords":"沙漠死神,内瑟斯,狗头,gt,nss,smss,Nasus,shamosishen,neisesi,goutou","emoji":"⚔️🐕🔵","sfx":"assets/sfx/75.ogg","vo":"assets/vo/75.ogg","icons":{"q":"assets/spells/Nasus_0.webp","w":"assets/spells/Nasus_1.webp","e":"assets/spells/Nasus_2.webp","r":"assets/spells/Nasus_3.webp"},"splash":"assets/splash/Nasus.webp","head":"assets/icons/Nasus.webp","splash0":"assets/splash0/Nasus.webp","abil":"1111"},{"key":111,"id":"Nautilus","cn":"深海泰坦","title":"诺提勒斯","gender":"Male","lanes":["SUPPORT"],"species":["Human","Magically Altered"],"resource":"MANA","rangeType":"Melee","region":["bilgewater"],"year":2012,"keywords":"深海泰坦,诺提勒斯,泰坦,Nautilus,tt,ntls,shtt,shenhaitaitan,nuotileisi,taitan","emoji":"🧍⚓🔵","sfx":"assets/sfx/111.ogg","vo":"assets/vo/111.ogg","icons":{"q":"assets/spells/Nautilus_0.webp","w":"assets/spells/Nautilus_1.webp","e":"assets/spells/Nautilus_2.webp","r":"assets/spells/Nautilus_3.webp"},"splash":"assets/splash/Nautilus.webp","head":"assets/icons/Nautilus.webp","splash0":"assets/splash0/Nautilus.webp","abil":"1111"},{"key":518,"id":"Neeko","cn":"万花通灵","title":"妮蔻","gender":"Female","lanes":["MIDDLE","SUPPORT"],"species":["Vastayan"],"resource":"MANA","rangeType":"Ranged","region":["ixtal"],"year":2018,"keywords":"万花通灵,妮蔻,neeko,nk,whtl,wanhuatongling,nikou","emoji":"🦊🌴🔵","sfx":"assets/sfx/518.ogg","vo":"assets/vo/518.ogg","icons":{"q":"assets/spells/Neeko_0.webp","w":"assets/spells/Neeko_1.webp","e":"assets/spells/Neeko_2.webp","r":"assets/spells/Neeko_3.webp"},"splash":"assets/splash/Neeko.webp","head":"assets/icons/Neeko.webp","splash0":"assets/splash0/Neeko.webp","abil":"1111"},{"key":76,"id":"Nidalee","cn":"狂野女猎手","title":"奈德丽","gender":"Female","lanes":["JUNGLE"],"species":["Human","Spiritualist"],"resource":"MANA","rangeType":"Ranged","region":["ixtal"],"year":2009,"keywords":"狂野女猎手,奈德丽,豹女,bn,ndl,kynls,Nidalee,kuangyenvlieshou,naideli,baonv","emoji":"🧍🐆🔵","sfx":"assets/sfx/76.ogg","vo":"assets/vo/76.ogg","icons":{"q":"assets/spells/Nidalee_0.webp","w":"assets/spells/Nidalee_1.webp","e":"assets/spells/Nidalee_2.webp","r":"assets/spells/Nidalee_3.webp"},"splash":"assets/splash/Nidalee.webp","head":"assets/icons/Nidalee.webp","splash0":"assets/splash0/Nidalee.webp","abil":"1111"},{"key":895,"id":"Nilah","cn":"不羁之悦","title":"尼菈","gender":"Female","lanes":["BOTTOM"],"species":["Human"],"resource":"MANA","rangeType":"Melee","region":["bilgewater"],"year":2022,"keywords":"尼菈,不羁之悦,Nilah,nila,bujizhiyue","emoji":"🧍⚓🔵","sfx":"assets/sfx/895.ogg","vo":"assets/vo/895.ogg","icons":{"q":"assets/spells/Nilah_0.webp","w":"assets/spells/Nilah_1.webp","e":"assets/spells/Nilah_2.webp","r":"assets/spells/Nilah_3.webp"},"splash":"assets/splash/Nilah.webp","head":"assets/icons/Nilah.webp","splash0":"assets/splash0/Nilah.webp","abil":"1111"},{"key":56,"id":"Nocturne","cn":"永恒梦魇","title":"魔腾","gender":"Male","lanes":["JUNGLE"],"species":["Demon"],"resource":"MANA","rangeType":"Melee","region":["unaffiliated"],"year":2011,"keywords":"永恒梦魇,魔腾,noc,Nocturne,梦魇,my,yhmy,mt,yonghengmengyan,moteng,mengyan","emoji":"😈🌑🤜","sfx":"assets/sfx/56.ogg","vo":"assets/vo/56.ogg","icons":{"q":"assets/spells/Nocturne_0.webp","w":"assets/spells/Nocturne_1.webp","e":"assets/spells/Nocturne_2.webp","r":"assets/spells/Nocturne_3.webp"},"splash":"assets/splash/Nocturne.webp","head":"assets/icons/Nocturne.webp","splash0":"assets/splash0/Nocturne.webp","abil":"1111"},{"key":20,"id":"Nunu","cn":"雪原双子","title":"努努和威朗普","gender":"Male","lanes":["JUNGLE"],"species":["Human","Yeti"],"resource":"MANA","rangeType":"Melee","region":["freljord"],"year":2009,"keywords":"雪原双子,努努和威朗普,努努,雪人,Nunu,nn,xr,xysz,mmhwlp,xueyuanshuangzi,nunuheweilangpu,nunu,xueren","emoji":"🧍❄️🔵","sfx":"assets/sfx/20.ogg","vo":"assets/vo/20.ogg","icons":{"q":"assets/spells/Nunu_0.webp","w":"assets/spells/Nunu_1.webp","e":"assets/spells/Nunu_2.webp","r":"assets/spells/Nunu_3.webp"},"splash":"assets/splash/Nunu.webp","head":"assets/icons/Nunu.webp","splash0":"assets/splash0/Nunu.webp","abil":"1111"},{"key":2,"id":"Olaf","cn":"狂战士","title":"奥拉夫","gender":"Male","lanes":["TOP"],"species":["Human"],"resource":"MANA","rangeType":"Melee","region":["freljord"],"year":2010,"keywords":"狂战士,奥拉夫,kzs,alf,Olaf,kuangzhanshi,aolafu","emoji":"🧍🪓🔵","sfx":"assets/sfx/2.ogg","vo":"assets/vo/2.ogg","icons":{"q":"assets/spells/Olaf_0.webp","w":"assets/spells/Olaf_1.webp","e":"assets/spells/Olaf_2.webp","r":"assets/spells/Olaf_3.webp"},"splash":"assets/splash/Olaf.webp","head":"assets/icons/Olaf.webp","splash0":"assets/splash0/Olaf.webp","abil":"1111"},{"key":61,"id":"Orianna","cn":"发条魔灵","title":"奥莉安娜","gender":"Female","lanes":["MIDDLE"],"species":["Golem"],"resource":"MANA","rangeType":"Ranged","region":["piltover"],"year":2011,"keywords":"发条魔灵,奥莉安娜,发条,Orianna,ftml,ft,alan,fatiaomoling,aolianna,fatiao","emoji":"🗿⚙️🔵","sfx":"assets/sfx/61.ogg","vo":"assets/vo/61.ogg","icons":{"q":"assets/spells/Orianna_0.webp","w":"assets/spells/Orianna_1.webp","e":"assets/spells/Orianna_2.webp","r":"assets/spells/Orianna_3.webp"},"splash":"assets/splash/Orianna.webp","head":"assets/icons/Orianna.webp","splash0":"assets/splash0/Orianna.webp","abil":"1111"},{"key":516,"id":"Ornn","cn":"山隐之焰","title":"奥恩","gender":"Male","lanes":["TOP"],"species":["God","Spirit"],"resource":"MANA","rangeType":"Melee","region":["freljord"],"year":2017,"keywords":"山隐之焰,奥恩,Ornn,an,syzy,shanyinzhiyan,aoen","emoji":"✨❄️🔵","sfx":"assets/sfx/516.ogg","vo":"assets/vo/516.ogg","icons":{"q":"assets/spells/Ornn_0.webp","w":"assets/spells/Ornn_1.webp","e":"assets/spells/Ornn_2.webp","r":"assets/spells/Ornn_3.webp"},"splash":"assets/splash/Ornn.webp","head":"assets/icons/Ornn.webp","splash0":"assets/splash0/Ornn.webp","abil":"1111"},{"key":80,"id":"Pantheon","cn":"不屈之枪","title":"潘森","gender":"Male","lanes":["JUNGLE","MIDDLE","SUPPORT","TOP"],"species":["Human","Aspect"],"resource":"MANA","rangeType":"Melee","region":["mount-targon"],"year":2010,"keywords":"不屈之枪,潘森,Pantheon,PS,bqzq,buquzhiqiang,pansen","emoji":"🧍🛡️🔵","sfx":"assets/sfx/80.ogg","vo":"assets/vo/80.ogg","icons":{"q":"assets/spells/Pantheon_0.webp","w":"assets/spells/Pantheon_1.webp","e":"assets/spells/Pantheon_2.webp","r":"assets/spells/Pantheon_3.webp"},"splash":"assets/splash/Pantheon.webp","head":"assets/icons/Pantheon.webp","splash0":"assets/splash0/Pantheon.webp","abil":"1111"},{"key":78,"id":"Poppy","cn":"圣锤之毅","title":"波比","gender":"Female","lanes":["JUNGLE","SUPPORT","TOP"],"species":["Yordle"],"resource":"MANA","rangeType":"Melee","region":["demacia"],"year":2010,"keywords":"圣锤之毅,波比,bb,sczy,Poppy,shengchuizhiyi,bobi","emoji":"🧸🔨🔵","sfx":"assets/sfx/78.ogg","vo":"assets/vo/78.ogg","icons":{"q":"assets/spells/Poppy_0.webp","w":"assets/spells/Poppy_1.webp","e":"assets/spells/Poppy_2.webp","r":"assets/spells/Poppy_3.webp"},"splash":"assets/splash/Poppy.webp","head":"assets/icons/Poppy.webp","splash0":"assets/splash0/Poppy.webp","abil":"1111"},{"key":555,"id":"Pyke","cn":"血港鬼影","title":"派克","gender":"Male","lanes":["SUPPORT"],"species":["Undead"],"resource":"MANA","rangeType":"Melee","region":["bilgewater"],"year":2018,"keywords":"血港鬼影,派克,pk,xggy,Pyke,xuegangguiying,paike","emoji":"💀🔱🔵","sfx":"assets/sfx/555.ogg","vo":"assets/vo/555.ogg","icons":{"q":"assets/spells/Pyke_0.webp","w":"assets/spells/Pyke_1.webp","e":"assets/spells/Pyke_2.webp","r":"assets/spells/Pyke_3.webp"},"splash":"assets/splash/Pyke.webp","head":"assets/icons/Pyke.webp","splash0":"assets/splash0/Pyke.webp","abil":"1111"},{"key":246,"id":"Qiyana","cn":"元素女皇","title":"奇亚娜","gender":"Female","lanes":["MIDDLE"],"species":["Human"],"resource":"MANA","rangeType":"Melee","region":["ixtal"],"year":2019,"keywords":"元素女皇,奇亚娜,qyn,ysnh,Qiyana,yuansunvhuang,qiyana","emoji":"🧍💎🔵","sfx":"assets/sfx/246.ogg","vo":"assets/vo/246.ogg","icons":{"q":"assets/spells/Qiyana_0.webp","w":"assets/spells/Qiyana_1.webp","e":"assets/spells/Qiyana_2.webp","r":"assets/spells/Qiyana_3.webp"},"splash":"assets/splash/Qiyana.webp","head":"assets/icons/Qiyana.webp","splash0":"assets/splash0/Qiyana.webp","abil":"1111"},{"key":133,"id":"Quinn","cn":"德玛西亚之翼","title":"奎因","gender":"Female","lanes":["TOP"],"species":["Human"],"resource":"MANA","rangeType":"Ranged","region":["demacia"],"year":2013,"keywords":"德玛西亚之翼,奎因,鸟人,ky,dmxyzz,Quinn,nr,demaxiyazhiyi,kuiyin,niaoren","emoji":"🧍🦅🔵","sfx":"assets/sfx/133.ogg","vo":"assets/vo/133.ogg","icons":{"q":"assets/spells/Quinn_0.webp","w":"assets/spells/Quinn_1.webp","e":"assets/spells/Quinn_2.webp","r":"assets/spells/Quinn_3.webp"},"splash":"assets/splash/Quinn.webp","head":"assets/icons/Quinn.webp","splash0":"assets/splash0/Quinn.webp","abil":"1111"},{"key":497,"id":"Rakan","cn":"幻翎","title":"洛","gender":"Male","lanes":["SUPPORT"],"species":["Vastayan"],"resource":"MANA","rangeType":"Melee","region":["ionia"],"year":2017,"keywords":"幻翎,洛,l,hl,Rakan,huanling,luo","emoji":"🦊🪶🔵","sfx":"assets/sfx/497.ogg","vo":"assets/vo/497.ogg","icons":{"q":"assets/spells/Rakan_0.webp","w":"assets/spells/Rakan_1.webp","e":"assets/spells/Rakan_2.webp","r":"assets/spells/Rakan_3.webp"},"splash":"assets/splash/Rakan.webp","head":"assets/icons/Rakan.webp","splash0":"assets/splash0/Rakan.webp","abil":"1111"},{"key":33,"id":"Rammus","cn":"披甲龙龟","title":"拉莫斯","gender":"Male","lanes":["JUNGLE"],"species":["Unknown"],"resource":"MANA","rangeType":"Melee","region":["shurima"],"year":2009,"keywords":"披甲龙龟,拉莫斯,龙龟,lg,pjlg,lms,Rammus,pijialonggui,lamosi,longgui","emoji":"❓🦔🔵","sfx":"assets/sfx/33.ogg","vo":"assets/vo/33.ogg","icons":{"q":"assets/spells/Rammus_0.webp","w":"assets/spells/Rammus_1.webp","e":"assets/spells/Rammus_2.webp","r":"assets/spells/Rammus_3.webp"},"splash":"assets/splash/Rammus.webp","head":"assets/icons/Rammus.webp","splash0":"assets/splash0/Rammus.webp","abil":"1111"},{"key":421,"id":"RekSai","cn":"虚空遁地兽","title":"雷克塞","gender":"Female","lanes":["JUNGLE"],"species":["Voidborn"],"resource":"RAGE","rangeType":"Melee","region":["void"],"year":2014,"keywords":"虚空遁地兽,挖掘机,雷克赛,雷克塞,lks,wjj,xkdds,RekSai,xukongdundishou,wajueji,leikesai,leikesai","emoji":"👾🦈🔥","sfx":"assets/sfx/421.ogg","vo":"assets/vo/421.ogg","icons":{"q":"assets/spells/RekSai_0.webp","w":"assets/spells/RekSai_1.webp","e":"assets/spells/RekSai_2.webp","r":"assets/spells/RekSai_3.webp"},"splash":"assets/splash/RekSai.webp","head":"assets/icons/RekSai.webp","splash0":"assets/splash0/RekSai.webp","abil":"1111"},{"key":526,"id":"Rell","cn":"镕铁少女","title":"芮尔","gender":"Female","lanes":["SUPPORT"],"species":["Human","Magically Altered"],"resource":"MANA","rangeType":"Melee","region":["noxus"],"year":2020,"keywords":"镕铁少女,芮尔,镕铁,,rongtieshaonv,ruier,rongtie","emoji":"🧍🔴🔵","sfx":"assets/sfx/526.ogg","vo":"assets/vo/526.ogg","icons":{"q":"assets/spells/Rell_0.webp","w":"assets/spells/Rell_1.webp","e":"assets/spells/Rell_2.webp","r":"assets/spells/Rell_3.webp"},"splash":"assets/splash/Rell.webp","head":"assets/icons/Rell.webp","splash0":"assets/splash0/Rell.webp","abil":"1111"},{"key":888,"id":"Renata","cn":"炼金男爵","title":"烈娜塔 · 戈拉斯克","gender":"Female","lanes":["SUPPORT"],"species":["Human","Chemically Altered"],"resource":"MANA","rangeType":"Ranged","region":["zaun"],"year":2022,"keywords":"烈娜塔,烈娜塔戈拉斯克,Renata,renata,炼金男爵,lienata,lienatagelasike,lianjinnanjue","emoji":"🧍🧪🔵","sfx":"assets/sfx/888.ogg","vo":"assets/vo/888.ogg","icons":{"q":"assets/spells/Renata_0.webp","w":"assets/spells/Renata_1.webp","e":"assets/spells/Renata_2.webp","r":"assets/spells/Renata_3.webp"},"splash":"assets/splash/Renata.webp","head":"assets/icons/Renata.webp","splash0":"assets/splash0/Renata.webp","abil":"1111"},{"key":58,"id":"Renekton","cn":"荒漠屠夫","title":"雷克顿","gender":"Male","lanes":["TOP"],"species":["God-Warrior","Ascended"],"resource":"FURY","rangeType":"Melee","region":["shurima"],"year":2011,"keywords":"荒漠屠夫,鳄鱼,雷克顿,ey,lkd,mmtf,huangmotufu,eyu,leikedun","emoji":"⚔️🏜️🤜","sfx":"assets/sfx/58.ogg","vo":"assets/vo/58.ogg","icons":{"q":"assets/spells/Renekton_0.webp","w":"assets/spells/Renekton_1.webp","e":"assets/spells/Renekton_2.webp","r":"assets/spells/Renekton_3.webp"},"splash":"assets/splash/Renekton.webp","head":"assets/icons/Renekton.webp","splash0":"assets/splash0/Renekton.webp","abil":"1111"},{"key":107,"id":"Rengar","cn":"傲之追猎者","title":"雷恩加尔","gender":"Male","lanes":["JUNGLE","TOP"],"species":["Vastayan"],"resource":"FEROCITY","rangeType":"Melee","region":["ixtal"],"year":2012,"keywords":"傲之追猎者,狮子狗,雷恩加尔,szg,leje,azzlz,Rengar,aozhizhuiliezhe,shizigou,leienjiaer","emoji":"🦊🌴🐯","sfx":"assets/sfx/107.ogg","vo":"assets/vo/107.ogg","icons":{"q":"assets/spells/Rengar_0.webp","w":"assets/spells/Rengar_1.webp","e":"assets/spells/Rengar_2.webp","r":"assets/spells/Rengar_3.webp"},"splash":"assets/splash/Rengar.webp","head":"assets/icons/Rengar.webp","splash0":"assets/splash0/Rengar.webp","abil":"1111"},{"key":92,"id":"Riven","cn":"放逐之刃","title":"锐雯","gender":"Female","lanes":["TOP"],"species":["Human"],"resource":"NONE","rangeType":"Melee","region":["noxus"],"year":2011,"keywords":"放逐之刃,锐雯,Riven,rw,fzzr,fangzhuzhiren,ruiwen","emoji":"🧍🗡️💪","sfx":"assets/sfx/92.ogg","vo":"assets/vo/92.ogg","icons":{"q":"assets/spells/Riven_0.webp","w":"assets/spells/Riven_1.webp","e":"assets/spells/Riven_2.webp","r":"assets/spells/Riven_3.webp"},"splash":"assets/splash/Riven.webp","head":"assets/icons/Riven.webp","splash0":"assets/splash0/Riven.webp","abil":"1111"},{"key":68,"id":"Rumble","cn":"机械公敌","title":"兰博","gender":"Male","lanes":["MIDDLE","TOP"],"species":["Yordle"],"resource":"HEAT","rangeType":"Melee","region":["bandle-city"],"year":2011,"keywords":"机械公敌,兰博,Rumble,lb,jxgd,jixiegongdi,lanbo","emoji":"🧸🤖♨️","sfx":"assets/sfx/68.ogg","vo":"assets/vo/68.ogg","icons":{"q":"assets/spells/Rumble_0.webp","w":"assets/spells/Rumble_1.webp","e":"assets/spells/Rumble_2.webp","r":"assets/spells/Rumble_3.webp"},"splash":"assets/splash/Rumble.webp","head":"assets/icons/Rumble.webp","splash0":"assets/splash0/Rumble.webp","abil":"1111"},{"key":13,"id":"Ryze","cn":"符文法师","title":"瑞兹","gender":"Male","lanes":["MIDDLE","TOP"],"species":["Human","Magically Altered"],"resource":"MANA","rangeType":"Ranged","region":["unaffiliated"],"year":2009,"keywords":"符文法师,瑞兹,Ryze,光头,rz,fwfs,gt,fuwenfashi,ruizi,guangtou","emoji":"🧍📚🎯","sfx":"assets/sfx/13.ogg","vo":"assets/vo/13.ogg","icons":{"q":"assets/spells/Ryze_0.webp","w":"assets/spells/Ryze_1.webp","e":"assets/spells/Ryze_2.webp","r":"assets/spells/Ryze_3.webp"},"splash":"assets/splash/Ryze.webp","head":"assets/icons/Ryze.webp","splash0":"assets/splash0/Ryze.webp","abil":"1111"},{"key":360,"id":"Samira","cn":"沙漠玫瑰","title":"莎弥拉","gender":"Female","lanes":["BOTTOM"],"species":["Human"],"resource":"MANA","rangeType":"Ranged","region":["noxus"],"year":2020,"keywords":"莎弥拉,沙漠玫瑰,Samira,sml,smmg,shamila,shamomeigui","emoji":"🧍🔥🔵","sfx":"assets/sfx/360.ogg","vo":"assets/vo/360.ogg","icons":{"q":"assets/spells/Samira_0.webp","w":"assets/spells/Samira_1.webp","e":"assets/spells/Samira_2.webp","r":"assets/spells/Samira_3.webp"},"splash":"assets/splash/Samira.webp","head":"assets/icons/Samira.webp","splash0":"assets/splash0/Samira.webp","abil":"1111"},{"key":113,"id":"Sejuani","cn":"北地之怒","title":"瑟庄妮","gender":"Female","lanes":["JUNGLE","TOP"],"species":["Human","Iceborn"],"resource":"MANA","rangeType":"Melee","region":["freljord"],"year":2012,"keywords":"北地之怒,猪妹,瑟庄妮,zm,szn,bdzn,Sejuani,beidizhinu,zhumei,sezhuangni","emoji":"🧍❄️🔵","sfx":"assets/sfx/113.ogg","vo":"assets/vo/113.ogg","icons":{"q":"assets/spells/Sejuani_0.webp","w":"assets/spells/Sejuani_1.webp","e":"assets/spells/Sejuani_2.webp","r":"assets/spells/Sejuani_3.webp"},"splash":"assets/splash/Sejuani.webp","head":"assets/icons/Sejuani.webp","splash0":"assets/splash0/Sejuani.webp","abil":"1111"},{"key":235,"id":"Senna","cn":"涤魂圣枪","title":"赛娜","gender":"Female","lanes":["BOTTOM","SUPPORT"],"species":["Human","Undead"],"resource":"MANA","rangeType":"Ranged","region":["unaffiliated"],"year":2019,"keywords":"涤魂圣枪,赛娜,奶枪,Senna,nq,sn,qhsq,dihunshengqiang,saina,naiqiang","emoji":"🧍🔵🎯","sfx":"assets/sfx/235.ogg","vo":"assets/vo/235.ogg","icons":{"q":"assets/spells/Senna_0.webp","w":"assets/spells/Senna_1.webp","e":"assets/spells/Senna_2.webp","r":"assets/spells/Senna_3.webp"},"splash":"assets/splash/Senna.webp","head":"assets/icons/Senna.webp","splash0":"assets/splash0/Senna.webp","abil":"1111"},{"key":147,"id":"Seraphine","cn":"星籁歌姬","title":"萨勒芬妮","gender":"Female","lanes":["BOTTOM","MIDDLE","SUPPORT"],"species":["Human"],"resource":"MANA","rangeType":"Ranged","region":["piltover"],"year":2020,"keywords":"萨勒芬妮,星籁歌姬,Seraphine,saleifenni,xinglaigeji","emoji":"🧍⚙️🔵","sfx":"assets/sfx/147.ogg","vo":"assets/vo/147.ogg","icons":{"q":"assets/spells/Seraphine_0.webp","w":"assets/spells/Seraphine_1.webp","e":"assets/spells/Seraphine_2.webp","r":"assets/spells/Seraphine_3.webp"},"splash":"assets/splash/Seraphine.webp","head":"assets/icons/Seraphine.webp","splash0":"assets/splash0/Seraphine.webp","abil":"1111"},{"key":875,"id":"Sett","cn":"腕豪","title":"瑟提","gender":"Male","lanes":["TOP","SUPPORT"],"species":["Human","Vastayan"],"resource":"GRIT","rangeType":"Melee","region":["ionia"],"year":2020,"keywords":"腕豪,瑟提,jinfu,jf,Sett,st,wh,wanhao,seti","emoji":"🧍🌸🧱","sfx":"assets/sfx/875.ogg","vo":"assets/vo/875.ogg","icons":{"q":"assets/spells/Sett_0.webp","w":"assets/spells/Sett_1.webp","e":"assets/spells/Sett_2.webp","r":"assets/spells/Sett_3.webp"},"splash":"assets/splash/Sett.webp","head":"assets/icons/Sett.webp","splash0":"assets/splash0/Sett.webp","abil":"1111"},{"key":35,"id":"Shaco","cn":"恶魔小丑","title":"萨科","gender":"Male","lanes":["JUNGLE","SUPPORT"],"species":["Demon"],"resource":"MANA","rangeType":"Melee","region":["unaffiliated"],"year":2009,"keywords":"恶魔小丑,小丑,沙扣,沙口,萨科,xc,emxc,sk,emoxiaochou,xiaochou,sake,Shaco","emoji":"😈🔵🤜","sfx":"assets/sfx/35.ogg","vo":"assets/vo/35.ogg","icons":{"q":"assets/spells/Shaco_0.webp","w":"assets/spells/Shaco_1.webp","e":"assets/spells/Shaco_2.webp","r":"assets/spells/Shaco_3.webp"},"splash":"assets/splash/Shaco.webp","head":"assets/icons/Shaco.webp","splash0":"assets/splash0/Shaco.webp","abil":"1111"},{"key":98,"id":"Shen","cn":"暮光之眼","title":"慎","gender":"Male","lanes":["SUPPORT","TOP"],"species":["Human","Spiritualist"],"resource":"ENERGY","rangeType":"Melee","region":["ionia"],"year":2010,"keywords":"暮光之眼,慎,yaozi,s,mgzy,Shen,muguangzhiyan,shen","emoji":"🧍🥋⚡","sfx":"assets/sfx/98.ogg","vo":"assets/vo/98.ogg","icons":{"q":"assets/spells/Shen_0.webp","w":"assets/spells/Shen_1.webp","e":"assets/spells/Shen_2.webp","r":"assets/spells/Shen_3.webp"},"splash":"assets/splash/Shen.webp","head":"assets/icons/Shen.webp","splash0":"assets/splash0/Shen.webp","abil":"1111"},{"key":102,"id":"Shyvana","cn":"龙血武姬","title":"希瓦娜","gender":"Female","lanes":["JUNGLE"],"species":["Human","Dragon"],"resource":"FURY","rangeType":"Melee","region":["demacia"],"year":2011,"keywords":"龙血武姬,龙女,希瓦娜,ln,xwn,lxwj,Shyvana,longxuewuji,longnv,xiwana","emoji":"🧍🐉⚔️","sfx":"assets/sfx/102.ogg","vo":"assets/vo/102.ogg","icons":{"q":"assets/spells/Shyvana_0.webp","w":"assets/spells/Shyvana_1.webp","e":"assets/spells/Shyvana_2.webp","r":"assets/spells/Shyvana_3.webp"},"splash":"assets/splash/Shyvana.webp","head":"assets/icons/Shyvana.webp","splash0":"assets/splash0/Shyvana.webp","abil":"1111"},{"key":27,"id":"Singed","cn":"炼金术士","title":"辛吉德","gender":"Male","lanes":["TOP"],"species":["Human","Chemically Altered"],"resource":"MANA","rangeType":"Melee","region":["zaun"],"year":2009,"keywords":"炼金术士,辛吉德,炼金,lj,xjd,ljss,Singed,lianjinshushi,xinjide,lianjin","emoji":"🧍🧪🔵","sfx":"assets/sfx/27.ogg","vo":"assets/vo/27.ogg","icons":{"q":"assets/spells/Singed_0.webp","w":"assets/spells/Singed_1.webp","e":"assets/spells/Singed_2.webp","r":"assets/spells/Singed_3.webp"},"splash":"assets/splash/Singed.webp","head":"assets/icons/Singed.webp","splash0":"assets/splash0/Singed.webp","abil":"1111"},{"key":14,"id":"Sion","cn":"亡灵战神","title":"赛恩","gender":"Male","lanes":["TOP"],"species":["Undead"],"resource":"MANA","rangeType":"Melee","region":["noxus"],"year":2009,"keywords":"亡灵战神,塞恩,赛恩,se,wlzs,Sion,wanglingzhanshen,saien","emoji":"💀🔵🤜","sfx":"assets/sfx/14.ogg","vo":"assets/vo/14.ogg","icons":{"q":"assets/spells/Sion_0.webp","w":"assets/spells/Sion_1.webp","e":"assets/spells/Sion_2.webp","r":"assets/spells/Sion_3.webp"},"splash":"assets/splash/Sion.webp","head":"assets/icons/Sion.webp","splash0":"assets/splash0/Sion.webp","abil":"1111"},{"key":15,"id":"Sivir","cn":"战争女神","title":"希维尔","gender":"Female","lanes":["BOTTOM"],"species":["Human"],"resource":"MANA","rangeType":"Ranged","region":["shurima"],"year":2009,"keywords":"战争女神,轮子妈,希维尔,lzm,xwe,zzns,Sivir,zhanzhengnvshen,lunzima,xiweier","emoji":"🧍🪃🔵","sfx":"assets/sfx/15.ogg","vo":"assets/vo/15.ogg","icons":{"q":"assets/spells/Sivir_0.webp","w":"assets/spells/Sivir_1.webp","e":"assets/spells/Sivir_2.webp","r":"assets/spells/Sivir_3.webp"},"splash":"assets/splash/Sivir.webp","head":"assets/icons/Sivir.webp","splash0":"assets/splash0/Sivir.webp","abil":"1111"},{"key":72,"id":"Skarner","cn":"上古领主","title":"斯卡纳","gender":"Male","lanes":["JUNGLE","TOP"],"species":["Brackern"],"resource":"MANA","rangeType":"Melee","region":["ixtal"],"year":2011,"keywords":"水晶先锋,斯卡纳,skn,sjxf,蝎子,xz,Skarner,shuijingxianfeng,sikana,xiezi","emoji":"🦂🔵🤜","sfx":"assets/sfx/72.ogg","vo":"assets/vo/72.ogg","icons":{"q":"assets/spells/Skarner_0.webp","w":"assets/spells/Skarner_1.webp","e":"assets/spells/Skarner_2.webp","r":"assets/spells/Skarner_3.webp"},"splash":"assets/splash/Skarner.webp","head":"assets/icons/Skarner.webp","splash0":"assets/splash0/Skarner.webp","abil":"1111"},{"key":901,"id":"Smolder","cn":"炽炎雏龙","title":"斯莫德","gender":"Male","lanes":["BOTTOM","MIDDLE","TOP"],"species":["Dragon"],"resource":"MANA","rangeType":"Ranged","region":["unaffiliated"],"year":2024,"keywords":"炽炎雏龙,斯莫德,chiyanchulong,simode","emoji":"🐉🔵🎯","sfx":"assets/sfx/901.ogg","vo":"assets/vo/901.ogg","icons":{"q":"assets/spells/Smolder_0.webp","w":"assets/spells/Smolder_1.webp","e":"assets/spells/Smolder_2.webp","r":"assets/spells/Smolder_3.webp"},"splash":"assets/splash/Smolder.webp","head":"assets/icons/Smolder.webp","splash0":"assets/splash0/Smolder.webp","abil":"1111"},{"key":37,"id":"Sona","cn":"琴瑟仙女","title":"娑娜","gender":"Female","lanes":["SUPPORT"],"species":["Human"],"resource":"MANA","rangeType":"Ranged","region":["demacia"],"year":2010,"keywords":"琴瑟仙女,琴女,娑娜,sn,qn,qsxn,Sona,qinsexiannv,qinnv,suona","emoji":"🧍🎼🔵","sfx":"assets/sfx/37.ogg","vo":"assets/vo/37.ogg","icons":{"q":"assets/spells/Sona_0.webp","w":"assets/spells/Sona_1.webp","e":"assets/spells/Sona_2.webp","r":"assets/spells/Sona_3.webp"},"splash":"assets/splash/Sona.webp","head":"assets/icons/Sona.webp","splash0":"assets/splash0/Sona.webp","abil":"1111"},{"key":16,"id":"Soraka","cn":"众星之子","title":"索拉卡","gender":"Female","lanes":["SUPPORT"],"species":["Celestial"],"resource":"MANA","rangeType":"Ranged","region":["mount-targon"],"year":2009,"keywords":"众星之子,索拉卡,星妈,奶妈,xm,nm,slk,zxzz,Soraka,zhongxingzhizi,suolaka,xingma,naima","emoji":"🌟🌙🔵","sfx":"assets/sfx/16.ogg","vo":"assets/vo/16.ogg","icons":{"q":"assets/spells/Soraka_0.webp","w":"assets/spells/Soraka_1.webp","e":"assets/spells/Soraka_2.webp","r":"assets/spells/Soraka_3.webp"},"splash":"assets/splash/Soraka.webp","head":"assets/icons/Soraka.webp","splash0":"assets/splash0/Soraka.webp","abil":"1111"},{"key":50,"id":"Swain","cn":"诺克萨斯统领","title":"斯维因","gender":"Male","lanes":["BOTTOM","MIDDLE","SUPPORT","TOP"],"species":["Human"],"resource":"MANA","rangeType":"Ranged","region":["noxus"],"year":2010,"keywords":"诺克萨斯统领,乌鸦,斯维因,swy,wy,nksstl,Swain,nuokesasitongling,wuya,siweiyin","emoji":"🧍🐦‍⬛🔵","sfx":"assets/sfx/50.ogg","vo":"assets/vo/50.ogg","icons":{"q":"assets/spells/Swain_0.webp","w":"assets/spells/Swain_1.webp","e":"assets/spells/Swain_2.webp","r":"assets/spells/Swain_3.webp"},"splash":"assets/splash/Swain.webp","head":"assets/icons/Swain.webp","splash0":"assets/splash0/Swain.webp","abil":"1111"},{"key":517,"id":"Sylas","cn":"解脱者","title":"塞拉斯","gender":"Male","lanes":["MIDDLE","TOP"],"species":["Human","Magicborn"],"resource":"MANA","rangeType":"Melee","region":["demacia"],"year":2019,"keywords":"解脱者,塞拉斯,sls,suannan,sn,jtz,Sylas,jietuozhe,sailasi","emoji":"🧍⛓️🔵","sfx":"assets/sfx/517.ogg","vo":"assets/vo/517.ogg","icons":{"q":"assets/spells/Sylas_0.webp","w":"assets/spells/Sylas_1.webp","e":"assets/spells/Sylas_2.webp","r":"assets/spells/Sylas_3.webp"},"splash":"assets/splash/Sylas.webp","head":"assets/icons/Sylas.webp","splash0":"assets/splash0/Sylas.webp","abil":"1111"},{"key":134,"id":"Syndra","cn":"暗黑元首","title":"辛德拉","gender":"Female","lanes":["MIDDLE"],"species":["Human","Magically Altered"],"resource":"MANA","rangeType":"Ranged","region":["ionia"],"year":2012,"keywords":"暗黑元首,球女,辛德拉,qn,xdl,ahyy,Syndra,anheiyuanshou,qiunv,xindela","emoji":"🧍🔮🔵","sfx":"assets/sfx/134.ogg","vo":"assets/vo/134.ogg","icons":{"q":"assets/spells/Syndra_0.webp","w":"assets/spells/Syndra_1.webp","e":"assets/spells/Syndra_2.webp","r":"assets/spells/Syndra_3.webp"},"splash":"assets/splash/Syndra.webp","head":"assets/icons/Syndra.webp","splash0":"assets/splash0/Syndra.webp","abil":"1111"},{"key":223,"id":"TahmKench","cn":"河流之王","title":"塔姆","gender":"Male","lanes":["SUPPORT","TOP"],"species":["Demon"],"resource":"MANA","rangeType":"Melee","region":["unaffiliated"],"year":2015,"keywords":"河流之王,hama,塔姆,tm,hlzw,TahmKench,heliuzhiwang,tamu","emoji":"😈🐸🤜","sfx":"assets/sfx/223.ogg","vo":"assets/vo/223.ogg","icons":{"q":"assets/spells/TahmKench_0.webp","w":"assets/spells/TahmKench_1.webp","e":"assets/spells/TahmKench_2.webp","r":"assets/spells/TahmKench_3.webp"},"splash":"assets/splash/TahmKench.webp","head":"assets/icons/TahmKench.webp","splash0":"assets/splash0/TahmKench.webp","abil":"1111"},{"key":163,"id":"Taliyah","cn":"岩雀","title":"塔莉垭","gender":"Female","lanes":["JUNGLE","MIDDLE"],"species":["Human"],"resource":"MANA","rangeType":"Ranged","region":["shurima"],"year":2016,"keywords":"岩雀,小鸟,塔莉垭,tly,xn,yq,Taliyah,yanque,xiaoniao,taliya","emoji":"🧍🏜️🔵","sfx":"assets/sfx/163.ogg","vo":"assets/vo/163.ogg","icons":{"q":"assets/spells/Taliyah_0.webp","w":"assets/spells/Taliyah_1.webp","e":"assets/spells/Taliyah_2.webp","r":"assets/spells/Taliyah_3.webp"},"splash":"assets/splash/Taliyah.webp","head":"assets/icons/Taliyah.webp","splash0":"assets/splash0/Taliyah.webp","abil":"1111"},{"key":91,"id":"Talon","cn":"刀锋之影","title":"泰隆","gender":"Male","lanes":["MIDDLE","JUNGLE"],"species":["Human"],"resource":"MANA","rangeType":"Melee","region":["noxus"],"year":2011,"keywords":"刀锋之影,男刀,泰隆,tl,nd,dfzy,Talon,daofengzhiying,nandao,tailong","emoji":"🧍🗡️🔵","sfx":"assets/sfx/91.ogg","vo":"assets/vo/91.ogg","icons":{"q":"assets/spells/Talon_0.webp","w":"assets/spells/Talon_1.webp","e":"assets/spells/Talon_2.webp","r":"assets/spells/Talon_3.webp"},"splash":"assets/splash/Talon.webp","head":"assets/icons/Talon.webp","splash0":"assets/splash0/Talon.webp","abil":"1111"},{"key":44,"id":"Taric","cn":"瓦洛兰之盾","title":"塔里克","gender":"Male","lanes":["SUPPORT"],"species":["Human","Aspect"],"resource":"MANA","rangeType":"Melee","region":["mount-targon"],"year":2009,"keywords":"瓦洛兰之盾,塔里克,宝石,bs,tlk,wllzd,Taric,waluolanzhidun,talike,baoshi","emoji":"🧍💎🔵","sfx":"assets/sfx/44.ogg","vo":"assets/vo/44.ogg","icons":{"q":"assets/spells/Taric_0.webp","w":"assets/spells/Taric_1.webp","e":"assets/spells/Taric_2.webp","r":"assets/spells/Taric_3.webp"},"splash":"assets/splash/Taric.webp","head":"assets/icons/Taric.webp","splash0":"assets/splash0/Taric.webp","abil":"1111"},{"key":17,"id":"Teemo","cn":"迅捷斥候","title":"提莫","gender":"Male","lanes":["JUNGLE","SUPPORT","TOP"],"species":["Yordle"],"resource":"MANA","rangeType":"Ranged","region":["bandle-city"],"year":2009,"keywords":"迅捷斥候,提莫,timo,Teemo,tm,xjch,xunjiechihou,timo","emoji":"🧸🍄🔵","sfx":"assets/sfx/17.ogg","vo":"assets/vo/17.ogg","icons":{"q":"assets/spells/Teemo_0.webp","w":"assets/spells/Teemo_1.webp","e":"assets/spells/Teemo_2.webp","r":"assets/spells/Teemo_3.webp"},"splash":"assets/splash/Teemo.webp","head":"assets/icons/Teemo.webp","splash0":"assets/splash0/Teemo.webp","abil":"1111"},{"key":412,"id":"Thresh","cn":"魂锁典狱长","title":"锤石","gender":"Male","lanes":["SUPPORT"],"species":["Undead"],"resource":"MANA","rangeType":"Ranged","region":["shadow-isles"],"year":2013,"keywords":"魂锁典狱长,锤石,Thresh,cs,hsdyz,hunsuodianyuzhang,chuishi","emoji":"💀🪝🔵","sfx":"assets/sfx/412.ogg","vo":"assets/vo/412.ogg","icons":{"q":"assets/spells/Thresh_0.webp","w":"assets/spells/Thresh_1.webp","e":"assets/spells/Thresh_2.webp","r":"assets/spells/Thresh_3.webp"},"splash":"assets/splash/Thresh.webp","head":"assets/icons/Thresh.webp","splash0":"assets/splash0/Thresh.webp","abil":"1111"},{"key":18,"id":"Tristana","cn":"麦林炮手","title":"崔丝塔娜","gender":"Female","lanes":["BOTTOM","MIDDLE"],"species":["Yordle"],"resource":"MANA","rangeType":"Ranged","region":["bandle-city"],"year":2009,"keywords":"麦林炮手,小炮,崔丝塔娜,xp,cstn,mlps,Tristana,mailinpaoshou,xiaopao,cuisitana","emoji":"🧸💥🔵","sfx":"assets/sfx/18.ogg","vo":"assets/vo/18.ogg","icons":{"q":"assets/spells/Tristana_0.webp","w":"assets/spells/Tristana_1.webp","e":"assets/spells/Tristana_2.webp","r":"assets/spells/Tristana_3.webp"},"splash":"assets/splash/Tristana.webp","head":"assets/icons/Tristana.webp","splash0":"assets/splash0/Tristana.webp","abil":"1111"},{"key":48,"id":"Trundle","cn":"巨魔之王","title":"特朗德尔","gender":"Male","lanes":["JUNGLE","TOP"],"species":["Troll"],"resource":"MANA","rangeType":"Melee","region":["freljord"],"year":2010,"keywords":"巨魔之王,巨魔,特朗德尔,Trundle,jm,jmzw,tlde,jumozhiwang,jumo,telangdeer","emoji":"👹❄️🔵","sfx":"assets/sfx/48.ogg","vo":"assets/vo/48.ogg","icons":{"q":"assets/spells/Trundle_0.webp","w":"assets/spells/Trundle_1.webp","e":"assets/spells/Trundle_2.webp","r":"assets/spells/Trundle_3.webp"},"splash":"assets/splash/Trundle.webp","head":"assets/icons/Trundle.webp","splash0":"assets/splash0/Trundle.webp","abil":"1111"},{"key":23,"id":"Tryndamere","cn":"蛮族之王","title":"泰达米尔","gender":"Male","lanes":["TOP"],"species":["Human","Magically Altered"],"resource":"FURY","rangeType":"Melee","region":["freljord"],"year":2009,"keywords":"蛮族之王,蛮王,泰达米尔,Tryndamere,tdme,mw,mzzw,manzuzhiwang,manwang,taidamier","emoji":"🧍🪓⚔️","sfx":"assets/sfx/23.ogg","vo":"assets/vo/23.ogg","icons":{"q":"assets/spells/Tryndamere_0.webp","w":"assets/spells/Tryndamere_1.webp","e":"assets/spells/Tryndamere_2.webp","r":"assets/spells/Tryndamere_3.webp"},"splash":"assets/splash/Tryndamere.webp","head":"assets/icons/Tryndamere.webp","splash0":"assets/splash0/Tryndamere.webp","abil":"1111"},{"key":4,"id":"TwistedFate","cn":"卡牌大师","title":"崔斯特","gender":"Male","lanes":["BOTTOM","MIDDLE","TOP"],"species":["Human"],"resource":"MANA","rangeType":"Ranged","region":["bilgewater"],"year":2009,"keywords":"卡牌大师,崔斯特,卡牌,TwistedFate,kp,cst,kpds,kapaidashi,cuisite,kapai","emoji":"🧍🃏🔵","sfx":"assets/sfx/4.ogg","vo":"assets/vo/4.ogg","icons":{"q":"assets/spells/TwistedFate_0.webp","w":"assets/spells/TwistedFate_1.webp","e":"assets/spells/TwistedFate_2.webp","r":"assets/spells/TwistedFate_3.webp"},"splash":"assets/splash/TwistedFate.webp","head":"assets/icons/TwistedFate.webp","splash0":"assets/splash0/TwistedFate.webp","abil":"1111"},{"key":29,"id":"Twitch","cn":"瘟疫之源","title":"图奇","gender":"Male","lanes":["BOTTOM","SUPPORT"],"species":["Chemically Altered"],"resource":"MANA","rangeType":"Ranged","region":["zaun"],"year":2009,"keywords":"瘟疫之源,图奇,老鼠,Twitch,ls,tq,wyzy,wenyizhiyuan,tuqi,laoshu","emoji":"🧪🐀🔵","sfx":"assets/sfx/29.ogg","vo":"assets/vo/29.ogg","icons":{"q":"assets/spells/Twitch_0.webp","w":"assets/spells/Twitch_1.webp","e":"assets/spells/Twitch_2.webp","r":"assets/spells/Twitch_3.webp"},"splash":"assets/splash/Twitch.webp","head":"assets/icons/Twitch.webp","splash0":"assets/splash0/Twitch.webp","abil":"1111"},{"key":77,"id":"Udyr","cn":"兽灵行者","title":"乌迪尔","gender":"Male","lanes":["JUNGLE","TOP"],"species":["Human","Spiritualist"],"resource":"MANA","rangeType":"Melee","region":["freljord"],"year":2009,"keywords":"兽灵行者,乌迪尔,Udyr,wde,slxz,UD,shoulingxingzhe,wudier","emoji":"🧍🐻🔵","sfx":"assets/sfx/77.ogg","vo":"assets/vo/77.ogg","icons":{"q":"assets/spells/Udyr_0.webp","w":"assets/spells/Udyr_1.webp","e":"assets/spells/Udyr_2.webp","r":"assets/spells/Udyr_3.webp"},"splash":"assets/splash/Udyr.webp","head":"assets/icons/Udyr.webp","splash0":"assets/splash0/Udyr.webp","abil":"1111"},{"key":6,"id":"Urgot","cn":"无畏战车","title":"厄加特","gender":"Male","lanes":["TOP"],"species":["Human","Chemically Altered"],"resource":"MANA","rangeType":"Ranged","region":["zaun"],"year":2010,"keywords":"无畏战车,厄加特,ejt,wwzc,Urgot,wuweizhanche,ejiate","emoji":"🧍🦀🔵","sfx":"assets/sfx/6.ogg","vo":"assets/vo/6.ogg","icons":{"q":"assets/spells/Urgot_0.webp","w":"assets/spells/Urgot_1.webp","e":"assets/spells/Urgot_2.webp","r":"assets/spells/Urgot_3.webp"},"splash":"assets/splash/Urgot.webp","head":"assets/icons/Urgot.webp","splash0":"assets/splash0/Urgot.webp","abil":"1111"},{"key":110,"id":"Varus","cn":"惩戒之箭","title":"韦鲁斯","gender":"Male","lanes":["BOTTOM"],"species":["Darkin"],"resource":"MANA","rangeType":"Ranged","region":["ionia"],"year":2012,"keywords":"惩戒之箭,韦鲁斯,维鲁斯,wls,cjzj,Varus,chengjiezhijian,weilusi","emoji":"😈🏹🔵","sfx":"assets/sfx/110.ogg","vo":"assets/vo/110.ogg","icons":{"q":"assets/spells/Varus_0.webp","w":"assets/spells/Varus_1.webp","e":"assets/spells/Varus_2.webp","r":"assets/spells/Varus_3.webp"},"splash":"assets/splash/Varus.webp","head":"assets/icons/Varus.webp","splash0":"assets/splash0/Varus.webp","abil":"1111"},{"key":67,"id":"Vayne","cn":"暗夜猎手","title":"薇恩","gender":"Female","lanes":["BOTTOM","TOP"],"species":["Human"],"resource":"MANA","rangeType":"Ranged","region":["demacia"],"year":2011,"keywords":"暗夜猎手,薇恩,vn,Vayne,ve,ayls,anyelieshou,weien","emoji":"🧍🔫🔵","sfx":"assets/sfx/67.ogg","vo":"assets/vo/67.ogg","icons":{"q":"assets/spells/Vayne_0.webp","w":"assets/spells/Vayne_1.webp","e":"assets/spells/Vayne_2.webp","r":"assets/spells/Vayne_3.webp"},"splash":"assets/splash/Vayne.webp","head":"assets/icons/Vayne.webp","splash0":"assets/splash0/Vayne.webp","abil":"1111"},{"key":45,"id":"Veigar","cn":"邪恶小法师","title":"维迦","gender":"Male","lanes":["MIDDLE","SUPPORT"],"species":["Yordle"],"resource":"MANA","rangeType":"Ranged","region":["bandle-city"],"year":2009,"keywords":"邪恶小法师,小法师,维迦,xfs,xexfs,wj,Veigar,xieexiaofashi,xiaofashi,weijia","emoji":"🧸🎩🔵","sfx":"assets/sfx/45.ogg","vo":"assets/vo/45.ogg","icons":{"q":"assets/spells/Veigar_0.webp","w":"assets/spells/Veigar_1.webp","e":"assets/spells/Veigar_2.webp","r":"assets/spells/Veigar_3.webp"},"splash":"assets/splash/Veigar.webp","head":"assets/icons/Veigar.webp","splash0":"assets/splash0/Veigar.webp","abil":"1111"},{"key":161,"id":"Velkoz","cn":"虚空之眼","title":"维克兹","gender":"Male","lanes":["MIDDLE","SUPPORT"],"species":["Voidborn"],"resource":"MANA","rangeType":"Ranged","region":["void"],"year":2014,"keywords":"虚空之眼,大眼,维克兹,wkz,dy,xkzy,Velkoz,xukongzhiyan,dayan,weikezi","emoji":"👾🌀🔵","sfx":"assets/sfx/161.ogg","vo":"assets/vo/161.ogg","icons":{"q":"assets/spells/Velkoz_0.webp","w":"assets/spells/Velkoz_1.webp","e":"assets/spells/Velkoz_2.webp","r":"assets/spells/Velkoz_3.webp"},"splash":"assets/splash/Velkoz.webp","head":"assets/icons/Velkoz.webp","splash0":"assets/splash0/Velkoz.webp","abil":"1111"},{"key":711,"id":"Vex","cn":"愁云使者","title":"薇古丝","gender":"Female","lanes":["MIDDLE"],"species":["Yordle"],"resource":"MANA","rangeType":"Ranged","region":["shadow-isles"],"year":2021,"keywords":"薇古丝,愁云使者,熬夜波比,weigusi,chouyunshizhe,aoyebobi","emoji":"🧸🌑🔵","sfx":"assets/sfx/711.ogg","vo":"assets/vo/711.ogg","icons":{"q":"assets/spells/Vex_0.webp","w":"assets/spells/Vex_1.webp","e":"assets/spells/Vex_2.webp","r":"assets/spells/Vex_3.webp"},"splash":"assets/splash/Vex.webp","head":"assets/icons/Vex.webp","splash0":"assets/splash0/Vex.webp","abil":"1111"},{"key":254,"id":"Vi","cn":"皮城执法官","title":"蔚","gender":"Female","lanes":["JUNGLE"],"species":["Human"],"resource":"MANA","rangeType":"Melee","region":["piltover"],"year":2012,"keywords":"皮城执法官,拳女,蔚,v,qv,pczfg,Vi,pichengzhifaguan,quannv,wei","emoji":"🧍🥊🔵","sfx":"assets/sfx/254.ogg","vo":"assets/vo/254.ogg","icons":{"q":"assets/spells/Vi_0.webp","w":"assets/spells/Vi_1.webp","e":"assets/spells/Vi_2.webp","r":"assets/spells/Vi_3.webp"},"splash":"assets/splash/Vi.webp","head":"assets/icons/Vi.webp","splash0":"assets/splash0/Vi.webp","abil":"1111"},{"key":234,"id":"Viego","cn":"破败之王","title":"佛耶戈","gender":"Male","lanes":["JUNGLE"],"species":["Undead"],"resource":"NONE","rangeType":"Melee","region":["shadow-isles"],"year":2021,"keywords":"破败之王,佛耶戈,破败,佛,pobaizhiwang,fuyege,pobai,fu","emoji":"💀🕯️💪","sfx":"assets/sfx/234.ogg","vo":"assets/vo/234.ogg","icons":{"q":"assets/spells/Viego_0.webp","w":"assets/spells/Viego_1.webp","e":"assets/spells/Viego_2.webp","r":"assets/spells/Viego_3.webp"},"splash":"assets/splash/Viego.webp","head":"assets/icons/Viego.webp","splash0":"assets/splash0/Viego.webp","abil":"1111"},{"key":112,"id":"Viktor","cn":"奥术先驱","title":"维克托","gender":"Male","lanes":["MIDDLE"],"species":["Human","Cyborg"],"resource":"MANA","rangeType":"Ranged","region":["zaun"],"year":2011,"keywords":"机械先驱,维克托,三只手,szs,wkt,jxxq,Viktor,jixiexianqu,weiketuo,sanzhishou","emoji":"🧍⚙️🔵","sfx":"assets/sfx/112.ogg","vo":"assets/vo/112.ogg","icons":{"q":"assets/spells/Viktor_0.webp","w":"assets/spells/Viktor_1.webp","e":"assets/spells/Viktor_2.webp","r":"assets/spells/Viktor_3.webp"},"splash":"assets/splash/Viktor.webp","head":"assets/icons/Viktor.webp","splash0":"assets/splash0/Viktor.webp","abil":"1111"},{"key":8,"id":"Vladimir","cn":"猩红收割者","title":"弗拉基米尔","gender":"Male","lanes":["MIDDLE","TOP"],"species":["Hemomancer"],"resource":"CRIMSON_RUSH","rangeType":"Ranged","region":["noxus"],"year":2010,"keywords":"猩红收割者,吸血鬼,弗拉基米尔,fljme,xxg,xhsgz,Vladimir,xinghongshougezhe,xixiegui,fulajimier","emoji":"🩸🎯🎯","sfx":"assets/sfx/8.ogg","vo":"assets/vo/8.ogg","icons":{"q":"assets/spells/Vladimir_0.webp","w":"assets/spells/Vladimir_1.webp","e":"assets/spells/Vladimir_2.webp","r":"assets/spells/Vladimir_3.webp"},"splash":"assets/splash/Vladimir.webp","head":"assets/icons/Vladimir.webp","splash0":"assets/splash0/Vladimir.webp","abil":"1111"},{"key":106,"id":"Volibear","cn":"不灭狂雷","title":"沃利贝尔","gender":"Male","lanes":["JUNGLE","TOP"],"species":["God","Spirit"],"resource":"MANA","rangeType":"Melee","region":["freljord"],"year":2011,"keywords":"不灭狂雷,沃利贝尔,Volibear,狗熊,gx,wlbe,bmkl,bumiekuanglei,wolibeier,gouxiong","emoji":"✨🐻🔵","sfx":"assets/sfx/106.ogg","vo":"assets/vo/106.ogg","icons":{"q":"assets/spells/Volibear_0.webp","w":"assets/spells/Volibear_1.webp","e":"assets/spells/Volibear_2.webp","r":"assets/spells/Volibear_3.webp"},"splash":"assets/splash/Volibear.webp","head":"assets/icons/Volibear.webp","splash0":"assets/splash0/Volibear.webp","abil":"1111"},{"key":19,"id":"Warwick","cn":"祖安怒兽","title":"沃里克","gender":"Male","lanes":["JUNGLE","TOP"],"species":["Human","Chemically Altered"],"resource":"MANA","rangeType":"Melee","region":["zaun"],"year":2009,"keywords":"祖安怒兽,沃里克,狼人,lr,wlk,zans,Warwick,zuannushou,wolike,langren","emoji":"🧍🐺🔵","sfx":"assets/sfx/19.ogg","vo":"assets/vo/19.ogg","icons":{"q":"assets/spells/Warwick_0.webp","w":"assets/spells/Warwick_1.webp","e":"assets/spells/Warwick_2.webp","r":"assets/spells/Warwick_3.webp"},"splash":"assets/splash/Warwick.webp","head":"assets/icons/Warwick.webp","splash0":"assets/splash0/Warwick.webp","abil":"1111"},{"key":498,"id":"Xayah","cn":"逆羽","title":"霞","gender":"Female","lanes":["BOTTOM"],"species":["Vastayan"],"resource":"MANA","rangeType":"Ranged","region":["ionia"],"year":2017,"keywords":"逆羽,霞,x,ny,Xayah,niyu,xia","emoji":"🦊🪶🔵","sfx":"assets/sfx/498.ogg","vo":"assets/vo/498.ogg","icons":{"q":"assets/spells/Xayah_0.webp","w":"assets/spells/Xayah_1.webp","e":"assets/spells/Xayah_2.webp","r":"assets/spells/Xayah_3.webp"},"splash":"assets/splash/Xayah.webp","head":"assets/icons/Xayah.webp","splash0":"assets/splash0/Xayah.webp","abil":"1111"},{"key":101,"id":"Xerath","cn":"远古巫灵","title":"泽拉斯","gender":"Male","lanes":["MIDDLE","SUPPORT"],"species":["God-Warrior","Ascended"],"resource":"MANA","rangeType":"Ranged","region":["shurima"],"year":2011,"keywords":"远古巫灵,泽拉斯,guancaiban,gbc,zls,ygwl,Xerath,yuanguwuling,zelasi","emoji":"⚔️⚡🔵","sfx":"assets/sfx/101.ogg","vo":"assets/vo/101.ogg","icons":{"q":"assets/spells/Xerath_0.webp","w":"assets/spells/Xerath_1.webp","e":"assets/spells/Xerath_2.webp","r":"assets/spells/Xerath_3.webp"},"splash":"assets/splash/Xerath.webp","head":"assets/icons/Xerath.webp","splash0":"assets/splash0/Xerath.webp","abil":"1111"},{"key":5,"id":"XinZhao","cn":"德邦总管","title":"赵信","gender":"Male","lanes":["JUNGLE"],"species":["Human"],"resource":"MANA","rangeType":"Melee","region":["demacia"],"year":2010,"keywords":"德邦总管,德邦,赵信,XinZhao,db,dbzg,zx,debangzongguan,debang,zhaoxin","emoji":"🧍🔱🔵","sfx":"assets/sfx/5.ogg","vo":"assets/vo/5.ogg","icons":{"q":"assets/spells/XinZhao_0.webp","w":"assets/spells/XinZhao_1.webp","e":"assets/spells/XinZhao_2.webp","r":"assets/spells/XinZhao_3.webp"},"splash":"assets/splash/XinZhao.webp","head":"assets/icons/XinZhao.webp","splash0":"assets/splash0/XinZhao.webp","abil":"0000"},{"key":157,"id":"Yasuo","cn":"疾风剑豪","title":"亚索","gender":"Male","lanes":["MIDDLE","TOP"],"species":["Human"],"resource":"FLOW","rangeType":"Melee","region":["ionia"],"year":2013,"keywords":"疾风剑豪,剑豪,亚索,Yasuo,ys,jh,jfjh,jifengjianhao,jianhao,yasuo","emoji":"🧍🌪️🌊","sfx":"assets/sfx/157.ogg","vo":"assets/vo/157.ogg","icons":{"q":"assets/spells/Yasuo_0.webp","w":"assets/spells/Yasuo_1.webp","e":"assets/spells/Yasuo_2.webp","r":"assets/spells/Yasuo_3.webp"},"splash":"assets/splash/Yasuo.webp","head":"assets/icons/Yasuo.webp","splash0":"assets/splash0/Yasuo.webp","abil":"1111"},{"key":777,"id":"Yone","cn":"封魔剑魂","title":"永恩","gender":"Male","lanes":["MIDDLE","TOP"],"species":["Human","Magically Altered"],"resource":"FLOW","rangeType":"Melee","region":["ionia"],"year":2020,"keywords":"永恩,封魔剑魂,ye,fmjh,Yone,yongen,fengmojianhun","emoji":"🧍🌸🌊","sfx":"assets/sfx/777.ogg","vo":"assets/vo/777.ogg","icons":{"q":"assets/spells/Yone_0.webp","w":"assets/spells/Yone_1.webp","e":"assets/spells/Yone_2.webp","r":"assets/spells/Yone_3.webp"},"splash":"assets/splash/Yone.webp","head":"assets/icons/Yone.webp","splash0":"assets/splash0/Yone.webp","abil":"1111"},{"key":83,"id":"Yorick","cn":"牧魂人","title":"约里克","gender":"Male","lanes":["TOP"],"species":["Human","Undead"],"resource":"MANA","rangeType":"Melee","region":["shadow-isles"],"year":2011,"keywords":"牧魂人,约里克,掘墓人,jmr,mhr,ylk,Yorick,muhunren,yuelike,juemuren","emoji":"🧍⛏️🔵","sfx":"assets/sfx/83.ogg","vo":"assets/vo/83.ogg","icons":{"q":"assets/spells/Yorick_0.webp","w":"assets/spells/Yorick_1.webp","e":"assets/spells/Yorick_2.webp","r":"assets/spells/Yorick_3.webp"},"splash":"assets/splash/Yorick.webp","head":"assets/icons/Yorick.webp","splash0":"assets/splash0/Yorick.webp","abil":"1111"},{"key":804,"id":"Yunara","cn":"不破之誓","title":"芸阿娜","gender":"Female","lanes":["BOTTOM"],"species":["Human"],"resource":"MANA","rangeType":"Ranged","region":["ionia"],"year":2025,"keywords":"芸阿娜,不破之誓,yunana,bupozhishi","emoji":"🧍🌸🔵","sfx":"assets/sfx/804.ogg","vo":"assets/vo/804.ogg","icons":{"q":"assets/spells/Yunara_0.webp","w":"assets/spells/Yunara_1.webp","e":"assets/spells/Yunara_2.webp","r":"assets/spells/Yunara_3.webp"},"splash":"assets/splash/Yunara.webp","head":"assets/icons/Yunara.webp","splash0":"assets/splash0/Yunara.webp","abil":"1111"},{"key":350,"id":"Yuumi","cn":"魔法猫咪","title":"悠米","gender":"Female","lanes":["SUPPORT"],"species":["Cat","Magically Altered"],"resource":"MANA","rangeType":"Ranged","region":["bandle-city"],"year":2019,"keywords":"魔法猫咪,猫,猫咪,悠米,cat,m,mm,mfmm,ym,Yuumi,mofamaomi,mao,maomi,youmi","emoji":"🐱🍄🔵","sfx":"assets/sfx/350.ogg","vo":"assets/vo/350.ogg","icons":{"q":"assets/spells/Yuumi_0.webp","w":"assets/spells/Yuumi_1.webp","e":"assets/spells/Yuumi_2.webp","r":"assets/spells/Yuumi_3.webp"},"splash":"assets/splash/Yuumi.webp","head":"assets/icons/Yuumi.webp","splash0":"assets/splash0/Yuumi.webp","abil":"1111"},{"key":154,"id":"Zac","cn":"生化魔人","title":"扎克","gender":"Male","lanes":["JUNGLE","SUPPORT","TOP"],"species":["Golem","Chemically Altered"],"resource":"HEALTH","rangeType":"Melee","region":["zaun"],"year":2013,"keywords":"生化魔人,扎克,Zac,shenghuamoren,zhake,zk,shmr","emoji":"🗿🧪❤️","sfx":"assets/sfx/154.ogg","vo":"assets/vo/154.ogg","icons":{"q":"assets/spells/Zac_0.webp","w":"assets/spells/Zac_1.webp","e":"assets/spells/Zac_2.webp","r":"assets/spells/Zac_3.webp"},"splash":"assets/splash/Zac.webp","head":"assets/icons/Zac.webp","splash0":"assets/splash0/Zac.webp","abil":"1111"},{"key":238,"id":"Zed","cn":"影流之主","title":"劫","gender":"Male","lanes":["JUNGLE","MIDDLE"],"species":["Human"],"resource":"ENERGY","rangeType":"Melee","region":["ionia"],"year":2012,"keywords":"影流之主,劫,j,ylzz,Zed,yingliuzhizhu,jie","emoji":"🧍🥷⚡","sfx":"assets/sfx/238.ogg","vo":"assets/vo/238.ogg","icons":{"q":"assets/spells/Zed_0.webp","w":"assets/spells/Zed_1.webp","e":"assets/spells/Zed_2.webp","r":"assets/spells/Zed_3.webp"},"splash":"assets/splash/Zed.webp","head":"assets/icons/Zed.webp","splash0":"assets/splash0/Zed.webp","abil":"1111"},{"key":221,"id":"Zeri","cn":"祖安花火","title":"泽丽","gender":"Female","lanes":["BOTTOM"],"species":["Human"],"resource":"MANA","rangeType":"Ranged","region":["zaun"],"year":2022,"keywords":"祖安花火,泽丽,zeri,Zeri,zuanhuahuo,zeli","emoji":"🧍🧪🔵","sfx":"assets/sfx/221.ogg","vo":"assets/vo/221.ogg","icons":{"q":"assets/spells/Zeri_0.webp","w":"assets/spells/Zeri_1.webp","e":"assets/spells/Zeri_2.webp","r":"assets/spells/Zeri_3.webp"},"splash":"assets/splash/Zeri.webp","head":"assets/icons/Zeri.webp","splash0":"assets/splash0/Zeri.webp","abil":"1111"},{"key":115,"id":"Ziggs","cn":"爆破鬼才","title":"吉格斯","gender":"Male","lanes":["BOTTOM","MIDDLE"],"species":["Yordle"],"resource":"MANA","rangeType":"Ranged","region":["zaun"],"year":2012,"keywords":"爆破鬼才,炸弹人,吉格斯,Ziggs,jgs,zdr,bpgc,baopoguicai,zhadanren,jigesi","emoji":"🧸💣🔵","sfx":"assets/sfx/115.ogg","vo":"assets/vo/115.ogg","icons":{"q":"assets/spells/Ziggs_0.webp","w":"assets/spells/Ziggs_1.webp","e":"assets/spells/Ziggs_2.webp","r":"assets/spells/Ziggs_3.webp"},"splash":"assets/splash/Ziggs.webp","head":"assets/icons/Ziggs.webp","splash0":"assets/splash0/Ziggs.webp","abil":"1111"},{"key":26,"id":"Zilean","cn":"时光守护者","title":"基兰","gender":"Male","lanes":["SUPPORT"],"species":["Human"],"resource":"MANA","rangeType":"Ranged","region":["unaffiliated"],"year":2009,"keywords":"时光守护者,基兰,Zilean,jl,sgshz,时光老人,时光老头,shiguangshouhuzhe,jilan,shiguanglaoren,shiguanglaotou","emoji":"🧍⏰🎯","sfx":"assets/sfx/26.ogg","vo":"assets/vo/26.ogg","icons":{"q":"assets/spells/Zilean_0.webp","w":"assets/spells/Zilean_1.webp","e":"assets/spells/Zilean_2.webp","r":"assets/spells/Zilean_3.webp"},"splash":"assets/splash/Zilean.webp","head":"assets/icons/Zilean.webp","splash0":"assets/splash0/Zilean.webp","abil":"1111"},{"key":142,"id":"Zoe","cn":"暮光星灵","title":"佐伊","gender":"Female","lanes":["MIDDLE"],"species":["Human","Aspect"],"resource":"MANA","rangeType":"Ranged","region":["mount-targon"],"year":2017,"keywords":"暮光星灵,佐伊,zy,mgxl,Zoe,muguangxingling,zuoyi","emoji":"🧍⭐🔵","sfx":"assets/sfx/142.ogg","vo":"assets/vo/142.ogg","icons":{"q":"assets/spells/Zoe_0.webp","w":"assets/spells/Zoe_1.webp","e":"assets/spells/Zoe_2.webp","r":"assets/spells/Zoe_3.webp"},"splash":"assets/splash/Zoe.webp","head":"assets/icons/Zoe.webp","splash0":"assets/splash0/Zoe.webp","abil":"1111"},{"key":143,"id":"Zyra","cn":"荆棘之兴","title":"婕拉","gender":"Female","lanes":["SUPPORT"],"species":["Plant","Magically Altered"],"resource":"MANA","rangeType":"Ranged","region":["ixtal"],"year":2012,"keywords":"荆棘之兴,婕拉,jl,jjzx,Zyra,jingjizhixing,jiela","emoji":"🌿🔵🎯","sfx":"assets/sfx/143.ogg","vo":"assets/vo/143.ogg","icons":{"q":"assets/spells/Zyra_0.webp","w":"assets/spells/Zyra_1.webp","e":"assets/spells/Zyra_2.webp","r":"assets/spells/Zyra_3.webp"},"splash":"assets/splash/Zyra.webp","head":"assets/icons/Zyra.webp","splash0":"assets/splash0/Zyra.webp","abil":"1111"}],"trophy":{"teams":["SKT T1","SSW","SSG","iG","FPX","DWG","EDG","DRX","T1"],"skins":[{"champion":"Aatrox","cn":"暗裔剑魔","team":"DRX","name":"DRX 亚托克斯","img":"assets/trophy/Aatrox_30.webp"},{"champion":"Caitlyn","cn":"皮城女警","team":"DRX","name":"DRX 凯特琳","img":"assets/trophy/Caitlyn_48.webp"},{"champion":"Kindred","cn":"永猎双子","team":"DRX","name":"DRX 千珏","img":"assets/trophy/Kindred_23.webp"},{"champion":"Ashe","cn":"寒冰射手","team":"DRX","name":"DRX 艾希","img":"assets/trophy/Ashe_63.webp"},{"champion":"Maokai","cn":"扭曲树精","team":"DRX","name":"DRX 茂凯","img":"assets/trophy/Maokai_33.webp"},{"champion":"Akali","cn":"离群之刺","team":"DRX","name":"DRX 阿卡丽","img":"assets/trophy/Akali_68.webp"},{"champion":"Kennen","cn":"狂暴之心","team":"DWG","name":"DWG 凯南","img":"assets/trophy/Kennen_23.webp"},{"champion":"Nidalee","cn":"狂野女猎手","team":"DWG","name":"DWG 奈德丽","img":"assets/trophy/Nidalee_27.webp"},{"champion":"TwistedFate","cn":"卡牌大师","team":"DWG","name":"DWG 崔斯特","img":"assets/trophy/TwistedFate_23.webp"},{"champion":"Jhin","cn":"戏命师","team":"DWG","name":"DWG 烬","img":"assets/trophy/Jhin_23.webp"},{"champion":"Leona","cn":"曙光女神","team":"DWG","name":"DWG 蕾欧娜","img":"assets/trophy/Leona_22.webp"},{"champion":"Zoe","cn":"暮光星灵","team":"EDG","name":"EDG 佐伊","img":"assets/trophy/Zoe_20.webp"},{"champion":"Viego","cn":"破败之王","team":"EDG","name":"EDG 佛耶戈","img":"assets/trophy/Viego_19.webp"},{"champion":"Aphelios","cn":"残月之肃","team":"EDG","name":"EDG 厄斐琉斯","img":"assets/trophy/Aphelios_18.webp"},{"champion":"Yuumi","cn":"魔法猫咪","team":"EDG","name":"EDG 悠米","img":"assets/trophy/Yuumi_37.webp"},{"champion":"Graves","cn":"法外狂徒","team":"EDG","name":"EDG 格雷福斯","img":"assets/trophy/Graves_42.webp"},{"champion":"Malphite","cn":"熔岩巨兽","team":"FPX","name":"FPX 墨菲特","img":"assets/trophy/Malphite_25.webp"},{"champion":"Gangplank","cn":"海洋之灾","team":"FPX","name":"FPX 普朗克","img":"assets/trophy/Gangplank_21.webp"},{"champion":"LeeSin","cn":"盲僧","team":"FPX","name":"FPX 李青","img":"assets/trophy/LeeSin_29.webp"},{"champion":"Vayne","cn":"暗夜猎手","team":"FPX","name":"FPX 薇恩","img":"assets/trophy/Vayne_15.webp"},{"champion":"Thresh","cn":"魂锁典狱长","team":"FPX","name":"FPX 锤石","img":"assets/trophy/Thresh_15.webp"},{"champion":"Leblanc","cn":"诡术妖姬","team":"IG","name":"iG 乐芙兰","img":"assets/trophy/Leblanc_19.webp"},{"champion":"Kaisa","cn":"虚空之女","team":"IG","name":"iG 卡莎","img":"assets/trophy/Kaisa_16.webp"},{"champion":"Camille","cn":"青钢影","team":"IG","name":"iG 卡蜜尔","img":"assets/trophy/Camille_10.webp"},{"champion":"Rakan","cn":"幻翎","team":"IG","name":"iG 洛","img":"assets/trophy/Rakan_4.webp"},{"champion":"Irelia","cn":"刀锋舞者","team":"IG","name":"iG 艾瑞莉娅","img":"assets/trophy/Irelia_15.webp"},{"champion":"Fiora","cn":"无双剑姬","team":"IG","name":"iG 菲奥娜","img":"assets/trophy/Fiora_31.webp"},{"champion":"Elise","cn":"蜘蛛女皇","team":"SKT T1","name":"SKT T1 伊莉丝","img":"assets/trophy/Elise_4.webp"},{"champion":"Zed","cn":"影流之主","team":"SKT T1","name":"SKT T1 劫","img":"assets/trophy/Zed_2.webp"},{"champion":"Kalista","cn":"复仇之矛","team":"SKT T1","name":"SKT T1 卡莉丝塔","img":"assets/trophy/Kalista_3.webp"},{"champion":"Olaf","cn":"狂战士","team":"SKT T1","name":"SKT T1 奥拉夫","img":"assets/trophy/Olaf_15.webp"},{"champion":"Nami","cn":"唤潮鲛姬","team":"SKT T1","name":"SKT T1 娜美","img":"assets/trophy/Nami_8.webp"},{"champion":"Zyra","cn":"荆棘之兴","team":"SKT T1","name":"SKT T1 婕拉","img":"assets/trophy/Zyra_3.webp"},{"champion":"Zac","cn":"生化魔人","team":"SKT T1","name":"SKT T1 扎克","img":"assets/trophy/Zac_6.webp"},{"champion":"LeeSin","cn":"盲僧","team":"SKT T1","name":"SKT T1 李青","img":"assets/trophy/LeeSin_6.webp"},{"champion":"Jhin","cn":"戏命师","team":"SKT T1","name":"SKT T1 烬","img":"assets/trophy/Jhin_3.webp"},{"champion":"Ryze","cn":"符文法师","team":"SKT T1","name":"SKT T1 瑞兹","img":"assets/trophy/Ryze_10.webp"},{"champion":"Ekko","cn":"时间刺客","team":"SKT T1","name":"SKT T1 艾克","img":"assets/trophy/Ekko_11.webp"},{"champion":"Vayne","cn":"暗夜猎手","team":"SKT T1","name":"SKT T1 薇恩","img":"assets/trophy/Vayne_5.webp"},{"champion":"Jax","cn":"武器大师","team":"SKT T1","name":"SKT T1 贾克斯","img":"assets/trophy/Jax_8.webp"},{"champion":"Syndra","cn":"暗黑元首","team":"SKT T1","name":"SKT T1 辛德拉","img":"assets/trophy/Syndra_5.webp"},{"champion":"Azir","cn":"沙漠皇帝","team":"SKT T1","name":"SKT T1 阿兹尔","img":"assets/trophy/Azir_3.webp"},{"champion":"Alistar","cn":"牛头酋长","team":"SKT T1","name":"SKT T1 阿利斯塔","img":"assets/trophy/Alistar_9.webp"},{"champion":"Renekton","cn":"荒漠屠夫","team":"SKT T1","name":"SKT T1 雷克顿","img":"assets/trophy/Renekton_8.webp"},{"champion":"Ezreal","cn":"探险家","team":"SSG","name":"SSG 伊泽瑞尔","img":"assets/trophy/Ezreal_19.webp"},{"champion":"JarvanIV","cn":"德玛西亚皇子","team":"SSG","name":"SSG 嘉文四世","img":"assets/trophy/JarvanIV_8.webp"},{"champion":"Taliyah","cn":"岩雀","team":"SSG","name":"SSG 塔莉垭","img":"assets/trophy/Taliyah_2.webp"},{"champion":"Rakan","cn":"幻翎","team":"SSG","name":"SSG 洛","img":"assets/trophy/Rakan_3.webp"},{"champion":"Gnar","cn":"迷失之牙","team":"SSG","name":"SSG 纳尔","img":"assets/trophy/Gnar_14.webp"},{"champion":"Xayah","cn":"逆羽","team":"SSG","name":"SSG 霞","img":"assets/trophy/Xayah_3.webp"},{"champion":"Twitch","cn":"瘟疫之源","team":"SSW","name":"SSW 图奇","img":"assets/trophy/Twitch_7.webp"},{"champion":"Talon","cn":"刀锋之影","team":"SSW","name":"SSW 泰隆","img":"assets/trophy/Talon_4.webp"},{"champion":"Singed","cn":"炼金术士","team":"SSW","name":"SSW 辛吉德","img":"assets/trophy/Singed_7.webp"},{"champion":"Thresh","cn":"魂锁典狱长","team":"SSW","name":"SSW 锤石","img":"assets/trophy/Thresh_4.webp"},{"champion":"Rengar","cn":"傲之追猎者","team":"SSW","name":"SSW 雷恩加尔","img":"assets/trophy/Rengar_3.webp"},{"champion":"Orianna","cn":"发条魔灵","team":"T1","name":"T1 奥莉安娜","img":"assets/trophy/Orianna_38.webp"},{"champion":"Bard","cn":"星界游神","team":"T1","name":"T1 巴德","img":"assets/trophy/Bard_35.webp"},{"champion":"Jayce","cn":"未来守护者","team":"T1","name":"T1 杰斯","img":"assets/trophy/Jayce_34.webp"},{"champion":"Vi","cn":"皮城执法官","team":"T1","name":"T1 蔚","img":"assets/trophy/Vi_49.webp"},{"champion":"Jinx","cn":"暴走萝莉","team":"T1","name":"T1 金克丝","img":"assets/trophy/Jinx_62.webp"}]}};
+/* __FALLBACK_PLACEHOLDER__ */
+Promise.all([
+  fetch("assets/manifest.json").then(r=>r.json()).catch(()=>({heroes:FALLBACK.heroes})),
+  fetch("assets/trophy.json").then(r=>r.json()).catch(()=>FALLBACK.trophy),
+]).then(([m,t])=>{
+  HEROES = m.heroes; TROPHY = t;
+  state.mode = "classic";
+  nextQuestion();
+});
+</script>
+<script>
+/* 移除平台右下角水印角标（shadow DOM .watermark-root，直接移除节点，防重注入轮询） */
+(function(){
+  function killBadge(){
+    try{
+      var list = document.querySelectorAll('body > div');
+      for(var i=0;i<list.length;i++){
+        var d = list[i];
+        if(d.shadowRoot && d.shadowRoot.querySelector('.watermark-root')){
+          if(d.parentNode) d.parentNode.removeChild(d);
+        }
+      }
+    }catch(e){}
+  }
+  killBadge();
+  new MutationObserver(killBadge).observe(document.body,{childList:true});
+  setInterval(killBadge, 300);
+})();
+</script>
+</body>
+</html>

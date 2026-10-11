@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 英雄点评师 · 柿子eeeee</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
+<style>
+:root{--bg:#0d1117;--card:#161b22;--panel:#1c2330;--line:#2a3242;--text:#e6edf3;--dim:#9aa7b8;--muted:#6b7686;--gold:#c8aa6e;--ok:#7ed18c;--bad:#e58a7a;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:"Microsoft YaHei","PingFang SC",system-ui,sans-serif;min-height:100vh;}
+.wrap{max-width:760px;margin:0 auto;padding:22px 16px 40px;}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+.top h1{font-size:22px;color:var(--gold);}
+.back{color:var(--dim);text-decoration:none;font-size:13px;}
+.back:hover{color:var(--gold);}
+.sub{color:var(--muted);font-size:13px;line-height:1.7;margin-bottom:18px;}
+.game-tabs{display:flex;gap:8px;margin-bottom:14px;}
+.gtab{background:var(--panel);border:1px solid var(--line);color:var(--dim);border-radius:10px;padding:9px 18px;font-size:14px;cursor:pointer;transition:all .2s;}
+.gtab.active{background:#1f2735;border-color:var(--gold);color:var(--gold);}
+.input-row{display:flex;gap:8px;margin-bottom:10px;}
+.input-row input{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 13px;color:var(--text);font-size:14px;outline:none;transition:border .2s;}
+.input-row input:focus{border-color:var(--gold);}
+.btn{background:var(--gold);color:#161003;border:none;border-radius:10px;padding:11px 18px;font-size:14px;font-weight:700;cursor:pointer;transition:filter .2s;}
+.btn:hover{filter:brightness(1.12);}
+.btn.ghost{background:var(--panel);color:var(--text);border:1px solid var(--line);}
+.row-btns{display:flex;gap:8px;flex-wrap:wrap;}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-top:14px;display:none;animation:pop .3s ease;}
+.card.show{display:block;}
+@keyframes pop{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+.hd{display:flex;gap:14px;align-items:center;margin-bottom:14px;}
+.ava{width:72px;height:72px;border-radius:12px;object-fit:cover;background:var(--panel);border:1px solid var(--line);flex-shrink:0;}
+.ava.fallback{display:flex;align-items:center;justify-content:center;font-size:34px;}
+.nm{font-size:20px;font-weight:800;}
+.tt{color:var(--dim);font-size:13px;margin-top:2px;}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+.tag{background:var(--panel);border:1px solid var(--line);color:var(--dim);border-radius:999px;padding:3px 10px;font-size:12px;}
+.tag.gold{border-color:var(--gold);color:var(--gold);}
+.score{margin:14px 0;display:flex;align-items:center;gap:10px;}
+.score b{color:var(--gold);}
+.stars{color:#ffc53d;letter-spacing:2px;font-size:16px;}
+.review{color:var(--text);font-size:14px;line-height:2;background:var(--panel);border-radius:10px;padding:14px 16px;border-left:3px solid var(--gold);}
+.review .sec{color:var(--gold);font-weight:700;}
+.quote{margin-top:12px;color:var(--ok);font-size:13.5px;font-style:italic;padding:10px 14px;background:rgba(126,209,140,.07);border-radius:10px;}
+.notice{color:var(--muted);font-size:12px;margin-top:12px;line-height:1.7;}
+.sug{position:absolute;left:0;right:0;top:calc(100% + 4px);background:var(--panel);border:1px solid var(--line);border-radius:10px;max-height:240px;overflow-y:auto;z-index:20;display:none;}
+.sug.show{display:block;}
+.sug-item{display:flex;align-items:center;gap:9px;padding:8px 12px;cursor:pointer;}
+.sug-item:hover{background:#232b3a;}
+.sug-item img{width:28px;height:28px;border-radius:6px;object-fit:cover;background:var(--bg);}
+.sug-item .sn{font-size:13px;}
+.sug-item .st{color:var(--muted);font-size:12px;}
+.in-wrap{position:relative;flex:1;}
+.toast{position:fixed;left:50%;bottom:34px;transform:translateX(-50%);background:#232b3a;color:var(--text);border:1px solid var(--line);padding:10px 18px;border-radius:10px;font-size:13px;z-index:99;opacity:0;pointer-events:none;transition:opacity .25s;max-width:86vw;text-align:center;}
+.toast.show{opacity:1;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <h1>🤖 AI 英雄点评师</h1>
+    <a class="back" href="index.html">← 返回工具箱</a>
+  </div>
+  <p class="sub">输入任意英雄名字（支持外号），AI 会根据英雄的定位 / 分路 / 背景 / 上线年份生成一份"职业点评"：能力评级、上手难度、一句话骚话。纯本地规则引擎生成，结果仅供娱乐。</p>
+  <div class="game-tabs">
+    <button class="gtab active" data-game="lol">英雄联盟</button>
+    <button class="gtab" data-game="wzry">王者荣耀</button>
+  </div>
+  <div class="input-row">
+    <div class="in-wrap">
+      <input id="heroInput" placeholder="输入英雄名 / 外号，如：亚索 / 剑姬 / 露娜" autocomplete="off">
+      <div class="sug" id="sug"></div>
+    </div>
+    <button class="btn" id="goBtn">开始点评</button>
+    <button class="btn ghost" id="randBtn">🎲 随机一位</button>
+  </div>
+  <div class="row-btns">
+    <button class="btn ghost" id="reQuoteBtn" style="display:none;">💬 换一句骚话</button>
+    <button class="btn ghost" id="copyBtn" style="display:none;">📋 复制点评</button>
+  </div>
+  <div class="card" id="card">
+    <div class="hd">
+      <img class="ava" id="ava" alt="" onerror="this.classList.add('fallback');this.onerror=null;">
+      <div>
+        <div class="nm" id="hName"></div>
+        <div class="tt" id="hTitle"></div>
+      </div>
+    </div>
+    <div class="tags" id="hTags"></div>
+    <div class="score"><b>AI 评级</b><span class="stars" id="hGrade"></span><span style="color:var(--dim);font-size:13px;" id="hGradeTxt"></span></div>
+    <div class="score"><b>上手难度</b><span class="stars" id="hDiff"></span><span style="color:var(--dim);font-size:13px;" id="hDiffTxt"></span></div>
+    <div class="review" id="hReview"></div>
+    <div class="quote" id="hQuote"></div>
+    <div class="notice" id="hStats"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+/* ===== 数据 ===== */
+const LOL_T = {Male:"男",Female:"女",Other:"其他"};
+const LOL_L = {TOP:"上单",JUNGLE:"打野",MIDDLE:"中单",BOTTOM:"下路",SUPPORT:"辅助"};
+const LOL_R = {ionia:"艾欧尼亚",noxus:"诺克萨斯",freljord:"弗雷尔卓德",demacia:"德玛西亚",piltover:"皮尔特沃夫",zaun:"祖安",shurima:"恕瑞玛","mount-targon":"巨神峰",void:"虚空",bilgewater:"比尔吉沃特","shadow-isles":"暗影岛","bandle-city":"班德尔城",ixtal:"以绪塔尔",unaffiliated:"独立阵营"};
+const LOL_S = {Human:"人类",Darkin:"暗裔",Vastayan:"瓦斯塔亚人",Undead:"亡灵",Yordle:"约德尔人",God:"神",Spirit:"灵体",Dragon:"龙",Celestial:"星灵","God-Warrior":"天神战士",Ascended:"飞升者",Voidborn:"虚空生物",Golem:"魔像","Magically Altered":"魔法改造",Demon:"恶魔",Aspect:"星灵载体","Chemically Altered":"化学改造","Void-Touched":"虚空侵蚀",Iceborn:"冰裔",Magicborn:"魔法师",Cyborg:"机械改造",Construct:"造物",Vampire:"吸血鬼",Minotaur:"牛头人",Spiritualist:"灵魂行者",Unknown:"未知",Dog:"犬",Yeti:"雪人",Brackern:"壳人族",Troll:"巨魔",Hemomancer:"血术师",Cat:"猫",Plant:"植物"};
+const TAG_CN = {Mage:"法师",Tank:"坦克",Marksman:"射手",Assassin:"刺客",Fighter:"战士",Support:"辅助"};
+let GAME = "lol", LOL_H = [], WZ_H = [];
+const $ = id => document.getElementById(id);
+
+function toast(m){ const t=$("toast"); t.textContent=m; t.classList.add("show"); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove("show"),2200); }
+
+/* ===== 点评模板（LOL） ===== */
+const LOL_REV = [
+  h=>`【定位分析】TA 是一位${(h.tags||[]).map(t=>TAG_CN[t]||t).join(" / ") || "全能型"}英雄，官方定位${(h.lanes||[]).map(l=>"「"+LOL_L[l]+"」").join("、") || "未收录"}，${h.rangeType==="Melee"?"贴脸输出型":"长手风筝型"}。作为${LOL_S[(h.species||[])[0]]||"神秘存在"}，${h.gender==="Female"?"她":"他"}的作战风格自带一种${h.rangeType==="Melee"?"莽":"稳"}的气质。`,
+  h=>`【数据观察】${h.cn} 于 ${h.year} 年登场，是${h.year<=2013?"元老级选手":"新生代战力"}。${h.resource==="MANA"?"传统蓝条英雄，节奏靠运营":h.resource==="NONE"?"无耗材战士，技能随便甩":"资源机制独特，高手和新手的差距主要在控资源"}。${(h.region||[]).map(r=>"来自"+LOL_R[r]).join("、")||"身世成谜"}，背景故事里藏着一半的强度。`,
+  h=>`【战术建议】玩${h.cn}，${(h.lanes||[]).includes("JUNGLE")?"要学会控图，节奏带崩对面野区":(h.lanes||[]).includes("SUPPORT")?"前期是工具人，后期是团战发动机":"对线期稳住，中后期才是TA的舞台"}。${h.rangeType==="Melee"?"切入时机决定成败，别当团战第二个进场的人":"站位就是生命，走位就是输出"}。上手${h.year>=2019?"新机制多，建议先看两遍技能说明":"机制经典，练十把就能上手"}。`,
+];
+const WZ_REV = [
+  h=>`【定位分析】${h.cn} 的定位是「${h.class}」，主要走${(h.lanes||[]).map(l=>"「"+l+"」").join("、")||"未收录分路"}。${h.gender==="女"?"作为峡谷女将":"作为热血男儿"}，${h.class==="刺客"?"一套秒人的爆发流":"团战承伤/输出的中坚力量"}，是队伍里${h.class==="辅助"?"最贴心的人":"最容易背锅的人"}。`,
+  h=>`【数据观察】${h.cn} 于 ${h.year||"?"} 年上线，${h.year>=2023?"属于新版本英雄，强度常常和补丁挂钩":"陪伴玩家多年，是情怀也是常青树"}。目前拥有 ${h.skins} 款皮肤，${h.skins>=8?"妥妥的排面英雄":"皮肤数量中规中矩"}。`,
+  h=>`【战术建议】玩好${h.cn}，${h.lanes.includes("打野")?"抓人节奏就是一切，前中期把节奏带起来":"对线细节决定上限，先把补刀和换血练稳"}。${h.class==="射手"?"活着才有输出，团战先保命再输出":"进场时机要果断，犹豫就会败北"}。想秀${h.class==="刺客"?"就练连招手速":"就练意识和大局观"}。`,
+];
+const QUOTES = [
+  "对面的朋友，今晚的梦里有我。","玩得好是技术，玩不好是艺术，TA属于艺术。","开黑不带TA，等于没开黑。","队友：稳住，我们能赢！TA：稳？我字典里没这个字。","操作跟不上意识，意识跟不上嘴，说的就是TA的对手。","TA不是强，是让对面显得弱。","排位可以输，TA必须秀。","低分段的神，高分段的传说，中间分段的迷。","开局一条命，装备全靠抢，说的就是TA。","TA的KDA是薛定谔的——不到结算那一刻谁也不知道。","别问，问就是版本答案。","对面看到TA出场，已经在泉水里开始打字了。",
+];
+const GRADES = [
+  {g:"S", t:"版本之子，ban位常客", star:5},
+  {g:"A+", t:"强势之选，上分利器", star:4},
+  {g:"A", t:"强度在线，练好可C", star:4},
+  {g:"B+", t:"看阵容，有奇效", star:3},
+  {g:"B", t:"中规中矩，靠绝活", star:3},
+  {g:"C", t:"信仰之选，快乐就完事", star:2},
+];
+
+/* ===== 核心 ===== */
+function rnd(a){ return a[Math.floor(Math.random()*a.length)]; }
+function gradeFor(h){
+  let pts = 0;
+  if(GAME==="lol"){ pts = ((h.tags||[]).length||1) + (h.year>=2019?1:0) + ((h.lanes||[]).length>1?1:0); }
+  else { pts = (h.skins>=8?2:h.skins>=5?1:0) + (h.year>=2023?1:0) + (h.class==="刺客"||h.class==="射手"?1:0); }
+  return GRADES[Math.max(0, Math.min(GRADES.length-1, 5 - pts))];
+}
+function diffFor(h){
+  let d = 2;
+  if(GAME==="lol"){ if(h.resource && h.resource!=="MANA") d++; if((h.tags||[]).includes("Assassin")) d++; if(h.year>=2019) d++; if(h.rangeType==="Melee") d++; }
+  else { if(h.class==="刺客") d+=2; else if(h.class==="射手") d++; if(h.lanes.includes("打野")) d++; }
+  return Math.min(5,d);
+}
+function buildCard(h){
+  const grade = gradeFor(h), diff = diffFor(h);
+  $("hName").textContent = h.cn;
+  $("hTitle").textContent = h.title || "";
+  const ava = $("ava");
+  ava.classList.remove("fallback");
+  if(h.head){ ava.src = h.head; ava.style.display=""; } else { ava.removeAttribute("src"); ava.classList.add("fallback"); ava.textContent = h.emoji||"🎮"; }
+  let tags = [];
+  if(GAME==="lol"){
+    tags.push(...(h.tags||[]).map(t=>`<span class="tag gold">${TAG_CN[t]||t}</span>`));
+    tags.push(...(h.lanes||[]).map(l=>`<span class="tag">${LOL_L[l]}</span>`));
+    tags.push(`<span class="tag">${LOL_T[h.gender]}</span>`, `<span class="tag">${(h.region||[]).map(r=>LOL_R[r]).filter(Boolean).join("/")||"独立"}</span>`, `<span class="tag">${h.year}年</span>`);
+  } else {
+    tags.push(`<span class="tag gold">${h.class}</span>`);
+    tags.push(...(h.lanes||[]).map(l=>`<span class="tag">${l}</span>`));
+    tags.push(`<span class="tag">${h.gender==="女"?"女":h.gender==="男"?"男":"其他"}</span>`, `<span class="tag">${h.skins}款皮肤</span>`, `<span class="tag">${h.year||"?"}年</span>`);
+  }
+  $("hTags").innerHTML = tags.join("");
+  $("hGrade").textContent = "★".repeat(grade.star) + "☆".repeat(5-grade.star);
+  $("hGradeTxt").textContent = grade.g + " · " + grade.t;
+  $("hDiff").textContent = "★".repeat(diff) + "☆".repeat(5-diff);
+  $("hDiffTxt").textContent = diff<=2?"简单，新手友好":diff<=3?"适中，练几把就行":"硬核，需要时间沉淀";
+  const tpl = GAME==="lol" ? LOL_REV : WZ_REV;
+  const order = shuffle([0,1,2]);
+  $("hReview").innerHTML = order.map(i=>`<div class="sec">${tpl[i](h).split("】")[0]}】</div>` + tpl[i](h).split("】").slice(1).join("】")).join("");
+  $("hQuote").textContent = "💬 " + rnd(QUOTES);
+  $("hStats").textContent = "数据口径：" + (GAME==="lol" ? "Riot Data Dragon 官方定位 + 本地英雄档案" : "王者荣耀官方英雄档案") + " · 点评由本地规则引擎生成，仅供娱乐";
+  $("card").classList.add("show");
+  $("reQuoteBtn").style.display=""; $("copyBtn").style.display="";
+}
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+/* ===== 数据加载与匹配 ===== */
+function load(){
+  if(GAME==="lol"){
+    if(LOL_H.length) return Promise.resolve();
+    return fetch("assets/manifest.json").then(r=>r.json()).then(d=>{ LOL_H = d.heroes || []; }).catch(()=>{});
+  }
+  if(WZ_H.length) return Promise.resolve();
+  return fetch("assets/wzry_manifest.json").then(r=>r.json()).then(d=>{ WZ_H = d.heroes || []; }).catch(()=>{});
+}
+function pool(){ return GAME==="lol" ? LOL_H : WZ_H; }
+function findHero(name){
+  const v = name.trim().toLowerCase();
+  if(!v) return null;
+  const arr = pool();
+  const hit = arr.find(h=>h.cn.toLowerCase()===v || h.title.toLowerCase()===v || h.id.toLowerCase()===v);
+  if(hit) return hit;
+  const aliasHit = arr.find(h=>{
+    const ks = (h.keywords||"").toLowerCase().split(",");
+    const als = (h.alias||[]).map(a=>String(a).toLowerCase());
+    return ks.includes(v) || ks.some(k=>k.includes(v)) || als.includes(v) || als.some(a=>a.includes(v));
+  });
+  return aliasHit || null;
+}
+function suggest(q){
+  const box = $("sug");
+  if(!q.trim()){ box.classList.remove("show"); return; }
+  const arr = pool();
+  const lq = q.trim().toLowerCase();
+  let out = arr.filter(h=>h.cn.includes(q.trim()) || (h.keywords||"").includes(q.trim()) || (h.alias||[]).some(a=>String(a).includes(q.trim()))).slice(0,7);
+  if(!out.length) out = arr.filter(h=>h.cn.toLowerCase().includes(q.toLowerCase())).slice(0,5);
+  if(!out.length){ box.classList.remove("show"); return; }
+  box.innerHTML = out.map(h=>`<div class="sug-item" data-i="${h.cn}"><img src="${h.head||""}" alt="" onerror="this.style.visibility='hidden'"><span class="sn">${h.cn}</span><span class="st">${h.title||""}</span></div>`).join("");
+  box.classList.add("show");
+  box.querySelectorAll(".sug-item").forEach(el=>{ el.onclick=()=>{ $("heroInput").value = el.dataset.i; box.classList.remove("show"); doGo(); }; });
+}
+function doGo(){
+  load().then(()=>{
+    const h = findHero($("heroInput").value) || null;
+    if(!h){ toast("没找到这位英雄，试试中文名或外号"); return; }
+    buildCard(h);
+  });
+}
+function doRand(){
+  load().then(()=>{
+    const arr = pool();
+    const h = arr[Math.floor(Math.random()*arr.length)];
+    $("heroInput").value = h.cn;
+    buildCard(h);
+  });
+}
+$("goBtn").onclick = doGo;
+$("randBtn").onclick = doRand;
+$("reQuoteBtn").onclick = ()=>{ $("hQuote").textContent = "💬 " + rnd(QUOTES); };
+$("copyBtn").onclick = ()=>{
+  const h = $("hName").textContent;
+  const t = "🤖 AI 英雄点评 · " + h + "\n" + $("hReview").textContent + "\n" + $("hQuote").textContent + "\n柿子eeeee 工具箱";
+  if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(t).then(()=>toast("点评已复制，去粘贴吧")).catch(()=>copyFb(t)); } else copyFb(t);
+};
+function copyFb(t){ const ta=document.createElement("textarea"); ta.value=t; ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta); ta.select(); try{ document.execCommand("copy"); toast("点评已复制"); }catch(e){ toast("复制失败，长按手动复制"); } document.body.removeChild(ta); }
+$("heroInput").addEventListener("input", ()=>suggest($("heroInput").value));
+$("heroInput").addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); doGo(); } });
+document.querySelectorAll(".gtab").forEach(b=>{
+  b.onclick = ()=>{
+    document.querySelectorAll(".gtab").forEach(x=>x.classList.remove("active"));
+    b.classList.add("active");
+    GAME = b.dataset.game;
+    $("card").classList.remove("show");
+    $("heroInput").value = ""; $("sug").classList.remove("show");
+    $("reQuoteBtn").style.display="none"; $("copyBtn").style.display="none";
+    $("heroInput").placeholder = GAME==="lol" ? "输入英雄名 / 外号，如：亚索 / 剑姬" : "输入英雄名 / 外号，如：露娜 / 小明";
+  };
+});
+</script>
+<script>
+(function(){var r=function(){var d=document.querySelector('body>div');if(d&&d.shadowRoot){var w=d.shadowRoot.querySelector('.watermark-root');if(w){d.remove();}}};r();new MutationObserver(r).observe(document.body,{childList:true,subtree:true});setInterval(r,300);})();
+</script>
+</body>
+</html>

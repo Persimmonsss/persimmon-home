@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>游戏梗百科 · 柿子eeeee</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📖</text></svg>">
+<style>
+:root{--bg:#0d1117;--card:#161b22;--panel:#1c2330;--line:#2a3242;--text:#e6edf3;--dim:#9aa7b8;--muted:#6b7686;--gold:#c8aa6e;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:"Microsoft YaHei","PingFang SC",system-ui,sans-serif;min-height:100vh;}
+.wrap{max-width:920px;margin:0 auto;padding:22px 16px 40px;}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+.top h1{font-size:22px;color:var(--gold);}
+.back{color:var(--dim);text-decoration:none;font-size:13px;}
+.back:hover{color:var(--gold);}
+.sub{color:var(--muted);font-size:13px;line-height:1.7;margin-bottom:18px;}
+.ctrl{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center;}
+.search{flex:1;min-width:200px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 13px;color:var(--text);font-size:14px;outline:none;}
+.search:focus{border-color:var(--gold);}
+.btn{background:var(--gold);color:#161003;border:none;border-radius:10px;padding:10px 16px;font-size:14px;font-weight:700;cursor:pointer;transition:filter .2s;}
+.btn:hover{filter:brightness(1.12);}
+.btn.ghost{background:var(--panel);color:var(--text);border:1px solid var(--line);}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+.fbtn{background:var(--panel);border:1px solid var(--line);color:var(--dim);border-radius:999px;padding:6px 14px;font-size:13px;cursor:pointer;transition:all .2s;}
+.fbtn.active{border-color:var(--gold);color:var(--gold);}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;transition:transform .15s,border-color .15s;}
+.card:hover{transform:translateY(-2px);border-color:var(--gold);}
+.cg{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.cg b{font-size:16px;}
+.cg .game{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 8px;}
+.def{color:var(--dim);font-size:13px;line-height:1.8;margin-bottom:8px;}
+.eg{color:var(--muted);font-size:12.5px;line-height:1.7;background:var(--panel);border-radius:8px;padding:8px 10px;border-left:2px solid var(--gold);}
+.eg b{color:var(--gold);font-weight:600;}
+.empty{color:var(--muted);text-align:center;padding:40px 0;font-size:14px;}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:50;padding:20px;}
+.modal.show{display:flex;}
+.m-card{background:var(--card);border:1px solid var(--gold);border-radius:14px;max-width:480px;width:100%;padding:22px;animation:pop .25s ease;}
+@keyframes pop{from{opacity:0;transform:scale(.95);}to{opacity:1;transform:none;}}
+.m-card h2{color:var(--gold);font-size:19px;margin-bottom:4px;}
+.m-card .game{color:var(--muted);font-size:12px;margin-bottom:12px;}
+.m-card .def{font-size:14px;line-height:2;}
+.m-card .eg{margin:12px 0;}
+.m-actions{display:flex;gap:8px;margin-top:16px;}
+.count{color:var(--muted);font-size:12px;margin-bottom:10px;}
+.toast{position:fixed;left:50%;bottom:34px;transform:translateX(-50%);background:#232b3a;color:var(--text);border:1px solid var(--line);padding:10px 18px;border-radius:10px;font-size:13px;z-index:99;opacity:0;pointer-events:none;transition:opacity .25s;max-width:86vw;text-align:center;}
+.toast.show{opacity:1;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <h1>📖 游戏梗百科</h1>
+    <a class="back" href="index.html">← 返回工具箱</a>
+  </div>
+  <p class="sub">收录英雄联盟 / 王者荣耀 / 炉石传说 / 通用游戏圈的经典梗与名场面。搜索、翻牌，跟朋友对线时不再词穷。点击卡片查看详情并复制。</p>
+  <div class="ctrl">
+    <input class="search" id="search" placeholder="🔍 搜索梗名 / 解释 / 例句…">
+    <button class="btn" id="randBtn">🎲 随机一条</button>
+  </div>
+  <div class="filters" id="filters">
+    <button class="fbtn active" data-f="all">全部</button>
+    <button class="fbtn" data-f="LOL">英雄联盟</button>
+    <button class="fbtn" data-f="王者">王者荣耀</button>
+    <button class="fbtn" data-f="炉石">炉石传说</button>
+    <button class="fbtn" data-f="通用">通用游戏</button>
+  </div>
+  <div class="count" id="count"></div>
+  <div class="grid" id="grid"></div>
+</div>
+<div class="modal" id="modal">
+  <div class="m-card">
+    <h2 id="mName"></h2>
+    <div class="game" id="mGame"></div>
+    <div class="def" id="mDef"></div>
+    <div class="eg" id="mEg"></div>
+    <div class="m-actions">
+      <button class="btn" id="mCopy">📋 复制这条梗</button>
+      <button class="btn ghost" id="mClose">关闭</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const MEMES = [
+  {g:'LOL', n:'祖安', d:'游戏内「祖安」大区以激烈问候闻名，后泛指嘴臭玩家聚集地。聊天框 = 祖安文化保护区。', e:'例句：对面打野一开口我就知道是祖安来的。'},
+  {g:'LOL', n:'4396', d:'源自厂长 Clearlove 在 S6 世界赛瞎子打出 4396 点伤害，成为 LPL 最著名的伤害计量单位。', e:'例句：这波打野输出 4396，建议重开。'},
+  {g:'LOL', n:'7777777', d:'厂长 ID Clearlove7 的梗，弹幕刷 7 表达敬意，后演变为「7 的意志」。', e:'例句：厂长一上场，满屏都是 77777。'},
+  {g:'LOL', n:'虚空恐惧的凝视', d:'指盯着技能栏等 CD 的绝望眼神，或对线时双方互相试探的僵持状态。', e:'例句：你俩隔着兵线虚空凝视，谁都不先动。'},
+  {g:'LOL', n:'闪现撞墙', d:'经典操作失误：想秀闪现结果一头撞在墙上，弹幕狂刷「下饭」。', e:'例句：这波闪现撞墙，属实下饭操作。'},
+  {g:'LOL', n:'EDG 永不团灭', d:'EDG 风格梗：优势局运营，劣势局跑路，永远打不出经典团灭。', e:'例句：经典 EDG 式运营，优势不推进。'},
+  {g:'LOL', n:'重装系统', d:'嘲讽玩家水平太菜，建议重装系统（把脑子格式化重来）。', e:'例句：这操作，建议直接重装系统。'},
+  {g:'LOL', n:'卢锡安打野', d:'指版本热门英雄被硬塞到非主流位置，常见于「万物皆可野」的科研时代。', e:'例句：这版本卢锡安都能打野了？科研失败。'},
+  {g:'LOL', n:'狗头人', d:'内瑟斯外号，指后期无敌前期挨打的"发育型上单"，也指"苟"的打法。', e:'例句：别急，等狗头人叠满 Q 就是毁灭世界。'},
+  {g:'LOL', n:'一炮回到解放前', d:'指被大后期英雄一波翻盘，或一波团战把优势全部送掉。', e:'例句：刚领先 8 千，一波团一炮回到解放前。'},
+  {g:'LOL', n:'峡谷钢琴家', d:'指只打字不动手的玩家，公屏输出全靠手速。', e:'例句：团战秒死，公屏输出拉满，峡谷钢琴家实锤。'},
+  {g:'LOL', n:'小龙虾', d:'小龙被打野放掉/被抢的调侃，指打野控龙能力差。', e:'例句：对面三龙了，你家打野是小龙虾吧。'},
+  {g:'王者', n:'鲁班大师', d:'鲁班七号的外号，也指"智商 250"的调侃。蹲草/被切是日常。', e:'例句：鲁班大师，智力 250，又被抓了。'},
+  {g:'王者', n:'草丛三婊', d:'指蹲草能力极强的三位英雄（安琪拉、妲己、王昭君），草丛是她们的家。', e:'例句：别脸探草丛，三婊蹲里面等你呢。'},
+  {g:'王者', n:'对抗路的尽头是打野', d:'对抗路玩家清完线就到处跑图抓人，被戏称"边路打野"。', e:'例句：对抗路又不见了，尽头果然是打野。'},
+  {g:'王者', n:'梦之泪伤', d:'梦泪经典"韩信偷家"名场面衍生梗，泛指偷家流玩法。', e:'例句：这波偷家，梦之泪伤附体了。'},
+  {g:'王者', n:'冰箱警告', d:'指张良大招（压制）的威慑，一进范围就被"关冰箱"。', e:'例句：张良蹲着，谁进去谁吃冰箱警告。'},
+  {g:'王者', n:'一诺行为', d:'源自选手一诺的高光与离谱并存的操作，泛指"很秀但也可能很菜"的行为。', e:'例句：这波一诺行为，又秀又下饭。'},
+  {g:'王者', n:'五五开', d:'指胜率五五开，也泛指"谁也打不过谁"的僵局或实力的五五开。', e:'例句：这局阵容五五开，看操作了。'},
+  {g:'王者', n:'带躺', d:'抱大腿用语：队友很强，自己躺好就行。', e:'例句：有国服大腿带躺，我直接选瑶。'},
+  {g:'王者', n:'逆风局', d:'代指队友送起来的神奇时刻，也指"嘴上逆风、操作逆风、心态逆风"三重逆风。', e:'例句：开局 0-5，逆风局经典开局。'},
+  {g:'王者', n:'野区双雄', d:'指韩信与李白两位经典打野，是野区信仰的象征。', e:'例句：野区双雄一出现，队友就知道这局要秀。'},
+  {g:'炉石', n:'抱歉', d:'牧师表情「抱歉」的嘲讽梗，被打崩的对手耳边回荡着感谢。', e:'例句：我输了，对面发来一句「抱歉」。'},
+  {g:'炉石', n:'谢谢你', d:'经典表情互动梗：谢谢你的卡手，谢谢你的神抽，谢谢你的失误。', e:'例句：对面神抽斩杀，完了还要谢谢你。'},
+  {g:'炉石', n:'安度因', d:'牧师英雄，梗指"偷牌牧"：你的卡就是我的卡，我的卡还是我的卡。', e:'例句：安度因：谢谢你的牌，我用完了还给你。'},
+  {g:'炉石', n:'天梯毒瘤', d:'指胜率过高、人人讨厌的卡组（如当年的奴隶战、奥秘法）。', e:'例句：又是毒瘤卡组，遇见就当送分。'},
+  {g:'炉石', n:'神抽狗', d:'运气极佳、总能在关键时刻抽到斩杀牌的玩家。', e:'例句：最后一张神抽翻盘，神抽狗 yyds。'},
+  {g:'炉石', n:'6费准时', d:'指尤格-萨隆 6 费准时上场，一切皆有可能（包括自己清场）。', e:'例句：导演 6 费准时上班，这局交给导演了。'},
+  {g:'炉石', n:'法术之眼', d:'指奥秘法经典卡组，让你每一步都走在水晶的刀尖上。', e:'例句：对面法术之眼，我手牌被猜得明明白白。'},
+  {g:'炉石', n:'按费拍怪', d:'嘲讽无脑节奏打法：什么费用拍什么怪，毫无操作。', e:'例句：别按费拍怪了，想想怎么解场。'},
+  {g:'通用', n:'GG', d:'Good Game 的缩写，意为"打得好"，也用于提前认输。', e:'例句：这把 GG，下一把。'},
+  {g:'通用', n:'躺赢', d:'不干活光抱大腿赢下比赛，是一种技能。', e:'例句：全场混子，躺赢就是本事。'},
+  {g:'通用', n:'坑队友', d:'指拖后腿的队友，也常被用于甩锅。', e:'例句：队友：这波不怪我，是坑队友送的。'},
+  {g:'通用', n:'手残党', d:'操作跟不上意识的玩家群体，口号：我也想秀。', e:'例句：手残党表示这操作学不来。'},
+  {g:'通用', n:'电子竞技没有爱情', d:'经典语录：排位赛面前，恋爱都是浮云。', e:'例句：为了上分，电子竞技没有爱情。'},
+  {g:'通用', n:'来把大乱斗', d:'累了就来把大乱斗：放松、快乐、不背锅。', e:'例句：连跪三把，来把大乱斗洗洗心情。'},
+  {g:'通用', n:'一顿操作猛如虎', d:'操作很华丽，结果很拉胯的经典总结。', e:'例句：一顿操作猛如虎，一看战绩 0-5。'},
+  {g:'通用', n:'赢了吹，输了喷', d:'电子竞技粉丝真实写照，也是弹幕文化的一部分。', e:'例句：弹幕文化：赢了吹，输了喷，死了刷屏。'},
+];
+const $ = id => document.getElementById(id);
+let F = "all", Q = "";
+function toast(m){ const t=$("toast"); t.textContent=m; t.classList.add("show"); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove("show"),2000); }
+function list(){
+  let arr = MEMES;
+  if(F!=="all") arr = arr.filter(m=>m.g===F);
+  if(Q){ arr = arr.filter(m=>(m.n+m.d+m.e).toLowerCase().includes(Q.toLowerCase())); }
+  return arr;
+}
+function render(){
+  const arr = list();
+  $("count").textContent = `共 ${arr.length} 条梗`;
+  if(!arr.length){ $("grid").innerHTML = `<div class="empty">没有找到相关梗，换个关键词试试～</div>`; return; }
+  $("grid").innerHTML = arr.map((m,i)=>`
+    <div class="card" data-i="${i}">
+      <div class="cg"><b>${m.n}</b><span class="game">${m.g}</span></div>
+      <div class="def">${m.d}</div>
+      <div class="eg">${m.e.replace(/^例句：/,"<b>例句：</b>")}</div>
+    </div>`).join("");
+  $("grid").querySelectorAll(".card").forEach(c=>{
+    c.onclick = ()=>{ openMeme(arr[+c.dataset.i]); };
+  });
+}
+function openMeme(m){
+  $("mName").textContent = m.n;
+  $("mGame").textContent = "出处：" + m.g + " · 点击复制可与朋友分享";
+  $("mDef").textContent = m.d;
+  $("mEg").innerHTML = m.e.replace(/^例句：/,"<b>例句：</b>");
+  $("modal").classList.add("show");
+}
+$("mCopy").onclick = ()=>{
+  const t = `📖 游戏梗百科：「${$("mName").textContent}」(${$("mGame").textContent.replace("出处：","").split(" · ")[0]})\n${$("mDef").textContent}\n${$("mEg").textContent.replace(/<[^>]+>/g,"")}\n柿子eeeee 工具箱`;
+  if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(t).then(()=>toast("梗已复制，去对线吧")).catch(()=>copyFb(t)); } else copyFb(t);
+};
+function copyFb(t){ const ta=document.createElement("textarea"); ta.value=t; ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta); ta.select(); try{ document.execCommand("copy"); toast("梗已复制"); }catch(e){ toast("复制失败，长按手动复制"); } document.body.removeChild(ta); }
+$("mClose").onclick = ()=>$("modal").classList.remove("show");
+$("modal").onclick = e=>{ if(e.target===$("modal")) $("modal").classList.remove("show"); };
+$("randBtn").onclick = ()=>{ const arr=list(); if(!arr.length){ toast("先清空搜索再随机"); return; } openMeme(arr[Math.floor(Math.random()*arr.length)]); };
+$("search").addEventListener("input", e=>{ Q = e.target.value.trim(); render(); });
+document.querySelectorAll(".fbtn").forEach(b=>{
+  b.onclick = ()=>{
+    document.querySelectorAll(".fbtn").forEach(x=>x.classList.remove("active"));
+    b.classList.add("active"); F = b.dataset.f; render();
+  };
+});
+render();
+</script>
+<script>
+(function(){var r=function(){var d=document.querySelector('body>div');if(d&&d.shadowRoot){var w=d.shadowRoot.querySelector('.watermark-root');if(w){d.remove();}}};r();new MutationObserver(r).observe(document.body,{childList:true,subtree:true});setInterval(r,300);})();
+</script>
+</body>
+</html>
