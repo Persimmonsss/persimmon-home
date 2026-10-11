@@ -87,7 +87,7 @@ canvas{display:block;width:100%;height:auto;border-radius:10px;background:#070d1
 <body>
 <div class="wrap">
   <div class="top">
-    <h1>🌪️ 疾风幸存者 · 亚索 <span style="font-size:12px;color:var(--muted);font-weight:normal;">v1.5</span></h1>
+    <h1>🌪️ 疾风幸存者 · 亚索 <span style="font-size:12px;color:var(--muted);font-weight:normal;">v1.7</span></h1>
     <a class="back" href="index.html">← 返回工具箱</a>
   </div>
   <div class="meta-bar">
@@ -1266,9 +1266,11 @@ function draw(){
     if(player.attackAnim > 0){ pDash = Math.sin(player.attackAnim / 0.18 * Math.PI) * 16; }
     var pDrawX = player.x + Math.cos(player.attackDir) * pDash;
     var pDrawY = player.y;
+    // 朝向：根据水平移动方向翻转
+    var facing = player.moveDir >= 0 ? 1 : -1;
     ctx.fillStyle = "rgba(0,0,0,0.4)";
     ctx.beginPath(); ctx.ellipse(player.x, player.y+42, 26, 8, 0, 0, 6.283); ctx.fill();
-    // 攻击风刃
+    // 攻击风刃（移动中也能放）
     if(player.attackAnim > 0){
       ctx.save();
       ctx.translate(pDrawX, pDrawY);
@@ -1284,6 +1286,7 @@ function draw(){
     }
     ctx.save();
     ctx.translate(pDrawX, pDrawY);
+    ctx.scale(facing, 1);
     if(gmGod){ ctx.shadowColor = "#ffd700"; ctx.shadowBlur = 20; }
     if(player.hitCd > 0 && Math.floor(tNow*20)%2===0) ctx.globalAlpha = 0.3;
     ctx.drawImage(sheet, fCol*fw, fRow*fh, fw, fh, -ps/2, -ps/2, ps, ps);
