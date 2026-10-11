@@ -1045,28 +1045,42 @@ function draw(){
   if(shake>0) ctx.translate(rnd(-5,5), rnd(-5,5));
   ctx.translate(-cam.x, -cam.y);
 
-  // 地面 - 程序化绘制，无缝
-  ctx.fillStyle = "#0a1628";
+  // 地面 - 程序化无缝绘制
+  var bgGrad = ctx.createLinearGradient(0, cam.y, 0, cam.y+H);
+  bgGrad.addColorStop(0, "#0a1020");
+  bgGrad.addColorStop(1, "#0d1528");
+  ctx.fillStyle = bgGrad;
   ctx.fillRect(cam.x, cam.y, W, H);
-  var tileSize = 128;
-  var startX = Math.floor(cam.x/tileSize)*tileSize;
-  var startY = Math.floor(cam.y/tileSize)*tileSize;
-  for(var tx=startX; tx<cam.x+W+tileSize; tx+=tileSize){
-    for(var ty=startY; ty<cam.y+H+tileSize; ty+=tileSize){
-      //  deterministic pseudo-random per tile
-      var h = Math.abs(Math.sin(tx*12.9898 + ty*78.233)*43758.5453) % 1;
-      var shade = 18 + Math.floor(h*10);
-      ctx.fillStyle = "rgb(" + shade + "," + (shade+8) + "," + (shade+18) + ")";
-      ctx.fillRect(tx+1, ty+1, tileSize-2, tileSize-2);
-      // 石板裂纹
-      ctx.strokeStyle = "rgba(0,0,0,0.2)";
-      ctx.lineWidth = 1;
-      ctx.strokeRect(tx+1, ty+1, tileSize-2, tileSize-2);
-      // 随机小装饰点
-      if(h > 0.7){
-        ctx.fillStyle = "rgba(100,180,255,0.08)";
+  // 随机散布装饰（基于世界坐标deterministic）
+  var decoSize = 200;
+  var sx = Math.floor(cam.x/decoSize)*decoSize;
+  var sy = Math.floor(cam.y/decoSize)*decoSize;
+  for(var dx=sx; dx<cam.x+W+decoSize; dx+=decoSize){
+    for(var dy=sy; dy<cam.y+H+decoSize; dy+=decoSize){
+      var h1 = Math.abs(Math.sin(dx*7.13 + dy*3.71)*43758.5453) % 1;
+      var h2 = Math.abs(Math.sin(dx*13.7 + dy*9.3)*12543.21) % 1;
+      // 暗色石板斑块
+      ctx.fillStyle = "rgba(40,60,90," + (0.15+h1*0.1) + ")";
+      ctx.beginPath();
+      ctx.ellipse(dx + h1*decoSize, dy + h2*decoSize, 40+h1*30, 25+h2*20, h1*3, 0, 6.283);
+      ctx.fill();
+      // 小草/草丛点缀
+      if(h2 > 0.5){
+        ctx.strokeStyle = "rgba(80,140,180,0.25)";
+        ctx.lineWidth = 1.5;
+        var gx = dx + h2*decoSize, gy = dy + h1*decoSize;
+        for(var gi=0; gi<4; gi++){
+          ctx.beginPath();
+          ctx.moveTo(gx+gi*3, gy);
+          ctx.quadraticCurveTo(gx+gi*3+2, gy-8, gx+gi*3+rnd(-3,3), gy-14);
+          ctx.stroke();
+        }
+      }
+      // 蓝色风纹微光
+      if(h1 > 0.6){
+        ctx.fillStyle = "rgba(100,180,255,0.06)";
         ctx.beginPath();
-        ctx.arc(tx + h*100, ty + (1-h)*100, 8, 0, 6.283);
+        ctx.arc(dx + h2*decoSize, dy + h1*decoSize, 15+h1*10, 0, 6.283);
         ctx.fill();
       }
     }
