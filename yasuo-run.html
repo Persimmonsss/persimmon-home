@@ -87,7 +87,7 @@ canvas{display:block;width:100%;height:auto;border-radius:10px;background:#070d1
 <body>
 <div class="wrap">
   <div class="top">
-    <h1>🌪️ 疾风幸存者 · 亚索 <span style="font-size:12px;color:var(--muted);font-weight:normal;">v3.3</span></h1>
+    <h1>🌪️ 疾风幸存者 · 亚索 <span style="font-size:12px;color:var(--muted);font-weight:normal;">v3.4</span></h1>
     <a class="back" href="index.html">← 返回工具箱</a>
   </div>
   <div class="meta-bar">
@@ -221,12 +221,12 @@ canvas{display:block;width:100%;height:auto;border-radius:10px;background:#070d1
 (function(){
 "use strict";
 var cv = document.getElementById("cv"), ctx = cv.getContext("2d");
-var W = 1280, H = 800, WW = 4000, WH = 3000;
+var W = 1280, H = 800, WW = 2048, WH = 2048;
 var IMG = {};
 function loadImg(key, src){ var im = new Image(); im.onload = function(){ IMG[key] = im; }; im.src = src; }
-["yasuo","slime","bat","skel","boss","gem","heal","tornado","ground","yasuo_sheet","yasuo_attack","ground_new","icon_wind","icon_sword","icon_guard","icon_elem","icon_summon"].forEach(function(k){
-  var ext = (k==="yasuo_sheet"||k==="yasuo_attack") ? "png" : (k.indexOf("icon_")===0||k==="ground_new") ? "jpg" : "webp";
-  loadImg(k, "assets/run2/" + k + "." + ext + "?v=2.3");
+["yasuo","slime","bat","skel","boss","gem","heal","tornado","map","yasuo_sheet","yasuo_attack","icon_wind","icon_sword","icon_guard","icon_elem","icon_summon"].forEach(function(k){
+  var ext = (k==="yasuo_sheet"||k==="yasuo_attack") ? "png" : (k==="map"||k.indexOf("icon_")===0) ? "jpg" : "webp";
+  loadImg(k, "assets/run2/" + k + "." + ext + "?v=3.4");
 });
 
 /* ===== 音效 ===== */
@@ -1150,26 +1150,14 @@ function draw(){
   if(shake>0) ctx.translate(rnd(-5,5), rnd(-5,5));
   ctx.translate(-cam.x, -cam.y);
 
-  // 地面 - 用生成的纹理图平铺
-  var gn = IMG.ground_new;
-  if(gn){
-    var gs2 = 400;
-    for(var gx2=Math.floor(cam.x/gs2)-1; gx2<Math.ceil((cam.x+W)/gs2)+1; gx2++){
-      for(var gy2=Math.floor(cam.y/gs2)-1; gy2<Math.ceil((cam.y+H)/gs2)+1; gy2++){
-        ctx.drawImage(gn, gx2*gs2, gy2*gs2, gs2, gs2);
-      }
-    }
+  // 地面 - 整张2.5D地图
+  var mapImg = IMG.map;
+  if(mapImg){
+    ctx.drawImage(mapImg, 0, 0, WW, WH);
   } else {
     ctx.fillStyle = "#0a1628";
     ctx.fillRect(cam.x, cam.y, W, H);
   }
-  // 边界 - 魔法能量屏障
-  ctx.strokeStyle = "rgba(127,216,255,0.15)"; ctx.lineWidth = 50;
-  ctx.strokeRect(0, 0, WW, WH);
-  ctx.strokeStyle = "rgba(127,216,255,0.5)"; ctx.lineWidth = 3;
-  ctx.shadowColor = "#7fd8ff"; ctx.shadowBlur = 20;
-  ctx.strokeRect(25, 25, WW-50, WH-50);
-  ctx.shadowBlur = 0;
 
   // 宝箱
   for(var ci=0;ci<chests.length;ci++){
