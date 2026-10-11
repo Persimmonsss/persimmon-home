@@ -87,12 +87,12 @@ canvas{display:block;width:100%;height:auto;border-radius:10px;background:#070d1
 <body>
 <div class="wrap">
   <div class="top">
-    <h1>🌪️ 疾风幸存者 · 亚索 <span style="font-size:12px;color:var(--muted);font-weight:normal;">v3.1</span></h1>
+    <h1>🌪️ 疾风幸存者 · 亚索 <span style="font-size:12px;color:var(--muted);font-weight:normal;">v3.2</span></h1>
     <a class="back" href="index.html">← 返回工具箱</a>
   </div>
   <div class="meta-bar">
     <div class="shard-display">💎 <span id="shardCount">0</span> 风之碎片</div>
-    <button class="meta-btn" id="shopBtn">永久升级</button>
+    <button class="meta-btn" id="shopBtn">天赋</button>
     <button class="meta-btn" id="gachaBtn">扭蛋</button>
     <button class="meta-btn" id="achBtn">成就</button>
   </div>
@@ -121,7 +121,7 @@ canvas{display:block;width:100%;height:auto;border-radius:10px;background:#070d1
 <div class="modal-mask" id="shopModal">
   <div class="modal">
     <button class="close" onclick="document.getElementById('shopModal').classList.remove('show')">✕</button>
-    <h2>⚔ 永久升级</h2>
+    <h2>天赋</h2>
     <p style="color:#9aa7b8;font-size:12px;">用风之碎片永久强化亚索，每局开始时生效。</p>
     <div class="upgrade-list" id="upgradeList"></div>
   </div>
@@ -1568,12 +1568,12 @@ function draw(){
         ctx.drawImage(iconImg, bx+cardW/2-40, by+30, 80, 80);
       }
       ctx.textAlign = "center";
-      ctx.font = "bold 18px 'Microsoft YaHei',sans-serif"; ctx.fillStyle = "#e6edf3";
-      ctx.fillText(u.name, bx+cardW/2, by+145);
-      ctx.font = "12px 'Microsoft YaHei',sans-serif"; ctx.fillStyle = fc;
-      ctx.fillText("[" + ({wind:"疾风",sword:"剑道",guard:"护体",elem:"元素",summon:"召唤"}[u.faction]||"?") + "系]", bx+cardW/2, by+168);
-      ctx.font = "13px 'Microsoft YaHei',sans-serif"; ctx.fillStyle = "#9aa7b8";
-      ctx.fillText(u.desc, bx+cardW/2, by+200);
+      ctx.font = "bold 20px 'Microsoft YaHei',sans-serif"; ctx.fillStyle = "#e6edf3";
+      ctx.fillText(u.name, bx+cardW/2, by+150);
+      ctx.font = "13px 'Microsoft YaHei',sans-serif"; ctx.fillStyle = fc;
+      ctx.fillText("[" + ({wind:"疾风",sword:"剑道",guard:"护体",elem:"元素",summon:"召唤"}[u.faction]||"?") + "系]", bx+cardW/2, by+175);
+      ctx.font = "15px 'Microsoft YaHei',sans-serif"; ctx.fillStyle = "#9aa7b8";
+      ctx.fillText(u.desc, bx+cardW/2, by+210);
       ctx.globalAlpha = 1;
     }
     // 刷新按钮
